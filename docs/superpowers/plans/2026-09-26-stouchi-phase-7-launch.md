@@ -270,6 +270,31 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
   - CLS 0;
   - Speed Index 1.8 s.
 
+### Session A outcome (2026-09-26)
+
+- **Commits:**
+  - `5db1f2a` Task 5: Sentry, with nothing sent without a DSN; `scrub()`; `sync_failed`; `supabase/queries/ai_dashboard.sql` and `launch_metrics.sql`;
+  - then the fixes from the review.
+- **Gate:** `npm run check` 1227/1227. First-load JS 124.9 kB, with Sentry in its own lazy chunk.
+- **Final review** (Opus, Tasks 2–5): 0 Critical. Fixed, each with a test that failed first:
+  - **I1:** a second window whose update was accepted in another window got stuck. It now keeps "Recharger", which reloads it. The worker keeps the previous version's cache, so that window can still load its chunks, and it serves the running version's shell.
+  - **m1** (re-graded): a resumed app now checks for a new version when it comes back on screen, at most once an hour.
+  - **m2** (re-graded): a page load on a connection that never answers gets the cached shell after 3 s, instead of a white screen.
+- **Deferred minors** (the user decides):
+  - **m3:** Sentry loads at `setTimeout(0)`, so it competes with the first load. Load it after `load` and idle, and re-measure signed in with the DSN set.
+  - **m4:** breadcrumbs lose their timestamps.
+  - **m5:** `sync_failed` can have an empty `code` tag.
+  - **m6:** the worker's version ignores a change to `index.html` alone.
+  - **m7:** `a11y.spec.ts` doesn't cover the receipt card and the edit sheet. `chat.spec.ts` checks them.
+- **`npm run e2e`:** 97 passed, 7 failed, 1 skipped. None of the failures comes from Session A:
+  - `couple:168` hit the day's cap on partner requests.
+  - `core:93` on Pixel 7 is flaky and passes on a rerun.
+  - On iPhone 13, `core:44`, `me:35`, `onboarding:47` and `chat:194` fail because typed input doesn't register. `core:44` also fails 2 times in 3 on the code from before Session A, checked in a baseline worktree at `0a5a494`.
+  - `couple:129` is Phase 6 M6.
+
+  **The WebKit input flake grew during the day. Look into it before launch.**
+- **Still open for the user:** the sync-loop finding (above) and commit `e07fb40`. That commit holds another session's files under a Phase 7 message.
+
 ---
 
 ## Session B — getting ready to cut over
@@ -355,6 +380,7 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 **Steps:**
 
 - [ ] **Env list.** From the code (`import.meta.env.*`, `process.env.*` in `api/`, `lib/aam-salah/`, `src/server/`), write the exact Vercel variables for **Production**. They must point at production: the `VITE_SUPABASE_*`, `SUPABASE_URL`/`SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, the provider keys `lib/aam-salah` reads, `VITE_VAPID_PUBLIC_KEY`, the Sentry vars, and `AAM_MODELS` if it is set. **Preview** stays on `stouchi-test`. Also list the `notify-run` secrets for production (VAPID ×3, `GEMINI_API_KEY`), and the Vault secrets and schedule from Phase 4 (`notify-schedule.sql`). Check that the GitHub repo has the secret `eval.yml` needs, because the nightly eval starts running from `master` at the merge (§8.6).
+- [ ] **Offline shell on Vercel:** on a preview, `/index.html` answers 200 with no redirect. A redirected response can't answer a navigation, which would break the offline start (from the Session A review).
 - [ ] **Production migration state** (read-only): `npx supabase migration list --project-ref gfbakmwllhuhfdydbcfa`. List which of `20260923`–`20260930` are missing, in order.
 - [ ] **Auth diff** (read-only, dashboard or CLI): the site URL, redirect URLs, Google provider and e-mail confirmation on production against `stouchi-test`. The user fixes the differences.
 - [ ] **Rehearsal on `stouchi-test`** (approval for the `--apply` on test):
