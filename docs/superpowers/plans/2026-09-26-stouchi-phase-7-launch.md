@@ -56,6 +56,13 @@
    - New analytics events. The +30-day metrics use what the tables already hold, and "median time to log" is reported as not measured.
 8. **First-load budget (D8).** Replace `createClient` from `@supabase/supabase-js` with a thin client built from `@supabase/auth-js` + `@supabase/postgrest-js`. Realtime, storage and functions are unused. Add a CI gate: JS loaded by `index.html` ≤ 150 kB gzipped.
 
+## Decisions of 2026-09-27 (after Session B)
+
+- **The code moved to the `stouchi` repo** (PR #9). `budget-maison` keeps the legacy app, whose `master` is production on Vercel, and the local `legacy` branch.
+- **Production host: Cloudflare Pages**, project `stouchi-app`, not Vercel. This replaces D3's and Task 10's Vercel steps for the new app: env vars, the domain switch in step 9, and the rollback. The legacy app stays on Vercel (`budget-maison` and `stouchi-ancien`). **Task 10 must be rewritten for this before Session C.**
+- **Launch date (D2): Sunday 1 November 2026**, in the morning.
+- **Still open:** Sentry (wired for Vercel only) or PostHog for errors (D4).
+
 ## Session split
 
 - **Session A** covers Tasks 1–5, the code hardening on `rebuild`. Task 1 is money and data work: an Opus reviewer checks it before Task 2.

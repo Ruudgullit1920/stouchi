@@ -21,7 +21,8 @@ A household budget PWA, written in French. Amounts are in Tunisian dinars (TND).
 ## Status
 - Phases 0–6 are done. Phase 7 (launch): Sessions A (hardening) and B (cut-over prep and a rehearsal on `stouchi-test`) are done. See their outcomes in the launch plan.
 - The Session A+B work was merged here from `budget-maison` in PR #9 (2026-09-27).
-- **Next: Session C, launch day (Task 10).** The runbook still assumes Vercel and must be rewritten for Cloudflare Pages first.
+- **Launch: Sunday 1 November 2026, morning, on Cloudflare Pages** (decided 2026-09-27).
+- **Next:** rewrite the Task 10 runbook for Cloudflare Pages (it still assumes Vercel), then settle Sentry vs PostHog. Session C (launch day) follows.
 - Still for the owner before launch:
   - the backfill dry run on production;
   - the Auth settings on production;
@@ -29,7 +30,6 @@ A household budget PWA, written in French. Amounts are in Tunisian dinars (TND).
   - the plan's "before Session C" list.
 
 ## Open decisions
-- **Production host:** Cloudflare Pages (this repo's setup) or Vercel (the launch plan). This decides how launch-day steps 8–9 and the rollback work.
 - **Sentry or PostHog for errors.** Sentry is Vercel-wired: `_headers` doesn't allow `*.sentry.io`, `functions/api/aam.ts` doesn't report, and the release reads `VERCEL_GIT_COMMIT_SHA`.
 - Carried over from Phase 7: the WebKit E2E input flake and the sync-loop finding.
 
