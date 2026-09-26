@@ -14,8 +14,10 @@ self.addEventListener('install', (event) =>
 self.addEventListener('activate', (event) =>
   event.waitUntil(
     (async () => {
-      for (const key of await caches.keys())
-        if (key.startsWith('stouchi-') && key !== CACHE) await caches.delete(key);
+      /* keep the version before too: a window still on it may lazy-load a chunk
+         that is gone from the server (caches.keys() lists oldest first) */
+      const older = (await caches.keys()).filter((key) => key.startsWith('stouchi-') && key !== CACHE);
+      for (const key of older.slice(0, -1)) await caches.delete(key);
       await self.clients.claim();
     })(),
   ),
@@ -32,11 +34,25 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match('/index.html', MATCH)));
+    event.respondWith(page(request));
     return;
   }
   if (url.pathname.startsWith('/assets/')) event.respondWith(fromCache(request));
 });
+
+/* Network first, but a connection that is up and never answers (weak Wi-Fi)
+   gets the cached shell after 3 s instead of a white screen. A first visit,
+   with nothing cached yet, waits for the network. */
+async function page(request) {
+  const network = fetch(request);
+  /* this version's shell first: caches.match would find the older one first */
+  const cached =
+    (await (await caches.open(CACHE)).match('/index.html', MATCH)) ||
+    (await caches.match('/index.html', MATCH));
+  if (!cached) return network;
+  const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 3000));
+  return Promise.race([network.catch(() => cached), slow]);
+}
 
 /* Built assets are content-hashed: a cached copy is always the right one, so a
    Vary header (Vary: Origin from some servers) must not turn it into a miss. */

@@ -7,7 +7,7 @@ import './design/components/components.css';
 import { App } from './app/App';
 import { initMonitoring } from './app/monitoring';
 import { navigate } from './app/router';
-import { watchUpdates } from './app/update';
+import { checkForUpdates, watchUpdates } from './app/update';
 import { listenToServiceWorker } from './data/push';
 import { NOTIFY_EVENT } from './data/sync';
 
@@ -17,7 +17,13 @@ if ('serviceWorker' in navigator) {
   if (import.meta.env.PROD)
     void navigator.serviceWorker
       .register('/sw.js')
-      .then((reg) => watchUpdates(reg, navigator.serviceWorker, () => window.location.reload()))
+      .then((reg) => {
+        watchUpdates(reg, navigator.serviceWorker, () => window.location.reload());
+        const check = checkForUpdates(reg);
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') check(Date.now());
+        });
+      })
       .catch(() => undefined);
   const pull = () => window.dispatchEvent(new Event(NOTIFY_EVENT));
   listenToServiceWorker(navigator.serviceWorker, {

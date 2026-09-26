@@ -16,6 +16,7 @@ const res = (body: string, ok = true, vary = false): Res => ({
   vary,
   clone: () => res(body, ok, vary),
 });
+const HANG = '__hang__';
 const abs = (u: string | { url: string }) => new URL(typeof u === 'string' ? u : u.url, ORIGIN).href;
 
 function loadWorker(
@@ -29,6 +30,8 @@ function loadWorker(
   const net = new Map<string, string>();
   const fetch = vi.fn((req: string | { url: string }) => {
     const body = net.get(abs(req));
+    /* HANG: a connection that is up but never answers (weak Wi-Fi) */
+    if (body === HANG) return new Promise<Res>(() => {});
     return body === undefined ? Promise.reject(new TypeError('offline')) : Promise.resolve(res(body));
   });
   const store = new Map<string, Map<string, Res>>(
@@ -43,6 +46,10 @@ function loadWorker(
     return {
       addAll: async (urls: string[]) => {
         for (const u of urls) rows.set(abs(u), await fetch(u));
+      },
+      match: (req: string | { url: string }, options?: { ignoreVary?: boolean }) => {
+        const hit = rows.get(abs(req));
+        return Promise.resolve(hit && (!hit.vary || options?.ignoreVary) ? hit : undefined);
       },
       put: (req: string | { url: string }, r: Res) => {
         rows.set(abs(req), r);
@@ -86,7 +93,7 @@ function loadWorker(
     opts.version ?? 'v1',
     opts.precache ?? [],
   );
-  runInNewContext(source, { self, caches, fetch, URL });
+  runInNewContext(source, { self, caches, fetch, URL, setTimeout });
   const fire = async (type: string, event: Record<string, unknown>) => {
     let work: Promise<unknown> = Promise.resolve();
     listeners.get(type)?.({ ...event, waitUntil: (p: Promise<unknown>) => (work = p) });
@@ -160,10 +167,13 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
     expect(w.self.skipWaiting).not.toHaveBeenCalled();
   });
 
-  it('activate drops older versions, keeps this one, and takes the open pages', async () => {
-    const w = loadWorker([], { version: 'v2', caches: { 'stouchi-v1': {}, 'stouchi-v2': {}, other: {} } });
+  it('activate keeps this version and the one before (an old window may still lazy-load from it), drops older ones', async () => {
+    const w = loadWorker([], {
+      version: 'v2',
+      caches: { 'stouchi-v0': {}, 'stouchi-v1': {}, 'stouchi-v2': {}, other: {} },
+    });
     await w.fire('activate', {});
-    expect([...w.store.keys()].sort()).toEqual(['other', 'stouchi-v2']);
+    expect([...w.store.keys()].sort()).toEqual(['other', 'stouchi-v1', 'stouchi-v2']);
     expect(w.self.clients.claim).toHaveBeenCalled();
   });
 
@@ -184,6 +194,43 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
   it('offline, a page load gets the cached shell', async () => {
     const w = loadWorker([], { caches: { 'stouchi-v1': { '/index.html': res('<html>cached') } } });
     expect((await w.request('/', { mode: 'navigate' })) as Res).toMatchObject({ body: '<html>cached' });
+  });
+
+  it('offline, the shell of the running version wins over the one kept from before', async () => {
+    const w = loadWorker([], {
+      version: 'v2',
+      caches: {
+        'stouchi-v1': { '/index.html': res('<html>v1') },
+        'stouchi-v2': { '/index.html': res('<html>v2') },
+      },
+    });
+    expect((await w.request('/', { mode: 'navigate' })) as Res).toMatchObject({ body: '<html>v2' });
+  });
+
+  it('a page load that hangs falls back to the cached shell after 3 s (review m2)', async () => {
+    vi.useFakeTimers();
+    try {
+      const w = loadWorker([], { caches: { 'stouchi-v1': { '/index.html': res('<html>cached') } } });
+      w.net.set(abs('/'), HANG);
+      const answer = w.request('/', { mode: 'navigate' });
+      await vi.advanceTimersByTimeAsync(3000);
+      expect((await answer) as Res).toMatchObject({ body: '<html>cached' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('with no cached shell yet (first visit), a slow page load is waited for', async () => {
+    vi.useFakeTimers();
+    try {
+      const w = loadWorker([]);
+      w.net.set(abs('/'), '<html>net');
+      const answer = w.request('/', { mode: 'navigate' });
+      await vi.advanceTimersByTimeAsync(5000);
+      expect((await answer) as Res).toMatchObject({ body: '<html>net' });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('a built asset comes from the cache, without the network', async () => {

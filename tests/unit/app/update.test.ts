@@ -1,7 +1,7 @@
 /* "Nouvelle version — Recharger" (spec §8.3): a new worker waits; the page
  * offers the reload and never reloads without the tap. */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyUpdate, updateReady, watchUpdates } from '../../../src/app/update';
+import { applyUpdate, checkForUpdates, updateReady, watchUpdates } from '../../../src/app/update';
 
 type Fn = () => void;
 class FakeWorker {
@@ -95,5 +95,35 @@ describe('watchUpdates', () => {
     watchUpdates(reg, container, reload);
     container.change();
     expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('after another window took the update, Recharger still reloads this one (review I1)', () => {
+    const reg = new FakeReg();
+    const container = new FakeContainer({});
+    reg.waiting = new FakeWorker();
+    watchUpdates(reg, container, reload);
+    /* window A tapped: the worker is active now, nothing waits any more */
+    reg.waiting = null;
+    container.change();
+    expect(updateReady.value).toBe(true);
+    applyUpdate();
+    expect(reload).toHaveBeenCalledOnce();
+  });
+});
+
+describe('checkForUpdates (review m1)', () => {
+  it('asks for a new version when the app comes back, at most once an hour', () => {
+    const update = vi.fn(() => Promise.resolve());
+    const check = checkForUpdates({ update }, 60 * 60_000);
+    check(0);
+    check(30 * 60_000);
+    expect(update).toHaveBeenCalledOnce();
+    check(61 * 60_000);
+    expect(update).toHaveBeenCalledTimes(2);
+  });
+
+  it('an offline check fails quietly', () => {
+    const check = checkForUpdates({ update: () => Promise.reject(new Error('offline')) }, 1);
+    expect(() => check(0)).not.toThrow();
   });
 });
