@@ -231,6 +231,33 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 
 **Session A ends:** `npm run e2e` green. Update this plan with the outcome and the Lighthouse figures.
 
+### Session A progress (2026-09-26, Tasks 1–3)
+
+- **Commits:**
+  - `60b9ad5` M1–M11;
+  - `00fb65b` the fix from the Task 1 review;
+  - `2dbc5dc` the thin Supabase client and the size gate;
+  - `a3f009c` offline shell and "Nouvelle version".
+- **Gate:** `npm run check` 1207/1207.
+- **First-load JS:** 124.1 kB gzipped (it was ~152). `npm run check:size` runs in CI, with `build:notify` and its 200 kB cap.
+- **Task 1 review (Opus):** 0 Critical. Two findings were fixed, each with a test that failed first:
+  - I1: Historique "Tout" used the household budget for periods from before the pairing;
+  - m2: Historique now uses `planFor`, like Budget.
+
+  Deferred:
+  - `couple_request`'s per-day dedupe key swallows a second request made the same day after an edit (the fix needs a migration);
+  - M3 compares a pending local edit against the device clock.
+- **Rulings:** listed in the ledger (`.superpowers/sdd/2026-09-26-stouchi-phase-7-launch/progress.md`). Among them:
+  - the worker precaches every built asset;
+  - the update bar hides while a sheet is open;
+  - `pwa.spec.ts` runs on Chromium only, and the iPhone offline check is manual (Task 10);
+  - `ignoreVary` on cache lookups.
+- **E2E status on 2026-09-26** (`stouchi-test`):
+  - `couple.spec:168` fails because the day's `couple_request` cap (10) was used up by the day's runs. It passes the next day.
+  - On iPhone 13, `me.spec:60` and `onboarding.spec:47` fail because WebKit's `fill()` doesn't register. They fail on the old client too.
+- **Finding for the user (sync loop, not fixed):** after a reconnect, if the first round fails (the network isn't usable yet), nothing retries until the 60 s interval. `postgrest-js`'s own 1/2/4 s GET retry partly hides this. `core.spec:93` on iPhone 13 is flaky because of it (old client 1/5, new client 6/9). The proposed fix: after a round that failed on the network while `navigator.onLine`, retry in ~2 s (`src/data/sync.ts`).
+- **Next:** Tasks 4 and 5, in a fresh session.
+
 ---
 
 ## Session B — getting ready to cut over
