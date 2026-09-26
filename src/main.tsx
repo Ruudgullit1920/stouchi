@@ -1,4 +1,5 @@
 import { render } from 'preact';
+import posthog from 'posthog-js';
 import '@fontsource-variable/plus-jakarta-sans/index.css';
 import './design/tokens.css';
 import './design/base.css';
@@ -18,6 +19,14 @@ if ('serviceWorker' in navigator) {
       navigate(id ? `#/notifications/${id}` : '#/notifications');
       pull();
     },
+  });
+}
+
+const phKey = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+if (phKey) {
+  posthog.init(phKey, {
+    api_host: (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://eu.i.posthog.com',
+    person_profiles: 'identified_only',
   });
 }
 

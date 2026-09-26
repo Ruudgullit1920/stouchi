@@ -29,6 +29,7 @@
     "@supabase/supabase-js": "^2.117.1",
     "idb": "^8.0.3",
     "lucide-preact": "^1.47.0",
+    "posthog-js": "^1.434.14",
     "preact": "^10.29.8",
     "zod": "^4.6.5"
   },
