@@ -265,8 +265,9 @@ export function buildCarnet(given: CarnetInput): {
   /* ── savings ── */
   const goal = activeGoal(input.goals);
   const monthly = facts.pots.savings.budget;
+  /* my own deposits (plan D2); the goal's total below counts both partners' */
   const savedThisPeriod = input.savingsMoves
-    .filter((m) => isInPeriod(m.occurred_on, period))
+    .filter((m) => m.user_id === profile.user_id && isInPeriod(m.occurred_on, period))
     .reduce((s, m) => s + m.amount_mil, 0);
   const saved = goal
     ? input.savingsMoves.filter((m) => m.goal_id === goal.id).reduce((s, m) => s + m.amount_mil, 0)

@@ -22,7 +22,7 @@ import type {
   Reminder,
   SavingsMove,
 } from '../../shared/schemas';
-import { floorFor } from '../aam/load';
+import { floorFor } from '../../shared/floor';
 import type { PushSub } from './push';
 import type { NotificationInsert, NotifyDb } from './run';
 

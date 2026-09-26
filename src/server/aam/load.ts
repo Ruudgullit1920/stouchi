@@ -5,6 +5,7 @@
  * never their profile. Never the service key. */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { payPeriod, type ISODate } from '../../shared/dates';
+import { floorFor } from '../../shared/floor';
 import { CoupleState } from '../../shared/schemas';
 import type {
   Bill,
@@ -34,15 +35,6 @@ export interface TurnRows {
 
 /** 2 000 rows cover three pay periods of anyone's spending many times over. */
 const MAX_EXPENSES = 2000;
-
-/** The first of the month four months back: the start of the pay period three
- * periods back, whatever the payday, is never earlier — so everything loads in
- * one parallel round without knowing the payday first. */
-export function floorFor(today: ISODate): ISODate {
-  const [y, m] = today.split('-').map(Number);
-  const first = new Date(Date.UTC(y, m - 1 - 4, 1));
-  return first.toISOString().slice(0, 10);
-}
 
 type Res<T> = { data: T | null; error: { message: string } | null };
 const rows = async <T>(q: PromiseLike<Res<T>>, what: string): Promise<T> => {

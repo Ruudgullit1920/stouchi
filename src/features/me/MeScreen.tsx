@@ -77,7 +77,8 @@ export function MeScreen({ store }: ScreenProps) {
   const goal = activeGoal(store.goals.value);
   const saved = goal ? goalView(goal, store.savingsMoves.value, 0, today).saved : 0;
   const tracked = periodsSince(p.onboarded_at?.slice(0, 10) ?? today, today, p.payday);
-  const noted = store.expenses.value.filter((e) => e.deleted_at === null).length;
+  /* mine only: in couple mode the store also holds the partner's shared rows */
+  const noted = store.expenses.value.filter((e) => e.deleted_at === null && e.user_id === p.user_id).length;
   const bills = store.bills.value.filter((b) => b.active);
   const reserved = billsDueTotal(bills, payPeriod(today, p.payday));
   const household = store.household.value;

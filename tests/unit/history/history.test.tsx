@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/pre
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore, type Store } from '../../../src/data/store';
 import { HistoryScreen } from '../../../src/features/history/HistoryScreen';
-import { formatTnd } from '../../../src/shared/money';
-import { coupleOn, expense, HOUSEHOLD, PARTNER, profile, SOLO } from '../fixtures';
+import { formatTnd, splitSalary } from '../../../src/shared/money';
+import { coupleOn, expense, HOUSEHOLD, move, PARTNER, profile, SOLO } from '../fixtures';
 
 let store: Store;
 
@@ -163,6 +163,43 @@ describe('HistoryScreen — couple mode', () => {
     expect(screen.queryByText('Monoprix')).toBeNull();
     expect(screen.getByText('Carrefour')).toBeTruthy();
     expect(total()).toContain(formatTnd(84_500, { unit: false }));
+  });
+
+  describe('the pot cards (M1)', () => {
+    const p = () => profile();
+    const myNeeds = () =>
+      splitSalary(p().salary_mil, {
+        needs: p().split_needs,
+        wants: p().split_wants,
+        savings: p().split_savings,
+      }).needs;
+    const card = (name: string) =>
+      screen.getByRole('button', { name: new RegExp(`^${name}`) }).textContent ?? '';
+    beforeEach(() => {
+      store.savingsMoves.value = [
+        move({ amount_mil: 100_000, occurred_on: '2026-09-02' }),
+        move({ user_id: PARTNER, amount_mil: 70_000, occurred_on: '2026-09-04' }),
+      ];
+    });
+
+    it('Tout compares shared Besoins with the household budget, like the Budget screen', () => {
+      render(<HistoryScreen store={store} />);
+      expect(card('Besoins')).toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
+    });
+
+    it('Moi compares my Besoins with my own budget', () => {
+      render(<HistoryScreen store={store} />);
+      fireEvent.click(screen.getByRole('button', { name: 'Moi' }));
+      expect(card('Besoins')).toContain(formatTnd(myNeeds(), { unit: false }));
+      expect(card('Besoins')).not.toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
+    });
+
+    it('Épargne counts my deposits only, in Tout and in Moi', () => {
+      render(<HistoryScreen store={store} />);
+      expect(card('Épargne')).toContain(formatTnd(100_000, { unit: false }));
+      fireEvent.click(screen.getByRole('button', { name: 'Moi' }));
+      expect(card('Épargne')).toContain(formatTnd(100_000, { unit: false }));
+    });
   });
 
   it('Moi also narrows the search', () => {

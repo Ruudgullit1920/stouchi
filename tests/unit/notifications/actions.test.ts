@@ -11,7 +11,18 @@ import { nextSundayTen, runAction } from '../../../src/features/notifications/ac
 import { computeFacts } from '../../../src/shared/facts';
 import type { Notification } from '../../../src/shared/schemas';
 import { toast } from '../../../src/app/ui';
-import { bill, debt, expense, notification, PARTNER, profile, USER, uuidN } from '../fixtures';
+import {
+  bill,
+  coupleOn,
+  debt,
+  expense,
+  notification,
+  PARTNER,
+  profile,
+  SOLO,
+  USER,
+  uuidN,
+} from '../fixtures';
 
 let db: LocalDb;
 let store: Store;
@@ -201,6 +212,55 @@ describe('partner_request (plan D7, Task 9)', () => {
   };
   const done = (id: string) => store.actedOn.value[id];
   const live = (id: string) => store.expenses.value.find((x) => x.id === id);
+  beforeEach(() => {
+    store.household.value = coupleOn();
+  });
+
+  describe('a request that is no longer current changes nothing (M3)', () => {
+    const STALE = "Cette demande n'est plus à jour.";
+    const accept = async (e: { id: string }) => {
+      const row = request(e.id, { kind: 'edit', fields: { amount_mil: 40_000 } });
+      await seedRow(row);
+      await runAction(row, row.action!, ctx(), 'accept');
+      return row;
+    };
+
+    it('after I stopped sharing', async () => {
+      const e = await mine();
+      store.household.value = SOLO;
+      const row = await accept(e);
+      expect(live(e.id)?.amount_mil).toBe(45_000);
+      expect(done(row.id)).toBe(STALE);
+      expect(read(row.id)).not.toBeNull();
+    });
+
+    it('when the expense is not shared (logged before the join)', async () => {
+      store.household.value = SOLO;
+      const e = await mine({ household_id: null });
+      store.household.value = coupleOn();
+      const row = await accept(e);
+      expect(live(e.id)?.amount_mil).toBe(45_000);
+      expect(done(row.id)).toBe(STALE);
+    });
+
+    it('when the expense was edited after the request', async () => {
+      const e = await mine({ updated_at: '2026-09-21T10:00:00+01:00' });
+      const row = await accept(e);
+      expect(live(e.id)?.amount_mil).toBe(45_000);
+      expect(done(row.id)).toBe(STALE);
+    });
+  });
+
+  it('a category-only change moves the expense to that category’s pot (M4)', async () => {
+    const e = await mine();
+    const row = request(e.id, { kind: 'edit', fields: { category: 'cafe' } });
+    await seedRow(row);
+    await runAction(row, row.action!, ctx(), 'accept');
+    /* a shared row moved to Envies goes private under a new id (plan D7) */
+    const now = store.expenses.value.filter((x) => x.label === 'Carrefour' && x.deleted_at === null);
+    expect(now).toHaveLength(1);
+    expect(now[0]).toMatchObject({ category: 'cafe', pot: 'wants', household_id: null });
+  });
 
   it('Accepter a delete: soft-deleted, with an undo toast, and marked read', async () => {
     const e = await mine();

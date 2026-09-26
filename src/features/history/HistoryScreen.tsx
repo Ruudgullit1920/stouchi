@@ -128,13 +128,17 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
 
   const inPeriod = expenses.filter((e) => e.deleted_at === null && isInPeriod(e.spent_on, period));
   const total = totals[index].needs + totals[index].wants;
-  const budgets = splitSalary(profile.salary_mil, {
+  const own = splitSalary(profile.salary_mil, {
     needs: profile.split_needs,
     wants: profile.split_wants,
     savings: profile.split_savings,
   });
+  /* Tout shows the household's Besoins, so it is set against the household's
+     budget, as on Budget (plan D2); Moi against my own */
+  const budgets = paired && !mine ? { ...own, needs: own.needs + couple.partner.needs_mil } : own;
+  /* my own deposits (plan D2), whichever filter */
   const saved = store.savingsMoves.value
-    .filter((m) => isInPeriod(m.occurred_on, period))
+    .filter((m) => m.user_id === profile.user_id && isInPeriod(m.occurred_on, period))
     .reduce((s, m) => s + m.amount_mil, 0);
   const cats = [
     ...potBreakdown(expenses, 'needs', period).categories,
