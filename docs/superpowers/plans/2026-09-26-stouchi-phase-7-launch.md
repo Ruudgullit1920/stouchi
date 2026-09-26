@@ -451,7 +451,8 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
   - **I2**, a beacon edit was lost with no banner: the probe on open, with legacy tests RED→GREEN.
   - **m3**, re-graded Important, the freeze could pass half-way: a self-check, with a PGlite test RED→GREEN.
   - **m4**, re-graded Important, a missing `read-only.js` wedged every save: a fallback, with a test RED→GREEN.
-- **Deferred minors** (the user decides):
+- **Minors fixed afterwards**, at the user's request: m5, m6, m8, m9 and m10 (on `rebuild` in `d59b112`, on `legacy` in `c0fdff0`, each with a test that failed first; m6 was also checked on a screenshot). m7 is covered by the note in step 1's announcement. Only m5's anon case stays: after `20260902`, anon gets the same message as the freeze.
+- **The review's minors, for the record:**
   - **m5:** 42501 also comes from RLS `with check` and from anon after `20260902`. A lost session between steps 4 and 5 would show the banner early.
   - **m6:** the banner sits over the header, with no body offset.
   - **m7:** during steps 5–9 the banner's link opens the frozen app. The announcement in step 1 now says so.
