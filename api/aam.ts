@@ -1,6 +1,6 @@
 /* Vercel function for Aam Salah v2: a thin adapter over src/server/aam.
  * Needs SUPABASE_URL, SUPABASE_ANON_KEY and GEMINI_API_KEY in the project's
- * environment. The legacy app keeps /api/chat until Phase 7. */
+ * environment. The legacy /api/chat was retired in Phase 7 (§8.5). */
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { handleAam, SAFE } from '../lib/aam-salah/index.js';
 import { serveAam } from '../src/server/aam/http';
