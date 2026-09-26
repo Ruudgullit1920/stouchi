@@ -5,6 +5,7 @@ import './design/tokens.css';
 import './design/base.css';
 import './design/components/components.css';
 import { App } from './app/App';
+import { initMonitoring } from './app/monitoring';
 import { navigate } from './app/router';
 import { watchUpdates } from './app/update';
 import { listenToServiceWorker } from './data/push';
@@ -39,3 +40,6 @@ if (phKey) {
 
 const root = document.getElementById('app');
 if (root) render(<App />, root);
+
+/* after the first paint, off the first-load budget (spec §8.4, §8.7) */
+setTimeout(() => void initMonitoring().catch(() => undefined), 0);

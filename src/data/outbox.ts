@@ -4,6 +4,7 @@
  * or discards it (spec §8.3). */
 import type { LocalDb, PatchTable, Row, Table } from './localdb';
 import { RemoteError, type Remote } from './remote';
+import { reportSyncFailure } from './report';
 
 export interface OutboxEntry {
   key: string;
@@ -101,6 +102,7 @@ export async function flush(
             }
           : { ...current, attempts, status: 'failed', error: err.code || err.message },
       );
+      if (!later) reportSyncFailure({ table: entry.table, kind: err.kind, code: err.code });
       if (err.kind === 'network' || err.kind === 'server') break;
     }
   }

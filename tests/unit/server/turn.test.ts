@@ -351,6 +351,19 @@ describe('serveAam', () => {
     error.mockRestore();
   });
 
+  it('a crash and a missing configuration are reported to the error tracker, the answer unchanged', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const report = vi.fn<(e: unknown) => Promise<void>>(() => Promise.resolve());
+    const env = { SUPABASE_URL: 'https://x.invalid', SUPABASE_ANON_KEY: 'k' };
+    const crash = await serveAam({ method: 'POST', body: { boom: 1n } }, env, pipeline, report);
+    expect(crash.status).toBe(500);
+    expect(report).toHaveBeenCalledWith(expect.any(TypeError));
+    const down = await serveAam({ method: 'POST', body: say() }, {}, pipeline, report);
+    expect(down.status).toBe(503);
+    expect(report).toHaveBeenCalledTimes(2);
+    error.mockRestore();
+  });
+
   it('dev reads the VITE_ variables when the server ones are absent', () => {
     expect(supabaseFor({ VITE_SUPABASE_URL: 'https://x.invalid', VITE_SUPABASE_ANON_KEY: 'k' })).toBeTypeOf(
       'function',

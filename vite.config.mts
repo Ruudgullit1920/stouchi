@@ -75,6 +75,10 @@ export default defineConfig({
   /* .env stays at the repo root, next to the legacy app's */
   envDir,
   plugins: [preact(), aamApi(), serviceWorker()],
+  /* Sentry's release tag: the commit Vercel builds (spec §8.7) */
+  define: {
+    'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev'),
+  },
   build: {
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),
     emptyOutDir: true,

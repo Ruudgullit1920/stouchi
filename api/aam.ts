@@ -4,6 +4,10 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { handleAam, SAFE } from '../lib/aam-salah/index.js';
 import { serveAam } from '../src/server/aam/http';
+import { serverReporter } from '../src/server/monitoring';
+
+/* once per cold start; a no-op without SENTRY_DSN */
+const report = serverReporter(process.env);
 
 export default async function handler(
   req: IncomingMessage & { body?: unknown },
@@ -13,6 +17,7 @@ export default async function handler(
     { method: req.method, authorization: req.headers.authorization, body: req.body ?? '' },
     process.env,
     { handleAam, safe: SAFE },
+    report,
   );
   res.statusCode = out.status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
