@@ -1,6 +1,7 @@
 /* The HTTP edge of /api/aam, shared by the Vercel function (api/aam.ts) and
  * the dev server (vite.config.mts): method, size cap, JSON, bearer token. */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { flushMetrics, recordMetric } from '../../../lib/ai-observability.js';
 import { t } from '../../shared/i18n/t';
 import { runTurn, type TurnDeps, type TurnResult } from './turn';
 
@@ -75,15 +76,31 @@ export async function serveAam(
   env: Record<string, string | undefined>,
   pipeline: Pick<TurnDeps, 'handleAam' | 'safe'>,
 ): Promise<TurnResult> {
+  const started = Date.now();
+  const recordResponse = (status: number) => {
+    const attributes = { route: '/api/aam', status_class: `${Math.floor(status / 100)}xx` };
+    recordMetric(env, 'count', 'http.server.requests', 1, { attributes });
+    recordMetric(env, 'histogram', 'http.server.duration', Date.now() - started, {
+      unit: 'ms',
+      attributes,
+    });
+  };
   const deps = turnDeps(env, pipeline);
   if (!deps) {
     console.error('[aam] SUPABASE_URL / SUPABASE_ANON_KEY are not set');
+    recordResponse(503);
+    await flushMetrics(env);
     return { status: 503, body: { error: t('aam.error.down') } };
   }
   try {
-    return await aamHttp(req, deps);
+    const out = await aamHttp(req, deps);
+    recordResponse(out.status);
+    await flushMetrics(env);
+    return out;
   } catch (e) {
     console.error('[aam] unexpected', e);
+    recordResponse(500);
+    await flushMetrics(env);
     return { status: 500, body: { error: t('aam.error.down') } };
   }
 }
