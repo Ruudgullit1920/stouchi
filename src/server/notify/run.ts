@@ -10,7 +10,7 @@ import { todayTunis } from '../../shared/dates';
 import { evaluate } from '../../shared/notify/rules';
 import type { UserSnapshot } from '../../shared/notify/rules';
 import { TRIGGERS } from '../../shared/notify/triggers';
-import { compose, type CallModel } from '../../shared/notify/writer';
+import { compose, type AiCallContext, type CallModel } from '../../shared/notify/writer';
 import type { ISODate } from '../../shared/dates';
 import type { NewSavingsMove, NotificationActionT } from '../../shared/schemas';
 import { isDelivered, isExpired, payloadFor, type PushSub, type SendPush } from './push';
@@ -154,7 +154,10 @@ async function runUser(deps: RunDeps, userId: string, report: RunReport): Promis
     const useModel =
       Boolean(deps.callModel) && TRIGGERS[c.trigger].writer && report.writerCalls < MAX_WRITER_CALLS;
     if (useModel) report.writerCalls++;
-    const text = await compose(c, snap.profile.first_name, useModel ? deps.callModel : undefined);
+    const aiContext: AiCallContext | undefined = useModel
+      ? { distinctId: userId, sessionId: null, traceId: crypto.randomUUID() }
+      : undefined;
+    const text = await compose(c, snap.profile.first_name, useModel ? deps.callModel : undefined, aiContext);
     const row = await db.insertNotification({
       user_id: userId,
       trigger: c.trigger,

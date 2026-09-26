@@ -9,7 +9,8 @@
  * Vercel or .env), the Gemini writer and web-push.
  *
  * Secrets (supabase secrets set …): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
- * VAPID_SUBJECT (mailto:…), GEMINI_API_KEY; optional NOTIFY_MODEL. */
+ * VAPID_SUBJECT (mailto:…), GEMINI_API_KEY, POSTHOG_API_KEY, POSTHOG_HOST;
+ * optional NOTIFY_MODEL. */
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import webpush from 'npm:web-push@3.6.7';
 import { geminiCaller, handleNotify, supabaseNotifyDb } from './core.js';
@@ -21,6 +22,62 @@ const PUSH_TTL_S = 86_400;
 /** a push service that never answers must not hold the run past its limit */
 const PUSH_TIMEOUT_MS = 10_000;
 const SECRET_CACHE_MS = 5 * 60_000;
+
+async function captureGeneration({
+  context,
+  model,
+  input,
+  output,
+  usage,
+  latency,
+  httpStatus,
+  isError,
+}: {
+  context?: { distinctId: string; sessionId: string | null; traceId: string };
+  model: string;
+  input: { role: 'user'; content: string }[];
+  output?: string;
+  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  latency: number;
+  httpStatus?: number;
+  isError: boolean;
+}): Promise<void> {
+  const apiKey = env('POSTHOG_API_KEY');
+  const host = env('POSTHOG_HOST');
+  if (!apiKey || !host || !context) return;
+  /* Prompts and replies hold household budget data: sent only on opt-in. */
+  const content = env('POSTHOG_CAPTURE_CONTENT') === '1';
+  try {
+    const send = fetch(`${host.replace(/\/$/, '')}/i/v0/e/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: apiKey,
+        event: '$ai_generation',
+        properties: {
+          distinct_id: context.distinctId,
+          $ai_trace_id: context.traceId,
+          $ai_session_id: context.sessionId,
+          $ai_model: model,
+          $ai_provider: 'gemini',
+          $ai_input: content ? input : undefined,
+          $ai_input_tokens: usage?.prompt_tokens,
+          $ai_output_choices: content && output ? [{ role: 'assistant', content: output }] : undefined,
+          $ai_output_tokens: usage?.completion_tokens,
+          $ai_latency: latency,
+          $ai_http_status: httpStatus,
+          $ai_is_error: isError,
+        },
+      }),
+      signal: AbortSignal.timeout(2_000),
+    });
+    send.catch(() => {});
+    /* Let the runtime finish the send after the response, without holding the notification. */
+    (globalThis as { EdgeRuntime?: { waitUntil(p: Promise<unknown>): void } }).EdgeRuntime?.waitUntil(send);
+  } catch {
+    /* Observability must not interrupt notification delivery. */
+  }
+}
 
 type Service = ReturnType<typeof createClient>;
 let service: Service | undefined;
@@ -58,7 +115,11 @@ Deno.serve(async (req: Request) => {
         db: supabaseNotifyDb(sb),
         now: new Date(),
         callModel: geminiKey
-          ? geminiCaller({ key: geminiKey, model: env('NOTIFY_MODEL') ?? DEFAULT_MODEL })
+          ? geminiCaller({
+              key: geminiKey,
+              model: env('NOTIFY_MODEL') ?? DEFAULT_MODEL,
+              captureGeneration,
+            })
           : undefined,
         sendPush: async (sub: { endpoint: string; p256dh: string; auth: string }, payload: string) => {
           try {

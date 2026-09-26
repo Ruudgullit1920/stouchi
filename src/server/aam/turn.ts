@@ -114,7 +114,12 @@ export async function runTurn(deps: TurnDeps, token: string, body: unknown): Pro
   });
 
   const t0 = Date.now();
-  const res: AamResult = await deps.handleAam({ messages: input.messages, carnet, env: deps.env });
+  const res: AamResult = await deps.handleAam({
+    messages: input.messages,
+    carnet,
+    env: deps.env,
+    posthogDistinctId: userId,
+  });
   const log = async (model: string, outcome: string, types: string[]) => {
     const row = {
       model,

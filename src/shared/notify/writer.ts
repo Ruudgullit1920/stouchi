@@ -8,7 +8,17 @@ import { t, type StringKey } from '../i18n/t';
 import type { Candidate } from './rules';
 import { TRIGGERS, type Trigger } from './triggers';
 
-export type CallModel = (prompt: string, signal: AbortSignal) => Promise<string>;
+export interface AiCallContext {
+  distinctId: string;
+  sessionId: string | null;
+  traceId: string;
+}
+
+export type CallModel = (
+  prompt: string,
+  signal: AbortSignal,
+  context?: AiCallContext,
+) => Promise<string>;
 
 const TIMEOUT_MS = 6_000;
 const TITLE_MAX = 40;
@@ -116,6 +126,7 @@ export async function compose(
   candidate: Candidate,
   firstName: string,
   callModel?: CallModel,
+  aiContext?: AiCallContext,
 ): Promise<{ title: string; body: string; source: 'model' | 'template' }> {
   const { trigger, facts } = candidate;
   if (callModel && TRIGGERS[trigger].writer) {
@@ -129,7 +140,7 @@ export async function compose(
     });
     try {
       const raw = await Promise.race([
-        callModel(writerPrompt(trigger, facts, firstName), abort.signal),
+        callModel(writerPrompt(trigger, facts, firstName), abort.signal, aiContext),
         timeout,
       ]);
       const ok = raw === null ? null : acceptWriter(raw, facts);

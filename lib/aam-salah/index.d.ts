@@ -31,6 +31,7 @@ export function handleAam(p: {
   messages: unknown;
   carnet: object;
   env: Record<string, string | undefined>;
+  posthogDistinctId?: string;
 }): Promise<AamResult>;
 
 /** The reply shown when an action was dropped: never a sentence claiming it happened. */
