@@ -1,0 +1,57 @@
+name: DB backup
+# Weekly off-site copy of the production database (public + auth schemas),
+# encrypted with age before it leaves the runner, stored in Cloudflare R2.
+# Old copies are deleted by the bucket's lifecycle rule, not here.
+#
+# Repository secrets:
+#   SUPABASE_DB_URL       Session pooler URI (Dashboard → Connect → Session pooler);
+#                         the direct host is IPv6-only and runners can't reach it
+#   BACKUP_AGE_RECIPIENT  age public key (age1…); the private key never goes to GitHub
+#   R2_ENDPOINT           https://<account id>.r2.cloudflarestorage.com
+#   R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY   R2 API token, Object Read & Write on the bucket
+#
+# Restore (on a machine holding the private key):
+#   age -d -i key.txt stouchi-….dump.age > db.dump
+#   pg_restore --no-owner --clean --if-exists -d "$TARGET_DB_URL" db.dump
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Sundays 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      BUCKET: stouchi-db-backups
+    steps:
+      # pg_dump must be at least the server's major version (Supabase runs 17)
+      - name: Install pg_dump 17 and age
+        run: |
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17 age
+
+      - name: Dump and encrypt
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          FILE="stouchi-$(date -u +%Y-%m-%dT%H%MZ).dump.age"
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" \
+            --format=custom --schema=public --schema=auth \
+          | age -r "$BACKUP_AGE_RECIPIENT" > "$FILE"
+          echo "FILE=$FILE" >> "$GITHUB_ENV"
+          ls -lh "$FILE"
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # R2 rejects the newer default checksums some aws-cli versions send
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+        run: aws s3 cp "$FILE" "s3://$BUCKET/$FILE" --endpoint-url "${{ secrets.R2_ENDPOINT }}"
