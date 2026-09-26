@@ -1,7 +1,11 @@
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
+import { injectSw, precacheList } from './scripts/sw-inject';
 
 const envDir = fileURLToPath(new URL('.', import.meta.url));
 
@@ -41,13 +45,36 @@ function aamApi(): Plugin {
   };
 }
 
+/* public/sw.js is copied as is; once the build is written, fill in its version
+   and precache list (scripts/sw-inject). The version hashes the content-hashed
+   file names, so any change to the app installs a new worker. */
+function serviceWorker(): Plugin {
+  let outDir = '';
+  let files: string[] = [];
+  return {
+    name: 'stouchi-sw',
+    apply: 'build',
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    generateBundle(_options, bundle) {
+      files = Object.keys(bundle);
+    },
+    closeBundle() {
+      const path = join(outDir, 'sw.js');
+      const version = createHash('sha256').update(files.sort().join('\n')).digest('hex').slice(0, 12);
+      writeFileSync(path, injectSw(readFileSync(path, 'utf8'), version, precacheList(files)));
+    },
+  };
+}
+
 /* The rebuild has its own index.html in src/, so the live app's root
    index.html is never picked up by Vite. */
 export default defineConfig({
   root: fileURLToPath(new URL('./src', import.meta.url)),
   /* .env stays at the repo root, next to the legacy app's */
   envDir,
-  plugins: [preact(), aamApi()],
+  plugins: [preact(), aamApi(), serviceWorker()],
   build: {
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),
     emptyOutDir: true,

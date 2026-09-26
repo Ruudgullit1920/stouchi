@@ -6,12 +6,18 @@ import './design/base.css';
 import './design/components/components.css';
 import { App } from './app/App';
 import { navigate } from './app/router';
+import { watchUpdates } from './app/update';
 import { listenToServiceWorker } from './data/push';
 import { NOTIFY_EVENT } from './data/sync';
 
-/* Push only (Phase 4); the worker has no fetch handler, so dev never runs it. */
+/* Push, the offline shell and "Nouvelle version" (spec §8.3): production only,
+   so dev never serves from a cache. */
 if ('serviceWorker' in navigator) {
-  if (import.meta.env.PROD) void navigator.serviceWorker.register('/sw.js');
+  if (import.meta.env.PROD)
+    void navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => watchUpdates(reg, navigator.serviceWorker, () => window.location.reload()))
+      .catch(() => undefined);
   const pull = () => window.dispatchEvent(new Event(NOTIFY_EVENT));
   listenToServiceWorker(navigator.serviceWorker, {
     notify: pull,

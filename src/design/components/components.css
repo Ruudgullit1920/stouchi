@@ -219,6 +219,10 @@
   font-weight: 600;
   animation: slide-up 320ms var(--ease) both;
 }
+/* "Nouvelle version" stays until tapped: above the tab bar, not over it */
+.toast-region--update {
+  bottom: calc(env(safe-area-inset-bottom) + 14px + var(--nav-h) + 12px);
+}
 .toast__action {
   min-height: 44px;
   min-width: 44px;

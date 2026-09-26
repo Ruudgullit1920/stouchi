@@ -36,6 +36,8 @@
   "action.close": "Fermer",
   "action.retry": "Réessayer",
   "action.undo": "Annuler",
+  "update.ready": "Nouvelle version",
+  "update.reload": "Recharger",
   "state.loading": "Chargement…",
   "state.error.title": "Ça n’a pas marché",
   "state.error.body": "Vérifie ta connexion et réessaie.",

@@ -366,6 +366,7 @@ Each numbered step is announced, approved, run, then checked. If a check fails, 
     - Historique finds a legacy expense;
     - Objectif shows the legacy savings;
     - enable push;
+    - on the installed iPhone PWA, in airplane mode, reopen the app: Budget shows (Playwright can't test this on WebKit);
     - Sentry receives the release.
 11. **Watch** for two hours: the Sentry issues, `ai_dashboard.sql`, and `notify-run`'s next runs.
 
