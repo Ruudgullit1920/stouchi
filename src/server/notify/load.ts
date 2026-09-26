@@ -177,7 +177,13 @@ export function supabaseNotifyDb(sb: SupabaseClient): NotifyDb {
 
     subscriptions: (userId) =>
       rows<PushSub[]>(
-        sb.from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', userId),
+        /* the table keeps at most 5 (migration 20261001); a slow push service can't hold the run past that */
+        sb
+          .from('push_subscriptions')
+          .select('endpoint, p256dh, auth')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(5),
         'push_subscriptions',
       ),
 

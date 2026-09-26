@@ -20,13 +20,13 @@ import { FakeRemote } from './fakeRemote';
 const OTHER = '00000000-0000-4000-8000-0000000000b2';
 
 describe('validateCredentials', () => {
-  it('asks for a complete e-mail first, then a 6-character password', () => {
+  it('asks for a complete e-mail first, then an 8-character password', () => {
     expect(validateCredentials('sofien@', 'secret1')).toEqual({ field: 'email', key: 'auth.email.invalid' });
-    expect(validateCredentials(' sofien@exemple.tn ', '12345')).toEqual({
+    expect(validateCredentials(' sofien@exemple.tn ', '1234567')).toEqual({
       field: 'password',
       key: 'auth.password.short',
     });
-    expect(validateCredentials(' sofien@exemple.tn ', '123456')).toBeNull();
+    expect(validateCredentials(' sofien@exemple.tn ', '12345678')).toBeNull();
   });
 });
 

@@ -47,6 +47,7 @@ const MIGRATIONS = [
   '20260928_phase5_plan_and_delete.sql',
   '20260929_phase6_couple.sql',
   '20260930_legacy_join_limit.sql',
+  '20261001_push_subscription_limits.sql',
 ];
 
 export async function freshDb(): Promise<PGlite> {

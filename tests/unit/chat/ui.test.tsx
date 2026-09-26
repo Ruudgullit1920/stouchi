@@ -218,6 +218,29 @@ describe('ConfirmCard', () => {
     ['pay_bill', { type: 'pay_bill', ref: b.id }, /STEG payée/],
     ['settle_debt', { type: 'settle_debt', ref: d.id }, /Sami/],
     ['update_goal', { type: 'update_goal', target: 6000 }, /5\s000 → 6\s000\sTND/],
+    /* couple mode: the adds wait for Oui too */
+    [
+      'add_expense',
+      {
+        type: 'add_expense',
+        amount: 50,
+        category: 'courses',
+        pot: 'besoins',
+        label: 'Aziza',
+        date: '2026-09-10',
+      },
+      /Aziza/,
+    ],
+    [
+      'add_debt',
+      { type: 'add_debt', direction: 'i_owe', person: 'Karim', amount: 100, due: null },
+      /Tu dois à Karim/,
+    ],
+    [
+      'set_reminder',
+      { type: 'set_reminder', text: 'Appeler Sami', date: '2026-09-12', time: '18:30' },
+      /Appeler Sami/,
+    ],
   ];
 
   it.each(variants)('%s renders with Oui / Non, and Oui answers once', (_type, action, text) => {

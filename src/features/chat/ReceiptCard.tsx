@@ -16,7 +16,8 @@ interface Look {
   value: string | null;
 }
 
-function look(a: ServerAction): Look | null {
+/** Also the confirm card's look for these three, which wait for Oui in couple mode. */
+export function receiptLook(a: ServerAction): Look | null {
   const str = (x: unknown) => (typeof x === 'string' ? x : '');
   switch (a.type) {
     case 'add_expense': {
@@ -58,7 +59,7 @@ function look(a: ServerAction): Look | null {
 }
 
 export function ReceiptCard({ action }: { action: ServerAction }) {
-  const l = look(action);
+  const l = receiptLook(action);
   if (!l) return null;
   return (
     <div class="receipt">

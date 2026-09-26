@@ -26,6 +26,7 @@ interface FakeOptions {
   aiCount?: number;
   insertFails?: boolean;
   loadFails?: boolean;
+  countFails?: boolean;
 }
 function fakeSupabase({
   user = ME,
@@ -33,6 +34,7 @@ function fakeSupabase({
   aiCount = 0,
   insertFails = false,
   loadFails = false,
+  countFails = false,
 }: FakeOptions = {}) {
   const inserts: { table: string; row: Record<string, unknown> }[] = [];
   const tokens: string[] = [];
@@ -40,7 +42,10 @@ function fakeSupabase({
     let single = false;
     const result = () => {
       if (loadFails) return { data: null, error: { message: 'down' }, count: null };
-      if (table === 'ai_events') return { data: null, error: null, count: aiCount };
+      if (table === 'ai_events')
+        return countFails
+          ? { data: null, error: { message: 'count down' }, count: null }
+          : { data: null, error: null, count: aiCount };
       const data = rows[table] ?? [];
       return { data: single ? (data[0] ?? null) : data, error: null, count: null };
     };
@@ -157,6 +162,13 @@ describe('runTurn', () => {
     const out = await runTurn(deps({}, fakeSupabase({ aiCount: 30 })).d, 't', say());
     expect(out.status).toBe(429);
     expect(out.body).toEqual({ error: expect.stringMatching(/ /) as string });
+  });
+
+  it('503 and no model call when the rate count fails (fail closed)', async () => {
+    const { d, handleAam } = deps({}, fakeSupabase({ countFails: true }));
+    const out = await runTurn(d, 't', say());
+    expect(out.status).toBe(503);
+    expect(handleAam).not.toHaveBeenCalled();
   });
 
   it('503 when the rows cannot be loaded', async () => {

@@ -8,7 +8,7 @@ export type AuthResult = { ok: true } | { ok: false; key: StringKey };
 export type SignUpResult = { ok: true; confirm: boolean } | { ok: false; key: StringKey };
 
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-export const MIN_PASSWORD = 6;
+export const MIN_PASSWORD = 8;
 
 export function validateCredentials(
   email: string,

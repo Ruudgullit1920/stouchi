@@ -369,12 +369,16 @@ describe('notifications', () => {
 
 describe('push subscriptions', () => {
   it('the owner subscribes and unsubscribes', async () => {
-    await insert(ALICE, 'push_subscriptions', { endpoint: 'https://push.example/1', p256dh: 'k', auth: 'a' });
+    await insert(ALICE, 'push_subscriptions', {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/1',
+      p256dh: 'k',
+      auth: 'a',
+    });
     expect(await select(BOB, 'select * from public.push_subscriptions')).toEqual([]);
     expect(
       await select(
         ALICE,
-        `delete from public.push_subscriptions where endpoint = 'https://push.example/1' returning endpoint`,
+        `delete from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/fcm/send/1' returning endpoint`,
       ),
     ).toHaveLength(1);
   });
@@ -407,19 +411,61 @@ describe('notifications and push (Phase 4)', () => {
   });
   it('push subscriptions: no update, https only', async () => {
     await insert(ALICE, 'push_subscriptions', {
-      endpoint: 'https://push.example/p4',
+      endpoint: 'https://fcm.googleapis.com/fcm/send/p4',
       p256dh: 'k',
       auth: 'a',
     });
     await expect(
       select(
         ALICE,
-        `update public.push_subscriptions set auth = 'z' where endpoint = 'https://push.example/p4'`,
+        `update public.push_subscriptions set auth = 'z' where endpoint = 'https://fcm.googleapis.com/fcm/send/p4'`,
       ),
     ).rejects.toMatchObject(RLS);
     await expect(
-      insert(ALICE, 'push_subscriptions', { endpoint: 'http://push.example/p4', p256dh: 'k', auth: 'a' }),
+      insert(ALICE, 'push_subscriptions', {
+        endpoint: 'http://fcm.googleapis.com/fcm/send/p4',
+        p256dh: 'k',
+        auth: 'a',
+      }),
     ).rejects.toMatchObject(CHECK);
+  });
+  it('push subscriptions: browser push services only', async () => {
+    for (const endpoint of [
+      'https://fcm.googleapis.com/fcm/send/ok1',
+      'https://updates.push.services.mozilla.com/wpush/v2/ok2',
+      'https://web.push.apple.com/ok3',
+      'https://wns2-par02p.notify.windows.com/w/?token=ok4',
+    ])
+      await insert(ALICE, 'push_subscriptions', { endpoint, p256dh: 'k', auth: 'a' });
+    for (const endpoint of [
+      'https://attacker.example/x',
+      'https://fcm.googleapis.com.attacker.example/x',
+      'https://169.254.169.254/latest',
+    ])
+      await expect(
+        insert(ALICE, 'push_subscriptions', { endpoint, p256dh: 'k', auth: 'a' }),
+      ).rejects.toMatchObject(CHECK);
+  });
+  it('push subscriptions: at most 5 per user, a new one evicts the oldest', async () => {
+    const fcm = (n: number) => `https://fcm.googleapis.com/fcm/send/cap${n}`;
+    for (let n = 1; n <= 6; n++) {
+      await asOwner(
+        `insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, created_at)
+         values ($1, $2, 'k', 'a', now() - ($3 || ' seconds')::interval)`,
+        [BOB, fcm(n), String(10 - n)],
+      );
+    }
+    await insert(BOB, 'push_subscriptions', { endpoint: fcm(7), p256dh: 'k', auth: 'a' });
+    const left = (await select(BOB, 'select endpoint from public.push_subscriptions order by endpoint')).map(
+      (r) => r.endpoint,
+    );
+    expect(left).toHaveLength(5);
+    expect(left).toContain(fcm(7));
+    expect(left).not.toContain(fcm(1));
+    expect(left).not.toContain(fcm(2));
+    /* a re-subscribe of a kept endpoint evicts nothing */
+    await insert(BOB, 'push_subscriptions', { endpoint: fcm(7), p256dh: 'k', auth: 'a' }).catch(() => null);
+    expect(await select(BOB, 'select endpoint from public.push_subscriptions')).toHaveLength(5);
   });
 });
 
@@ -595,16 +641,20 @@ describe('deletes an outsider cannot reach', () => {
     ).toEqual([]);
     expect(await asOwner('select id from public.savings_moves where id = $1', [move.id])).toHaveLength(1);
 
-    await insert(ALICE, 'push_subscriptions', { endpoint: 'https://push.example/2', p256dh: 'k', auth: 'a' });
+    await insert(ALICE, 'push_subscriptions', {
+      endpoint: 'https://fcm.googleapis.com/fcm/send/2',
+      p256dh: 'k',
+      auth: 'a',
+    });
     expect(
       await select(
         BOB,
-        `delete from public.push_subscriptions where endpoint = 'https://push.example/2' returning endpoint`,
+        `delete from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/fcm/send/2' returning endpoint`,
       ),
     ).toEqual([]);
     expect(
       await asOwner(
-        `select endpoint from public.push_subscriptions where endpoint = 'https://push.example/2'`,
+        `select endpoint from public.push_subscriptions where endpoint = 'https://fcm.googleapis.com/fcm/send/2'`,
       ),
     ).toHaveLength(1);
   });
@@ -627,7 +677,7 @@ describe('anon has no access to any new table', () => {
     reminders: { text: 'Payer la STEG', remind_at: '2026-09-25T08:00:00Z' },
     incomes: { amount_mil: 150_000, pot: 'wants', label: 'Prime', received_on: '2026-09-22' },
     notifications: { trigger: 'bill_due', dedupe_key: 'x', title: 't', body: 'b' },
-    push_subscriptions: { endpoint: 'https://push.example/x', p256dh: 'k', auth: 'a' },
+    push_subscriptions: { endpoint: 'https://fcm.googleapis.com/fcm/send/x', p256dh: 'k', auth: 'a' },
     ai_events: { model: 'gemini:flash-lite', latency_ms: 1200, outcome: 'ok', action_types: ['add_expense'] },
   };
   it.each(Object.entries(rows))('%s: anon cannot select or insert', async (table, row) => {
@@ -734,7 +784,7 @@ describe('delete_my_account (Phase 5)', () => {
       received_on: '2026-09-22',
     });
     await insert(user, 'push_subscriptions', {
-      endpoint: `https://push.example/${user}`,
+      endpoint: `https://fcm.googleapis.com/fcm/send/${user}`,
       p256dh: 'k',
       auth: 'a',
     });

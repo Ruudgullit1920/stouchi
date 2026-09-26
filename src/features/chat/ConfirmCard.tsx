@@ -24,6 +24,7 @@ import { titleOf } from '../../shared/ledger';
 import { formatTnd } from '../../shared/money';
 import { activeGoal } from '../../shared/payday';
 import type { Card } from './history';
+import { receiptLook } from './ReceiptCard';
 import { amount, dayName, milOf, POT_COLOR, potName } from './view';
 
 interface Look {
@@ -166,7 +167,8 @@ function look(card: Card, store: Store): Look | null {
       };
     }
     default:
-      return null;
+      /* add_expense / add_debt / set_reminder, confirmed in couple mode */
+      return receiptLook(a);
   }
 }
 

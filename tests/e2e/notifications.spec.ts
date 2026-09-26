@@ -112,7 +112,7 @@ async function stub(page: Page, { days = 30 } = {}): Promise<Stub> {
     return route.fulfill({ status: 201 });
   });
   await page.addInitScript(() => {
-    const endpoint = 'https://push.example.test/e2e';
+    const endpoint = 'https://fcm.googleapis.com/fcm/send/stouchi-e2e';
     let current: unknown = null;
     const sub = {
       endpoint,
@@ -204,7 +204,10 @@ test('a user onboarded 8 days ago gets the push card, and Activer subscribes', a
   await page.getByRole('button', { name: 'Activer' }).click(ARRIVE);
   await expect(page.getByRole('button', { name: 'Activer' })).toHaveCount(0);
   await expect.poll(() => s.subscriptions.length).toBe(1);
-  expect(s.subscriptions[0]).toMatchObject({ user_id: userId, endpoint: 'https://push.example.test/e2e' });
+  expect(s.subscriptions[0]).toMatchObject({
+    user_id: userId,
+    endpoint: 'https://fcm.googleapis.com/fcm/send/stouchi-e2e',
+  });
   await expect(page.getByRole('switch', { name: 'Notifications sur ce téléphone' })).toHaveAttribute(
     'aria-checked',
     'true',

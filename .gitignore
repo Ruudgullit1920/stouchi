@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 .server.out.log
 .server.err.log
 node_modules/

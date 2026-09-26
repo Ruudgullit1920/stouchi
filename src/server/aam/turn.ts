@@ -7,6 +7,7 @@
  * never message text — and a failed insert never blocks the reply. */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AamAction, AamResult, handleAam as HandleAam } from '../../../lib/aam-salah/index.js';
+import { recordMetric } from '../../../lib/ai-observability.js';
 import { buildCarnet, type LastAction } from '../../shared/carnet';
 import { todayTunis } from '../../shared/dates';
 import { t, type StringKey } from '../../shared/i18n/t';
@@ -89,8 +90,12 @@ export async function runTurn(deps: TurnDeps, token: string, body: unknown): Pro
     .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .gte('created_at', since);
-  if (countError) deps.warn('[aam] rate count failed', countError.message);
-  if ((count ?? 0) >= RATE_TURNS) return fail(429, 'aam.error.rate');
+  /* fail closed: without a count there is no limit on the model bill */
+  if (countError || count === null) {
+    deps.warn('[aam] rate count failed', countError?.message ?? 'no count');
+    return fail(503, 'aam.error.down');
+  }
+  if (count >= RATE_TURNS) return fail(429, 'aam.error.rate');
 
   let rows;
   try {
@@ -120,7 +125,7 @@ export async function runTurn(deps: TurnDeps, token: string, body: unknown): Pro
     env: deps.env,
     posthogDistinctId: userId,
   });
-  const log = async (model: string, outcome: string, types: string[]) => {
+  const log = async (model: string, outcome: 'ok' | 'error' | 'validation_drop', types: string[]) => {
     const row = {
       model,
       latency_ms: Date.now() - t0,
@@ -130,6 +135,7 @@ export async function runTurn(deps: TurnDeps, token: string, body: unknown): Pro
     try {
       const { error } = await sb.from('ai_events').insert(row);
       if (error) deps.warn('[aam] ai_events insert failed', error.message);
+      else recordMetric(deps.env, 'count', 'aam.turns.committed', 1, { attributes: { outcome } });
     } catch (e) {
       deps.warn('[aam] ai_events insert failed', e instanceof Error ? e.message : e);
     }

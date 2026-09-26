@@ -371,7 +371,7 @@
   "signup.checkMail.body": "Un lien de confirmation t’attend à {email}. Ouvre-le, puis reviens te connecter ici.",
   "signup.checkMail.back": "Retour à la connexion",
   "auth.email.invalid": "Cette adresse e-mail ne semble pas complète.",
-  "auth.password.short": "Le mot de passe fait au moins 6 caractères.",
+  "auth.password.short": "Le mot de passe fait au moins 8 caractères.",
   "auth.error.credentials": "E-mail ou mot de passe incorrect.",
   "auth.error.unconfirmed": "Confirme d’abord ton adresse : le lien est dans ta boîte mail.",
   "auth.error.exists": "Un compte existe déjà avec cette adresse. Connecte-toi.",
