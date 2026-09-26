@@ -27,6 +27,7 @@ if (phKey) {
   posthog.init(phKey, {
     api_host: (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://eu.i.posthog.com',
     person_profiles: 'identified_only',
+    defaults: '2026-05-30',
   });
 }
 
