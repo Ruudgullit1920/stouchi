@@ -51,6 +51,8 @@ export default defineConfig({
   build: {
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),
     emptyOutDir: true,
+    /* dist/.vite/manifest.json: scripts/check-size.ts walks it (spec §8.4) */
+    manifest: true,
     /* Never inline fonts as data: URIs: the CSP is font-src 'self', so an
        inlined font would be blocked and log a console CSP error. */
     assetsInlineLimit: (filePath) => (/\.(woff2?|ttf|otf)$/.test(filePath) ? false : undefined),

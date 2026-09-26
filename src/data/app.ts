@@ -22,8 +22,7 @@ import {
   type PushDeps,
 } from './push';
 import { createStore, removeRow } from './store';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { supabase, type Db } from './supabase';
 import { forgetDevice, pushOnce, refreshSyncState, startSync, syncOnce, useUser } from './sync';
 import { writeRow } from './write';
 
@@ -47,7 +46,7 @@ const oldestKept = () => {
  * and did not sign out: their rows and unsent writes stay visible, and sync
  * waits until they log in again (spec §8.3). */
 export async function boot(
-  client: SupabaseClient = supabase(),
+  client: Db = supabase(),
   open: () => Promise<LocalDb> = openLocal,
 ): Promise<'signed-in' | 'signed-out'> {
   const { data: auth } = await client.auth.getSession();
