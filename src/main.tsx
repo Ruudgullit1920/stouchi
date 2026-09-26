@@ -1,5 +1,4 @@
 import { render } from 'preact';
-import posthog from 'posthog-js';
 import '@fontsource-variable/plus-jakarta-sans/index.css';
 import './design/tokens.css';
 import './design/base.css';
@@ -36,12 +35,18 @@ if ('serviceWorker' in navigator) {
 }
 
 const phKey = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
+/* loaded on demand, like Sentry: posthog-js alone would put first-load JS over
+   the 150 kB budget (spec §8.4, gated by npm run check:size) */
 if (phKey) {
-  posthog.init(phKey, {
-    api_host: (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://eu.i.posthog.com',
-    person_profiles: 'identified_only',
-    defaults: '2026-05-30',
-  });
+  void import('posthog-js')
+    .then(({ default: posthog }) => {
+      posthog.init(phKey, {
+        api_host: (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://eu.i.posthog.com',
+        person_profiles: 'identified_only',
+        defaults: '2026-05-30',
+      });
+    })
+    .catch(() => undefined);
 }
 
 const root = document.getElementById('app');
