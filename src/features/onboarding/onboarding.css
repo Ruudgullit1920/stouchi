@@ -1,0 +1,515 @@
+/* First run, ported from prototype/index.html (.flow, intro, login, illustrations).
+   Contrast (§5.6): the round button is --ink (white on --acc is 3.0 : 1), coloured
+   small text uses the *-ink shades. */
+.flow {
+  min-height: 100dvh;
+  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  padding: calc(env(safe-area-inset-top) + 20px) var(--gutter-onb) calc(env(safe-area-inset-bottom) + 24px);
+  overflow: hidden;
+  animation: flowIn 0.5s var(--ease) both;
+}
+@keyframes flowIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+.wordmark {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  display: inline-flex;
+  align-items: flex-end;
+}
+.wordmark i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--acc);
+  margin: 0 0 6px 2px;
+}
+.link-mut {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mut);
+  min-height: 44px;
+  padding: 0 4px;
+}
+.link-acc {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--acc-ink);
+  min-height: 44px;
+}
+.roundbtn {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  box-shadow: 0 10px 24px #0e0f1240;
+  transition:
+    transform 0.12s,
+    background 0.2s;
+}
+.roundbtn:disabled {
+  opacity: 0.6;
+}
+.roundbtn svg {
+  width: 24px;
+  height: 24px;
+}
+.spin {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid #ffffff55;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* illustrations: line icons in floating white orbs, joined by marching dashes */
+.illo {
+  position: relative;
+  width: 300px;
+  height: 250px;
+  margin: 0 auto;
+  flex: none;
+}
+.illo-wide {
+  width: auto;
+  height: 200px;
+  margin: 0 calc(-1 * var(--gutter-onb));
+}
+.illo .path {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.illo .path path {
+  fill: none;
+  stroke: #cbd0da;
+  stroke-width: 1.6;
+  stroke-dasharray: 5 7;
+  stroke-linecap: round;
+  animation: dash 16s linear infinite;
+}
+@keyframes dash {
+  to {
+    stroke-dashoffset: -300;
+  }
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 16px 36px #1b1f3a17,
+    0 2px 6px #1b1f3a0a;
+  animation: float 5.5s ease-in-out infinite;
+}
+.orb svg {
+  stroke-width: 1.5;
+}
+.o-lg {
+  width: 104px;
+  height: 104px;
+}
+.o-lg svg {
+  width: 42px;
+  height: 42px;
+}
+.o-md {
+  width: 72px;
+  height: 72px;
+}
+.o-md svg {
+  width: 28px;
+  height: 28px;
+}
+.o-sm {
+  width: 50px;
+  height: 50px;
+}
+.o-sm svg {
+  width: 21px;
+  height: 21px;
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(34px);
+  opacity: 0.55;
+}
+
+/* login */
+.flow.login {
+  padding-top: 0;
+}
+.login-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.login-body h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-top: 4px;
+}
+.login-sub {
+  font-size: 14px;
+  color: var(--mut);
+  margin-top: -8px;
+}
+.uline {
+  display: block;
+}
+.uline > span,
+.uline > label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--acc-ink);
+  margin-bottom: 2px;
+}
+.uline > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1.5px solid var(--line);
+  transition: border-color 0.2s;
+}
+.uline > div:focus-within {
+  border-color: var(--acc);
+}
+.uline.bad > div {
+  border-color: var(--danger);
+}
+.uline input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  height: 44px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  background: none;
+  color: var(--ink);
+}
+.uline svg {
+  width: 18px;
+  height: 18px;
+  color: var(--mut);
+}
+.uline button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.l-err {
+  font-size: 12.5px;
+  color: var(--danger);
+  font-weight: 600;
+}
+.l-err:empty {
+  display: none;
+}
+.shake {
+  animation: shake 0.4s;
+}
+@keyframes shake {
+  20%,
+  60% {
+    transform: translateX(-7px);
+  }
+  40%,
+  80% {
+    transform: translateX(7px);
+  }
+}
+.login-go {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 4px;
+}
+.login-go p {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.or {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--mut);
+  font-size: 12px;
+  font-weight: 600;
+}
+.or::before,
+.or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.gbtn {
+  height: 52px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.gbtn svg {
+  width: 18px;
+  height: 18px;
+}
+.checkmail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.checkmail p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow,
+  .shake,
+  .orb,
+  .illo .path path {
+    animation: none;
+  }
+}
+
+/* intro */
+.intro-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 44px;
+}
+.slides-wrap {
+  flex: 1;
+  overflow: hidden;
+  margin: 0 calc(-1 * var(--gutter-onb));
+}
+.slides {
+  display: flex;
+  width: 300%;
+  height: 100%;
+  transition: transform 0.55s var(--ease);
+  touch-action: pan-y;
+}
+.slide {
+  width: calc(100% / 3);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 var(--gutter-onb);
+}
+.slide h1 {
+  font-size: 31px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  margin-top: 26px;
+}
+.slide p {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink2);
+  margin-top: 12px;
+}
+.slide h1,
+.slide p {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.5s 0.15s,
+    transform 0.5s 0.15s;
+}
+.slide.cur h1,
+.slide.cur p {
+  opacity: 1;
+  transform: none;
+}
+.slide.cur p {
+  transition-delay: 0.28s;
+}
+.intro-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+}
+.dots {
+  display: flex;
+}
+/* 44 px targets around the prototype's 8 px dots */
+.dots button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+.dots button::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  transition: all 0.35s var(--ease);
+}
+.dots button.on::before {
+  width: 26px;
+  background: var(--acc);
+}
+.tagf {
+  position: absolute;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 6px 16px #1b1f3a14;
+  animation: float 5.5s ease-in-out infinite;
+}
+.tagf__icon {
+  width: 12px;
+  height: 12px;
+  vertical-align: -1px;
+}
+.chatpill {
+  position: absolute;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 18px 18px 6px 18px;
+  box-shadow: 0 12px 26px #0e0f1233;
+  animation: float 5.5s ease-in-out infinite;
+}
+.rcard {
+  position: absolute;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  width: 178px;
+  white-space: nowrap;
+  background: #fff;
+  border-radius: 18px;
+  padding: 10px 12px;
+  box-shadow: 0 16px 36px #1b1f3a1a;
+  animation: float 5.5s ease-in-out infinite;
+}
+.rcard .ic {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--need);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.rcard .ic svg {
+  width: 17px;
+  height: 17px;
+}
+.rcard b {
+  display: block;
+  font-size: 13px;
+}
+.rcard small {
+  font-size: 11px;
+  color: var(--mut);
+}
+.rcard .v {
+  font-weight: 800;
+  font-size: 14px;
+}
+.rcard .okb {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--save);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.rcard .okb svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 3;
+}
+.pdot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--save);
+  box-shadow: 0 0 0 5px #12b07622;
+  animation: pulse 2.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 9px #12b07600;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slides,
+  .slide h1,
+  .slide p,
+  .dots button,
+  .dots button::before {
+    transition: none;
+  }
+  .tagf,
+  .chatpill,
+  .rcard,
+  .pdot {
+    animation: none;
+  }
+}

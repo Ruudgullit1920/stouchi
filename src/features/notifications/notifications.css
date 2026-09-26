@@ -1,0 +1,206 @@
+/* Notifications, ported from prototype/index.html #s-notif (.ngroup, .notif, .nbtn). */
+.notif-h1 {
+  font-size: 18px;
+}
+.readall {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--acc-ink);
+  min-height: 44px;
+  padding: 0 4px;
+}
+.readall:disabled {
+  color: var(--mut);
+}
+.ngroup {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mut);
+  margin: 20px 4px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+section:first-of-type > .ngroup {
+  margin-top: 4px;
+}
+.nlist {
+  list-style: none;
+  margin: 0;
+  background: var(--card);
+  border-radius: var(--r-card);
+  padding: 0 16px;
+}
+.notif {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+  transition: background 0.4s;
+}
+.notif:last-child {
+  border-bottom: 0;
+}
+.notif.unread {
+  background: linear-gradient(90deg, transparent, #fff6f3 10%, #fff6f3 90%, transparent);
+}
+.notif .ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.notif .ic svg {
+  width: 18px;
+  height: 18px;
+}
+.ic.tone-warn {
+  background: #fef3d7;
+  color: #b7791f;
+}
+.ic.tone-need {
+  background: var(--need-soft);
+  color: var(--need);
+}
+.ic.tone-save {
+  background: var(--save-soft);
+  color: var(--save);
+}
+.ic.tone-acc {
+  background: var(--acc-soft);
+  color: var(--acc);
+}
+.notif__open {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+  color: inherit;
+}
+.notif .nt {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.notif .nt b {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.notif .nt > span {
+  font-size: 12px;
+  color: var(--mut);
+  font-weight: 500;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.notif.unread .nt > span::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acc);
+}
+.notif__body {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink2);
+  margin-top: 4px;
+}
+.nact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+/* 32 px to the eye as in the prototype, 44 px to the finger (spec §5.6) */
+.nbtn {
+  position: relative;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--ink);
+  color: #fff;
+}
+.nbtn::after {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+}
+.nbtn.ghost {
+  background: var(--bg);
+  color: var(--ink);
+}
+.notif-foot {
+  font-size: 12px;
+  color: var(--mut);
+  text-align: center;
+  margin: 20px 24px 0;
+  line-height: 1.5;
+}
+/* push opt-in card and footer switch (prototype .sw) */
+.pushcard {
+  background: var(--card);
+  border-radius: var(--r-card);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.pushcard__title {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+.pushcard__body {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink2);
+  margin-top: 4px;
+}
+.pushswitch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  margin: 20px 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.sw {
+  width: 50px;
+  height: 30px;
+  border-radius: 15px;
+  background: #d9dbe1;
+  position: relative;
+  flex: none;
+  transition: background 0.2s;
+}
+.sw::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 5px #0003;
+  transition: transform 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.sw.on {
+  background: var(--save);
+}
+.sw.on::after {
+  transform: translateX(20px);
+}
+/* 30 px to the eye, 44 px to the finger (spec §5.6) */
+.sw::before {
+  content: '';
+  position: absolute;
+  inset: -7px -2px;
+}

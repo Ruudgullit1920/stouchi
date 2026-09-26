@@ -1,0 +1,56 @@
+{
+  "name": "stouchi",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Stouchi — a mobile-first household budget PWA for Tunisian households (Preact, TypeScript, Supabase)",
+  "engines": {
+    "node": ">=20.19"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:notify": "node scripts/build-notify.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc",
+    "lint": "eslint .",
+    "format": "prettier --write --no-error-on-unmatched-pattern \"src/**/*.{ts,tsx,css,json,html}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"*.mts\" playwright.config.ts tsconfig.json",
+    "format:check": "prettier --check --no-error-on-unmatched-pattern \"src/**/*.{ts,tsx,css,json,html}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"*.mts\" playwright.config.ts tsconfig.json",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test",
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm run test:coverage",
+    "backfill": "tsx scripts/backfill/cli.ts",
+    "check:supabase": "tsx scripts/check-supabase.ts",
+    "eval": "tsx scripts/eval-aam-salah.js"
+  },
+  "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@preact/signals": "^2.11.2",
+    "@supabase/supabase-js": "^2.117.1",
+    "idb": "^8.0.3",
+    "lucide-preact": "^1.47.0",
+    "preact": "^10.29.8",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@babel/core": "^7.29.7",
+    "@electric-sql/pglite": "^0.5.8",
+    "@eslint/js": "^9.39.5",
+    "@playwright/test": "^1.63.0",
+    "@preact/preset-vite": "^2.10.6",
+    "@testing-library/preact": "^3.2.4",
+    "@types/node": "^24.13.6",
+    "@vitest/coverage-v8": "^5.0.1",
+    "eslint": "^9.39.5",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
+    "fake-indexeddb": "^6.2.5",
+    "jsdom": "^30.1.1",
+    "prettier": "^3.9.9",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.70.1",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}

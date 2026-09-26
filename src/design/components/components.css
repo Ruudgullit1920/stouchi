@@ -1,0 +1,293 @@
+/* Design-system components (spec §5.4). Touch targets ≥ 44 px; only transform
+   and opacity are animated (spec §8.4); reduced motion is handled in base.css. */
+
+/* Button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  min-width: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-small);
+  font-weight: 700;
+  font-size: 15px;
+  transition: transform var(--t-press) var(--ease);
+}
+.btn:active {
+  transform: scale(0.95);
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.btn--primary {
+  background: var(--ink);
+  color: #fff;
+}
+.btn--secondary {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px var(--line);
+}
+
+/* Pill */
+.pill {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  color: var(--ink2);
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  transition: transform var(--t-press) var(--ease);
+}
+.pill:active {
+  transform: scale(0.95);
+}
+.pill[aria-pressed='true'] {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* Amount */
+.amount {
+  white-space: nowrap;
+}
+.amount__unit {
+  font-size: 0.55em;
+  font-weight: 700;
+  letter-spacing: 0;
+  vertical-align: 0.6em;
+}
+
+/* Ledger row */
+.ledger-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 10px 0;
+  text-align: left;
+  transition: transform var(--t-press) var(--ease);
+}
+.ledger-row:active {
+  transform: scale(0.98);
+}
+.ledger-row__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.ledger-row__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.ledger-row__title {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ledger-row__sub {
+  font-size: 13px;
+  color: var(--mut);
+}
+.ledger-row__amount {
+  font-size: 16px;
+}
+
+/* Segmented bar */
+.segbar {
+  display: flex;
+  gap: 4px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  overflow: hidden;
+}
+.segbar__seg {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transform-origin: left;
+  animation: grow 800ms var(--ease) both;
+}
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Sheet */
+.sheet-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+}
+.sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgb(14 15 18 / 0.4);
+  animation: fade 240ms ease-out both;
+}
+.sheet {
+  position: relative;
+  width: 100%;
+  max-height: 90dvh;
+  overflow: auto;
+  background: var(--card);
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  padding: 8px var(--gutter) calc(24px + env(safe-area-inset-bottom));
+  animation: slide-up var(--t-sheet) var(--ease) both;
+}
+.sheet:focus {
+  outline: none;
+}
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+}
+.sheet__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+}
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Toast */
+.toast-region {
+  position: fixed;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 4px 4px 4px 16px;
+  border-radius: var(--r-tile);
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  animation: slide-up 320ms var(--ease) both;
+}
+.toast__action {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-small);
+  color: #fff;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+/* Loading, empty, error */
+.skeleton {
+  display: grid;
+  gap: 10px;
+}
+.skeleton__line {
+  height: 16px;
+  border-radius: var(--r-small);
+  background: var(--line);
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
+.skeleton__line:nth-child(3n) {
+  width: 60%;
+}
+@keyframes pulse {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.state {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px var(--gutter);
+  text-align: center;
+}
+.state__title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 16px;
+}
+.state__body {
+  margin: 0;
+  color: var(--mut);
+  font-size: 14px;
+}
+/* couple mode: the author's initials over the avatar's corner (plan D9) */
+.ledger-row__lead {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+.author-badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  color: #fff;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border: 2px solid var(--card);
+}

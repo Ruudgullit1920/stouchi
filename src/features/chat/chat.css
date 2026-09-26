@@ -1,0 +1,292 @@
+/* Aam Salah's chat, ported from prototype/index.html (.chat, .msg, .receipt,
+ * .typing, .sugg, .composer, .ccard, .openbtn). Loaded with the lazy chat chunk. */
+.sheet.sheet--chat {
+  height: 88dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat__status {
+  margin: -10px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--save-ink);
+}
+.chat__status.off {
+  color: var(--mut);
+}
+.chat__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.chat-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 12px;
+  scrollbar-width: none;
+}
+.msg {
+  max-width: 82%;
+  margin: 0;
+  padding: 11px 14px;
+  border-radius: 20px;
+  font-size: 14.5px;
+  line-height: 1.4;
+  font-weight: 500;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.msg.me {
+  align-self: flex-end;
+  background: var(--ink);
+  color: #fff;
+  border-bottom-right-radius: 6px;
+}
+.msg.him {
+  align-self: flex-start;
+  background: var(--bg);
+  border-bottom-left-radius: 6px;
+}
+.msg.note {
+  align-self: center;
+  max-width: 100%;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+  text-align: center;
+}
+.receipt {
+  align-self: flex-start;
+  min-width: 240px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.receipt .ic,
+.cc-head .ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.receipt .t,
+.cc-head .t {
+  font-weight: 700;
+  font-size: 14px;
+}
+.receipt .s,
+.cc-head .s {
+  font-size: 12px;
+  color: var(--mut);
+  margin-top: 2px;
+}
+.receipt .a,
+.cc-head .a {
+  font-weight: 800;
+}
+.receipt__ok {
+  color: var(--save);
+}
+.receipt s,
+.cc-head s {
+  color: var(--mut);
+}
+.typing {
+  align-self: flex-start;
+  background: var(--bg);
+  border-radius: 20px;
+  padding: 14px 16px;
+  display: flex;
+  gap: 4px;
+}
+.typing i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mut);
+}
+.sugg {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 10px;
+}
+.sugg button {
+  flex: none;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+.composer {
+  display: grid;
+  grid-template-columns: 1fr 48px;
+  gap: 8px;
+}
+.composer input {
+  height: 48px;
+  min-width: 0;
+  border-radius: 16px;
+  border: 0;
+  background: var(--bg);
+  padding: 0 16px;
+  font: inherit;
+  font-size: 16px;
+}
+.composer button {
+  height: 48px;
+  border-radius: 16px;
+  background: var(--acc);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.composer button:disabled {
+  opacity: 0.5;
+}
+
+/* confirm cards: nothing changes until Oui */
+.ccard {
+  align-self: stretch;
+  background: var(--card);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  padding: 12px;
+  display: grid;
+  gap: 10px;
+}
+.cc-head {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.cc-btns {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 8px;
+}
+.cc-btns button {
+  min-height: 44px;
+  border-radius: 13px;
+  font-weight: 700;
+  font-size: 14px;
+}
+.cc-no {
+  background: var(--bg);
+}
+.cc-yes {
+  background: var(--ink);
+  color: #fff;
+}
+.cc-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--save-ink);
+}
+/* no opacity on a card that is over: its grey text must keep its contrast (axe) */
+.ccard.no,
+.ccard.expired,
+.ccard.stale {
+  background: var(--bg);
+  border-style: dashed;
+}
+.ccard.no .cc-state,
+.ccard.expired .cc-state,
+.ccard.stale .cc-state {
+  color: var(--mut);
+}
+.ccard.yes {
+  border-color: #12b07655;
+}
+/* the income card's switch reuses the keypad's .seg2 (add.css, main bundle, aria-pressed) */
+.openrow {
+  align-self: flex-start;
+}
+.openbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--acc-soft);
+  color: var(--acc-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .msg,
+  .receipt,
+  .typing,
+  .ccard,
+  .openrow {
+    animation: bubble 320ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+    transform-origin: bottom left;
+  }
+  .msg.me {
+    transform-origin: bottom right;
+  }
+  .typing i {
+    animation: typing 1s infinite;
+  }
+  .typing i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .typing i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+  .sugg button:active,
+  .cc-btns button:active,
+  .openbtn:active {
+    transform: scale(0.95);
+  }
+}
+@keyframes bubble {
+  from {
+    opacity: 0;
+    transform: scale(0.85) translateY(8px);
+  }
+}
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+    transform: none;
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}

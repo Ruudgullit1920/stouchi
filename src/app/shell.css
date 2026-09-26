@@ -1,0 +1,146 @@
+/* The app frame, ported from prototype/index.html (.screen, .top, .nav, .fab). */
+:root {
+  --nav-h: 72px;
+}
+
+.app {
+  position: relative;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.screen {
+  min-height: 100dvh;
+  padding: calc(env(safe-area-inset-top) + 20px) 16px calc(var(--nav-h) + 40px);
+}
+.screen.push {
+  background: var(--card);
+}
+
+/* Screen enter: children fade up 16 px, 45 ms apart (spec §5.5). */
+.screen > * {
+  animation: fade-up 550ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.screen > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+.screen > *:nth-child(3) {
+  animation-delay: 90ms;
+}
+.screen > *:nth-child(4) {
+  animation-delay: 135ms;
+}
+.screen > *:nth-child(5) {
+  animation-delay: 180ms;
+}
+.screen > *:nth-child(6) {
+  animation-delay: 225ms;
+}
+.screen > *:nth-child(n + 7) {
+  animation-delay: 270ms;
+}
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  margin-bottom: 20px;
+}
+.top h1 {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.nav {
+  position: fixed;
+  left: max(16px, calc(50% - 224px));
+  right: max(16px, calc(50% - 224px));
+  bottom: calc(env(safe-area-inset-bottom) + 14px);
+  height: var(--nav-h);
+  z-index: 20;
+  background: var(--card);
+  border-radius: 26px;
+  box-shadow: 0 10px 30px #1b1f3a1f;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+}
+.nav__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
+  min-width: 44px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--mut);
+}
+.nav__tab.on {
+  color: var(--ink);
+}
+.fab {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background: var(--acc);
+  color: #fff;
+  box-shadow: 0 8px 20px #ff5a3666;
+  transition: transform 140ms;
+}
+.fab:active,
+.nav__tab:active {
+  transform: scale(0.95);
+}
+.nav__fab-cell {
+  display: grid;
+}
+
+.offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--ink2);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.failed-writes {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--acc-soft);
+  color: var(--acc-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.failed-writes__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.failed-writes__btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--acc-ink);
+  font-weight: 700;
+}

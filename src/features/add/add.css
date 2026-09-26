@@ -1,0 +1,190 @@
+/* Add / edit sheet, ported from prototype/index.html #manual. */
+.xform__amount {
+  text-align: center;
+  padding: 8px 0 16px;
+}
+.xform__amount .big {
+  font-size: 52px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.seg2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+}
+.seg2 button {
+  min-height: 44px;
+  border-radius: 11px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mut);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.seg2 button[aria-pressed='true'] {
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 1px 3px #0000001a;
+}
+.seg2 button i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.cats {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 14px 0 6px;
+}
+.cat {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 64px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+.cat__ic {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  transition: background 150ms;
+}
+.cat[aria-pressed='true'] .cat__ic {
+  color: #fff;
+}
+.meta-row {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0 10px;
+}
+.field {
+  display: grid;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mut);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.field--grow {
+  flex: 1;
+}
+.field input {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--ink);
+  width: 100%;
+}
+.field input[aria-invalid='true'] {
+  box-shadow: inset 0 -2px 0 var(--acc-ink);
+}
+.field-error {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--acc-ink);
+  margin-bottom: 6px;
+}
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+.pad button {
+  height: 54px;
+  border-radius: 14px;
+  font-size: 22px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+.pad button:active {
+  background: var(--bg);
+}
+.cta {
+  height: 56px;
+  border-radius: 18px;
+  /* White on --acc is 3.0 : 1 (tokens.css): the CTA takes the primary button's --ink. */
+  background: var(--ink);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.cta:disabled {
+  opacity: 0.45;
+}
+.danger-link {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--acc-ink);
+}
+.confirm {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--acc-soft);
+  font-weight: 700;
+  text-align: center;
+}
+.confirm__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.confirm__actions button {
+  min-height: 48px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+.confirm__no {
+  background: var(--card);
+}
+.confirm__yes {
+  background: var(--acc-ink);
+  color: #fff;
+}
+/* couple mode: who logged a shared expense (plan D9) */
+.author-line {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mut);
+  text-align: center;
+}

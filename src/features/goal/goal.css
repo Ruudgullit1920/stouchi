@@ -1,0 +1,273 @@
+/* Objectif, ported from prototype/index.html (#s-goal, .dark, .chip, .gbar, .card). */
+.goal-verser {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.goal-card {
+  position: relative;
+  position: relative;
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: linear-gradient(155deg, var(--ink) 55%, #0f3a2a);
+  color: #fff;
+  border-radius: 24px;
+  padding: 20px;
+}
+.goal-card > span {
+  display: block;
+}
+.goal-card__head {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+}
+.goal-card__name {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.goal-card__pct {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #12b07633;
+  color: #7ff0c1;
+  font-size: 12px;
+  font-weight: 600;
+}
+.goal-card__saved {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  margin-top: 10px;
+}
+.goal-card__saved .unit {
+  color: #ffffff99;
+  vertical-align: 20px;
+}
+.goal-card__target {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-top: 4px;
+}
+.goal-card__bar {
+  height: 8px;
+  background: #ffffff1f;
+  border-radius: 4px;
+  margin: 16px 0 12px;
+  overflow: hidden;
+}
+.goal-card__bar i {
+  display: block;
+  height: 100%;
+  background: var(--save);
+  border-radius: 4px;
+  transition: width 800ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.goal-card__foot {
+  display: flex !important;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.goal-card__foot span {
+  opacity: 0.6;
+}
+.goal-whatif,
+.goal-next {
+  background: var(--card);
+  border-radius: 24px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.goal-whatif h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.goal-whatif .filters {
+  margin: 0 0 12px;
+}
+.goal-whatif__box {
+  background: var(--save-soft);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0c5c3d;
+}
+.goal-next p {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.goal-move {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+}
+.goal-move + .goal-move {
+  border-top: 1px solid var(--line);
+}
+.goal-move__ic {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--save-soft);
+  color: var(--save);
+}
+.goal-move__t {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+}
+.goal-move__s {
+  display: block;
+  font-size: 12px;
+  color: var(--mut);
+  margin-top: 2px;
+}
+/* the prototype's --save and --warn fail 4.5 : 1 on white: their dark inks */
+.goal-move__a {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--save-ink);
+}
+.goal-move__a--out {
+  color: #7a4f0e;
+}
+
+/* Verser and goal sheets (prototype openEdit 'deposit'). The onboarding styles
+   these mirror (.amt-in, .qchips, .goals) load only with onboarding. */
+.deposit .hint {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  color: var(--ink2);
+}
+.deposit .amt-in,
+.goal-sheet .amt-in {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  border-bottom: 2px solid var(--line);
+  margin: 14px 0 6px;
+}
+.deposit .amt-in:focus-within,
+.goal-sheet .amt-in:focus-within {
+  border-color: var(--acc);
+}
+.deposit .amt-in input,
+.goal-sheet .amt-in input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  padding: 6px 0;
+  background: none;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.deposit .amt-in span,
+.goal-sheet .amt-in span {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--mut);
+}
+.deposit .qchips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.deposit .qchips button {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.deposit .qchips button.on {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+.deposit .aamtip {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 10px;
+  align-items: start;
+  background: var(--acc-soft);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 14px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: #3a1c14;
+}
+.deposit .aamtip .sal {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--acc);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+}
+.goal-sheet .goals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.goal-sheet .goals button {
+  border-radius: 18px;
+  background: var(--bg);
+  padding: 14px 4px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+}
+.goal-sheet .goals button.on {
+  background: #fff;
+  border-color: var(--save);
+  box-shadow: 0 8px 18px #12b07622;
+}
+.goal-sheet .gfield {
+  display: block;
+  margin-top: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+}
+/* couple mode: who made the move on the shared goal (plan D9) */
+.goal-move__lead {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}

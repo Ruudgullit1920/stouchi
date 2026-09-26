@@ -1,0 +1,40 @@
+/* Spec §5.1 tokens. Two changes for §5.6 contrast (≥ 4.5 : 1), see the plan's
+   "Spec deviations": --mut is darker, and *-ink variants exist for coloured text.
+   White text only ever sits on --ink, never on --acc (3.0 : 1). */
+:root {
+  --bg: #f3f4f7;
+  --card: #ffffff;
+  --ink: #0e0f12;
+  --ink2: #3a3d44;
+  --mut: #666b74;
+  --line: #ecedf1;
+  --acc: #ff5a36;
+  --acc-soft: #ffe9e3;
+  --acc-ink: #c2391b;
+  --need: #3e7bfa;
+  --need-soft: #e7efff;
+  --need-ink: #2b5fd9;
+  --want: #8b5cf6;
+  --want-soft: #f0eaff;
+  --want-ink: #6d3fd6;
+  --save: #12b076;
+  --save-soft: #e2f6ee;
+  --save-ink: #0b7a52;
+  --warn: #f5a524;
+  /* the prototype's #e5484d is 3.9 : 1 on white; errors are small text */
+  --danger: #c52f36;
+  /* the prototype's #e5484d is 3.9 : 1 on white; errors are small text */
+  --danger: #c52f36;
+
+  --r-card: 24px;
+  --r-tile: 18px;
+  --r-small: 12px;
+  --r-pill: 999px;
+  --gutter: 16px;
+  --gutter-onb: 24px;
+
+  --font: 'Plus Jakarta Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-press: 140ms;
+  --t-sheet: 330ms;
+}

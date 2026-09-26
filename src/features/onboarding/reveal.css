@@ -1,0 +1,172 @@
+/* Reveal, ported from prototype #f-reveal. Pot cards use the *-ink shades so
+   white text passes AA (as on Budget). */
+.flow.reveal {
+  justify-content: center;
+  background: linear-gradient(180deg, #fff 40%, #fff4f0);
+  position: relative;
+}
+.rv {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.rv-coin {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 18px 40px #0e0f1240;
+  animation: coin 0.8s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+.rv-coin b {
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+.rv-coin small {
+  font-size: 10.5px;
+  color: #ffffffb3;
+  font-weight: 600;
+}
+@keyframes coin {
+  from {
+    transform: scale(0.2) translateY(40px);
+    opacity: 0;
+  }
+}
+.rv h1 {
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-top: 8px;
+}
+.rv > p {
+  text-align: center;
+  color: var(--ink2);
+  font-size: 14.5px;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+.rv-pot {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--r-tile);
+  color: #fff;
+  animation: potIn 0.6s cubic-bezier(0.2, 1.25, 0.4, 1) both;
+}
+.rv-pot--needs {
+  background: var(--need-ink);
+}
+.rv-pot--wants {
+  background: var(--want-ink);
+}
+.rv-pot--savings {
+  background: var(--save-ink);
+}
+.rv-pot .tile {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: #ffffff26;
+  display: grid;
+  place-items: center;
+}
+.rv-pot .tile svg {
+  width: 21px;
+  height: 21px;
+}
+.rv-pot .name {
+  font-size: 16px;
+  font-weight: 800;
+}
+.rv-pot .desc {
+  font-size: 12.5px;
+  color: #ffffffe0;
+  font-weight: 600;
+}
+.rv-pot .amt {
+  text-align: right;
+}
+.rv-pot .amt b {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+}
+.rv-pot .amt span {
+  font-size: 11px;
+  color: #ffffffe0;
+  font-weight: 600;
+}
+@keyframes potIn {
+  from {
+    opacity: 0;
+    transform: translateY(-46px) scale(0.92);
+  }
+}
+.rv-cta {
+  height: 56px;
+  border-radius: 18px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  width: 100%;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.rv-cta svg {
+  width: 20px;
+  height: 20px;
+}
+.confetti {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+.confetti i {
+  position: absolute;
+  left: 50%;
+  top: 24%;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: burst 1.2s cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+}
+@keyframes burst {
+  from {
+    opacity: 1;
+  }
+  to {
+    transform: translate(var(--x), var(--y)) rotate(var(--r));
+    opacity: 0;
+  }
+}
+.rv.still .rv-coin,
+.rv.still .rv-pot {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv-coin,
+  .rv-pot,
+  .confetti i {
+    animation: none;
+  }
+}

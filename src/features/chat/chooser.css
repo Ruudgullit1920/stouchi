@@ -1,0 +1,98 @@
+/* The + speed dial, ported from prototype/index.html (.scrim, .dial, .fab.open). */
+.dial-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: #0e0f1266;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: fade 200ms ease-out both;
+}
+.dial {
+  position: fixed;
+  left: max(16px, calc(50% - 224px));
+  right: max(16px, calc(50% - 224px));
+  bottom: calc(env(safe-area-inset-bottom) + 14px + var(--nav-h) + 12px);
+  z-index: 31;
+  display: grid;
+  gap: 10px;
+}
+.dial__item {
+  display: grid;
+  grid-template-columns: 48px 1fr 20px;
+  gap: 14px;
+  align-items: center;
+  width: 100%;
+  min-height: 76px;
+  padding: 14px;
+  text-align: left;
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: 0 10px 30px #0002;
+}
+.dial__ic {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--ink);
+}
+.dial__ic--chat {
+  background: var(--acc-soft);
+  color: var(--acc);
+}
+.dial__text b {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+.dial__text span {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--mut);
+}
+.dial__go {
+  color: var(--mut);
+}
+/* the + turns into × and stays above the scrim; the other tabs step aside */
+.nav.dial-open {
+  z-index: 33;
+  background: transparent;
+  box-shadow: none;
+}
+.nav.dial-open .nav__tab {
+  opacity: 0;
+  pointer-events: none;
+}
+.nav__tab {
+  transition: opacity 200ms;
+}
+.fab.open {
+  background: var(--ink);
+  box-shadow: 0 8px 20px #0003;
+}
+.fab svg {
+  transition: transform 250ms var(--ease);
+}
+.fab.open svg {
+  transform: rotate(45deg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dial__item {
+    animation: dial-in 280ms var(--ease) both;
+  }
+  .dial__item:nth-child(1) {
+    animation-delay: 40ms;
+  }
+  .dial__item:active {
+    transform: scale(0.97);
+  }
+}
+@keyframes dial-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+}
