@@ -14,7 +14,7 @@
 
 ## Facts found while planning (2026-09-26)
 
-- `master` has no commits beyond its merge base with `rebuild` (`a9a1826`), so the launch merge is a **fast-forward**.
+- `master` has no commits beyond its merge base with `rebuild` (`a9a1826`), so the launch merge is a **fast-forward**. **Since Session B:** Task 10 step 3 puts `legacy`'s commits on `master`, so step 9 fast-forwards only after step 8b records them on `rebuild` (rehearsed in a scratch clone on 2026-09-26).
 - First-load JS is **~152 kB gzipped**: `index` 73.7 kB plus `supabase` 78.4 kB. The budget is 150 kB, so D8 is needed.
 - The legacy app has **no service worker** and no manifest, so once the domain serves the new app, no old cached shell survives.
 - The legacy `budget-facts.js` is read by the backfill (`appDiffs`), so the legacy files stay until Session D.
@@ -311,7 +311,7 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 
 **Tests:** `npm run check` (legacy tests minus the deleted ones), `npm run eval -- --min-rate 0.9167` once if the quota allows. Otherwise, note it.
 
-- [ ] Delete → `npm run check` → commit `Refonte : lancement — fin de /api/chat`
+- [x] Delete → `npm run check` → commit `Refonte : lancement — fin de /api/chat`
 
 ### Task 7: Cut-over SQL (freeze, unfreeze, validate, archive)
 
@@ -350,7 +350,7 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 - The archive: row counts are equal before and after, and `authenticated` can't read `archive.*`.
 - First open: the fixture household converted by `scripts/backfill` is fed to `dueDeposits` at "1st, 09:00" and at "15th": the expected deposit count, and none before the launch period.
 
-- [ ] TDD → `npm run check` → commit `Refonte : lancement — scripts de bascule`
+- [x] TDD → `npm run check` → commit `Refonte : lancement — scripts de bascule`
 
 ### Task 8: The frozen legacy app (branch `legacy`)
 
@@ -369,7 +369,7 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 - `isReadOnlyError` is true for `{code: '42501'}` and for a `permission denied` message, and false for a network error.
 - Manually, in the rehearsal (Task 9), with `npm start` against `stouchi-test`.
 
-- [ ] TDD on `legacy` → `npm run test:legacy` → commit `Ancienne version : lecture seule après la bascule` (on `legacy`; pushing it is part of Task 10)
+- [x] TDD on `legacy` → `npm run test:legacy` → commit `Ancienne version : lecture seule après la bascule` (on `legacy`; pushing it is part of Task 10)
 
 ### Task 9: Production readiness and the rehearsal
 
@@ -379,11 +379,11 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 
 **Steps:**
 
-- [ ] **Env list.** From the code (`import.meta.env.*`, `process.env.*` in `api/`, `lib/aam-salah/`, `src/server/`), write the exact Vercel variables for **Production**. They must point at production: the `VITE_SUPABASE_*`, `SUPABASE_URL`/`SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, the provider keys `lib/aam-salah` reads, `VITE_VAPID_PUBLIC_KEY`, the Sentry vars, and `AAM_MODELS` if it is set. **Preview** stays on `stouchi-test`. Also list the `notify-run` secrets for production (VAPID ×3, `GEMINI_API_KEY`), and the Vault secrets and schedule from Phase 4 (`notify-schedule.sql`). Check that the GitHub repo has the secret `eval.yml` needs, because the nightly eval starts running from `master` at the merge (§8.6).
-- [ ] **Offline shell on Vercel:** on a preview, `/index.html` answers 200 with no redirect. A redirected response can't answer a navigation, which would break the offline start (from the Session A review).
-- [ ] **Production migration state** (read-only): `npx supabase migration list --project-ref gfbakmwllhuhfdydbcfa`. List which of `20260923`–`20260930` are missing, in order.
+- [x] **Env list.** From the code (`import.meta.env.*`, `process.env.*` in `api/`, `lib/aam-salah/`, `src/server/`), write the exact Vercel variables for **Production**. They must point at production: the `VITE_SUPABASE_*`, `SUPABASE_URL`/`SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, the provider keys `lib/aam-salah` reads, `VITE_VAPID_PUBLIC_KEY`, the Sentry vars, and `AAM_MODELS` if it is set. **Preview** stays on `stouchi-test`. Also list the `notify-run` secrets for production (VAPID ×3, `GEMINI_API_KEY`), and the Vault secrets and schedule from Phase 4 (`notify-schedule.sql`). Check that the GitHub repo has the secret `eval.yml` needs, because the nightly eval starts running from `master` at the merge (§8.6).
+- [x] **Offline shell on Vercel:** on a preview, `/index.html` answers 200 with no redirect. A redirected response can't answer a navigation, which would break the offline start (from the Session A review).
+- [x] **Production migration state** (read-only): `npx supabase migration list --project-ref gfbakmwllhuhfdydbcfa`. List which of `20260923`–`20260930` are missing, in order.
 - [ ] **Auth diff** (read-only, dashboard or CLI): the site URL, redirect URLs, Google provider and e-mail confirmation on production against `stouchi-test`. The user fixes the differences.
-- [ ] **Rehearsal on `stouchi-test`** (approval for the `--apply` on test):
+- [x] **Rehearsal on `stouchi-test`** (approval for the `--apply` on test):
   1. Run the legacy app locally against test and write a legacy row.
   2. Apply `legacy_read_only.sql`, then check the banner (Task 8).
   3. Run `npm run backfill` against test, then `-- --apply`.
@@ -397,6 +397,75 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
   - Fix any failure on `rebuild` with a test, then run it again.
 - [ ] `npm run check` and `npm run e2e` green → update this plan and `CLAUDE.md` status → commit `Refonte : phase 7 — prêt pour la bascule`
 
+### Session B findings for Task 10 (2026-09-26, read-only)
+
+- **Vercel env, project `budget-maison`, Production** (all on production `gfbakmwllhuhfdydbcfa`):
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (the app);
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (`api/aam.ts`; it has no fallback, it answers 503 without them);
+  - `GEMINI_API_KEY`, and `MISTRAL_API_KEY` (the last link of the default `AAM_MODELS` chain). `TOKENROUTER_API_KEY` only if `AAM_MODELS` names it. `AAM_MODELS` and `AAM_DEADLINE_MS` are optional;
+  - `VITE_VAPID_PUBLIC_KEY` (the production pair);
+  - `VITE_SENTRY_DSN`, `SENTRY_DSN`. The release tag comes from `VERCEL_GIT_COMMIT_SHA` on its own;
+  - never `SUPABASE_SERVICE_ROLE_KEY`.
+  - `CHAT_PROVIDER`, `CHAT_MODEL`, `CHAT_API_URL` and `TOKENROUTER_API_KEY` only serve the legacy `api/chat.js`: they move to `stouchi-ancien`, together with that project's `SUPABASE_URL`/`SUPABASE_ANON_KEY` (production).
+  - **Preview:** the same names, on `stouchi-test`.
+- **`notify-run` secrets on production:** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `GEMINI_API_KEY`, and `NOTIFY_MODEL` (optional). Supabase injects `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Then the Vault secrets `notify_url` and `notify_secret`, and `supabase/sql/notify-schedule.sql`.
+- **GitHub:** the repo has **no Actions secret**. Add `GEMINI_API_KEY` before the merge, because `eval.yml` runs nightly from `master`.
+- **Offline shell:** on a preview, `/index.html` answers 200 with no redirect (`vercel.json` has no `cleanUrls`).
+- **Production migrations:** the history holds `20260809…`–`20260811…` and `20260923…`, `20260924…`, under timestamped versions that differ from the file names. Missing, in order:
+  1. `20260902_budget_data_rls` (retroactive and idempotent, never recorded on production);
+  2. `20260925_phase3_incomes_soft_delete`;
+  3. `20260926_phase4_notify`;
+  4. `20260927_notify_cron_secret`;
+  5. `20260928_phase5_plan_and_delete`;
+  6. `20260929_phase6_couple`;
+  7. `20260930_legacy_join_limit`.
+
+  **Don't use `supabase db push`:** the versions don't match the file names, so it would re-run the applied files too. Apply these 7 one by one, as `stouchi-test` got them.
+- **Auth, what the new app needs:**
+  - e-mail + password sign-up, with no `emailRedirectTo`, so the confirmation link uses the **Site URL**;
+  - Google OAuth with `redirectTo` = origin + path.
+  - Production needs: Site URL = the production domain (today `https://budget-maison-xi.vercel.app/`), that URL in the redirect allow-list, and the Google provider on. The user compares the rest (e-mail confirmation) with `stouchi-test` in the dashboard.
+- **Legacy banner link:** `read-only.js` on `legacy` points at `https://budget-maison-xi.vercel.app/`. Change it if the launch adds a custom domain.
+
+### Session B outcome (2026-09-26)
+
+- **Commits:**
+  - On `rebuild`: `a8b7009` Task 6, `ce9fe42` Task 7, then the review's fixes.
+  - On `legacy` (not pushed): `098b8e3` Task 8, `15654e0` (`read-only.js` is served; the rehearsal found it missing), `831a4e4` (the review's fixes).
+- **Task 6:** only `api/chat.js` goes. `lib/chat-context.js` stays: `lib/aam-salah`, `server.js` and `scripts/ping-model.js` still require it. The eval was quota-bound: flash-lite 27/30 (2 API 503s, 1 real miss, #30).
+- **Task 7:**
+  - The freeze records the grants it removes (`cutover.legacy_grants`) and the rollback replays them. It checks itself: a grant that survives, for example one made by another grantor, fails the whole freeze.
+  - The archive moves only `budget_data` and `household_shared_data`, because couple mode runs on `households`, `household_members` and `household_join_attempts`. It redefines `delete_my_account`.
+  - Validation is one atomic statement.
+  - A launch-morning backfill writes no payday deposit for the launch period; the next payday writes one.
+- **Task 8:**
+  - The legacy app's helpers live in `read-only.js`, following the `budget-facts.js` pattern.
+  - A 42501 on any write shows the banner and stops sending.
+  - A probe on open (an update that matches no row) shows the banner before anything is typed.
+  - The banner links to `https://budget-maison-xi.vercel.app/`.
+- **Task 9:**
+  - The findings are above.
+  - The rehearsal on `stouchi-test` passed end to end, on a throwaway account that was deleted afterwards: legacy write → freeze → banner → backfill dry run and `--apply` → validation → first open (Budget and Objectif right, no deposit) → unfreeze. `stouchi-test` is back to 3 users and 0 legacy rows, and its two constraints stay validated.
+- **Final review** (Opus): 0 Critical. Fixed:
+  - **I1**, step 9 couldn't fast-forward: step 8b is added and was rehearsed in a scratch clone.
+  - **I2**, a beacon edit was lost with no banner: the probe on open, with legacy tests RED→GREEN.
+  - **m3**, re-graded Important, the freeze could pass half-way: a self-check, with a PGlite test RED→GREEN.
+  - **m4**, re-graded Important, a missing `read-only.js` wedged every save: a fallback, with a test RED→GREEN.
+- **Deferred minors** (the user decides):
+  - **m5:** 42501 also comes from RLS `with check` and from anon after `20260902`. A lost session between steps 4 and 5 would show the banner early.
+  - **m6:** the banner sits over the header, with no body offset.
+  - **m7:** during steps 5–9 the banner's link opens the frozen app. The announcement in step 1 now says so.
+  - **m8:** the archive leaves `household_shared_data` in `supabase_realtime`, and drops only exact function signatures.
+  - **m9:** stale comments in `lib/chat-context.js:1` and `server.js:168`.
+  - **m10:** the "fixture rows" validation test inserts no incomes.
+- **`npm run e2e`:** 95 passed, 7 failed, 1 skipped. On rerun, 6 still fail: the iPhone input class (`chat:121`, `core:44`, `me:60`, `onboarding:47`), `couple:129` (M6) and `couple:168` (daily cap). Session B changed no code under `src/`.
+- **Still for the user:**
+  - the backfill dry run on production (deferred; it needs the production service key);
+  - the Auth diff on the dashboard;
+  - the GitHub `GEMINI_API_KEY` secret;
+  - the "before Session C" list;
+  - rotating the `stouchi-test` secret key (both keys were pasted in the chat).
+
 ---
 
 ## Session C — launch day (the 1st, morning)
@@ -405,14 +474,14 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 
 Each numbered step is announced, approved, run, then checked. If a check fails, stop and roll back (below).
 
-1. **Announce** in the legacy app's household, if the user wants: the time of the switch.
+1. **Announce** in the legacy app's household, if the user wants: the time of the switch. Between steps 5 and 9 the banner's link still opens the frozen app: say so in the announcement.
 2. **Legacy app on its own project.**
    - Push the `legacy` branch.
    - `stouchi-ancien` deploys it with the legacy env vars.
    - Check that it opens and reads data.
 3. **Merge `legacy` → `master`** (the join-limit and read-only `app.js`) and let Vercel deploy it to production. Check that the legacy app still works: the new `app.js` accepts both join replies.
 4. **Production migrations** `20260923`–`20260930`, in order, as found in Task 9. Run `npm run check:supabase` against production (with the anon key; no service key). The legacy app still works, because the migrations are additive.
-5. **Freeze:** `legacy_read_only.sql`. Check that a legacy write shows the banner.
+5. **Freeze:** `legacy_read_only.sql`. It raises `freeze failed: … still writable` and changes nothing if a grant survives (for example one made by another grantor): stop and look. Check that opening the legacy app shows the banner (the probe on open), and that a legacy write does too.
 6. **Final backfill:**
    - `npm run backfill`: verification passes, with the same issues as the dry run plus any rows added since.
    - Then `npm run backfill -- --apply`.
@@ -424,6 +493,7 @@ Each numbered step is announced, approved, run, then checked. If a check fails, 
    - Set the secrets (VAPID ×3, `GEMINI_API_KEY`), the Vault entries and `notify-schedule.sql`.
    - A manual run answers 200.
 8. **Vercel production env** set from Task 9's list, Sentry included.
+8b. **Record `legacy` on `rebuild`**, after its last commit: `git checkout rebuild && git merge -s ours legacy -m "Refonte : lancement — historique de l'ancienne version (sans son contenu)"`. This keeps `rebuild`'s files as they are. Without it, step 9 refuses to fast-forward.
 9. **Launch:** `git checkout master && git merge --ff-only rebuild && git push`. Vercel deploys the new app.
 10. **Smoke test on phones** (the user):
     - log in with a real account: Budget's figures match the backfill report for this period;

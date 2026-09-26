@@ -67,4 +67,22 @@ begin
   loop
     execute format('revoke execute on function %s from public, anon, authenticated', f);
   end loop;
+
+  /* A REVOKE only removes its own grantor's grants: one made by another role
+     survives it without a word. Check the result, and undo everything
+     (this block is one transaction) rather than freeze half-way. */
+  foreach t in array legacy_tables loop
+    if has_table_privilege('anon', format('public.%I', t), 'INSERT, UPDATE, DELETE')
+       or has_table_privilege('authenticated', format('public.%I', t), 'INSERT, UPDATE, DELETE') then
+      raise exception 'freeze failed: public.% is still writable (a grant from another grantor?)', t;
+    end if;
+  end loop;
+  for f in
+    select p.oid::regprocedure from pg_catalog.pg_proc p
+     where p.pronamespace = 'public'::regnamespace and p.proname = any (legacy_writers)
+  loop
+    if has_function_privilege('anon', f, 'EXECUTE') or has_function_privilege('authenticated', f, 'EXECUTE') then
+      raise exception 'freeze failed: % is still writable (a grant from another grantor?)', f;
+    end if;
+  end loop;
 end $$;

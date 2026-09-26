@@ -115,6 +115,13 @@ describe('legacy_read_only.sql (the freeze)', () => {
   it('refuses legacy writes with 42501', async () => {
     await expect(upsertBudget(ALICE)).rejects.toMatchObject(DENIED);
     await expect(as(ALICE, `update public.budget_data set data = '{}'`)).rejects.toMatchObject(DENIED);
+    /* the legacy app's probe on open: an update that matches no row is refused too */
+    await expect(
+      as(
+        ALICE,
+        `update public.budget_data set data = '{}' where id = '00000000-0000-0000-0000-000000000000'`,
+      ),
+    ).rejects.toMatchObject(DENIED);
     await expect(as(ALICE, `update public.household_shared_data set data = '{}'`)).rejects.toMatchObject(
       DENIED,
     );
@@ -138,6 +145,20 @@ describe('legacy_read_only.sql (the freeze)', () => {
     expect(((await as(CAROL, 'select public.couple_invite() as r'))[0].r as { code: string }).code).toMatch(
       /^STC-/,
     );
+  });
+});
+
+describe('legacy_read_only.sql, when a revoke cannot bite', () => {
+  it('fails loudly if a write grant survives (made by another grantor)', async () => {
+    /* A REVOKE only removes the grants its own grantor made: one made by
+       another role (say, supabase_admin) survives it silently. */
+    await asOwner(`create role other_admin nologin`);
+    await asOwner(`grant insert on public.budget_data to other_admin with grant option`);
+    await asOwner(`set role other_admin`);
+    await asOwner(`grant insert on public.budget_data to authenticated`);
+    await asOwner(`reset role`);
+    await expect(cutover('legacy_read_only')).rejects.toThrow(/still writable/);
+    expect(await asOwner(`select to_regclass('cutover.legacy_grants') as t`)).toEqual([{ t: null }]);
   });
 });
 
