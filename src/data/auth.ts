@@ -1,6 +1,6 @@
 /* Signing in and out (spec §4.2). Every Supabase refusal becomes a French
  * message key; the screens never show the server's own wording. */
-import type { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/auth-js';
 import type { StringKey } from '../shared/i18n/t';
 import { supabase } from './supabase';
 

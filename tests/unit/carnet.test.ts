@@ -567,6 +567,22 @@ describe('couple mode (plan Task 8, Aam Salah spec §4)', () => {
     expect(JSON.stringify(carnet)).not.toContain('Hedi');
   });
 
+  it("versé ce mois counts my deposits only; the goal's total counts both (M2, plan D2)", () => {
+    const goals = fixture.goals.map((g) => ({ ...g, household_id: H }));
+    const mine = buildCarnet(couple({ goals })).carnet.pots.epargne;
+    const theirs = {
+      ...fixture.savingsMoves[1],
+      id: u('m9000000'),
+      user_id: PARTNER,
+      amount_mil: 70_000,
+      occurred_on: '2026-09-21',
+    };
+    const both = buildCarnet(couple({ goals, savingsMoves: [...fixture.savingsMoves, theirs] })).carnet.pots
+      .epargne;
+    expect(both.verse_ce_mois).toBe(mine.verse_ce_mois);
+    expect(both.total).toBe((mine.total ?? 0) + 70);
+  });
+
   it('solo: a stray partner row is filtered out too', () => {
     const { carnet } = buildCarnet(input({ expenses: [...fixture.expenses, shared] }));
     expect(JSON.stringify(carnet)).not.toContain('Aziza');

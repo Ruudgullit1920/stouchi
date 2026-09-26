@@ -10,6 +10,7 @@ import { route, routePath, type RouteName } from './router';
 import { SheetHost } from './SheetHost';
 import { TabBar } from './TabBar';
 import { ToastHost } from './ToastHost';
+import { UpdateToast } from './UpdateToast';
 
 export type ScreenProps = { store: Store; onOpenExpense?: (e: Expense) => void };
 type Props = {
@@ -41,6 +42,7 @@ export function Shell({ store, screens, onAdd, addOpen, onOpenExpense, onRetry, 
       <TabBar onAdd={onAdd} addOpen={addOpen} />
       <SheetHost />
       <ToastHost />
+      <UpdateToast />
     </div>
   );
 }

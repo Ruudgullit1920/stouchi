@@ -7,7 +7,19 @@ import { createStore, type Store } from '../../../src/data/store';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { shortDate } from '../../../src/shared/format';
 import { formatTnd } from '../../../src/shared/money';
-import { bill, coupleOn, couplePending, expense, goal, move, profile, reminder, SOLO } from '../fixtures';
+import {
+  bill,
+  coupleOn,
+  couplePending,
+  expense,
+  goal,
+  HOUSEHOLD,
+  move,
+  PARTNER,
+  profile,
+  reminder,
+  SOLO,
+} from '../fixtures';
 
 const signOut = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
 const coupleActions = vi.fn((): unknown => null);
@@ -93,6 +105,16 @@ describe('Moi — the screen', () => {
     expect(stats).toContain('3mois suivis');
     expect(stats).toContain('150TND épargnés');
     expect(stats).toContain('2dépenses');
+  });
+
+  it("counts only my own expenses, not the partner's shared ones (M8)", () => {
+    store.household.value = coupleOn();
+    store.expenses.value = [
+      ...store.expenses.value,
+      expense({ user_id: PARTNER, household_id: HOUSEHOLD, pot: 'needs' }),
+    ];
+    open();
+    expect(screen.getByTestId('me-stats').textContent).toContain('2dépenses');
   });
 
   it('shows the plan rows with their values', () => {

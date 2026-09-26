@@ -1,6 +1,6 @@
 /* The server side of sync: push rows, pull what changed. The interface keeps
  * the outbox testable without a network; supabaseRemote is the real one. */
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Db } from './supabase';
 import type { ISODate } from '../shared/dates';
 import type { PatchTable, Row, Table } from './localdb';
 
@@ -54,7 +54,7 @@ export const afterRow = (col: string, key: string, last: Row): string => {
 };
 
 /** `floor` = first day of the oldest pay period kept on the device (expenses only). */
-export function supabaseRemote(client: SupabaseClient, floor: () => ISODate): Remote {
+export function supabaseRemote(client: Db, floor: () => ISODate): Remote {
   const fail = (error: { code?: string; message: string }, status: number) =>
     new RemoteError(classify(error, status), error.code ?? '', error.message);
 

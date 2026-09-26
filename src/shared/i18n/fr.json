@@ -36,6 +36,8 @@
   "action.close": "Fermer",
   "action.retry": "Réessayer",
   "action.undo": "Annuler",
+  "update.ready": "Nouvelle version",
+  "update.reload": "Recharger",
   "state.loading": "Chargement…",
   "state.error.title": "Ça n’a pas marché",
   "state.error.body": "Vérifie ta connexion et réessaie.",
@@ -756,5 +758,6 @@
   "notify.done.partner_applied": "Corrigée, comme demandé.",
   "notify.done.partner_invalid": "Cette demande n'est pas valable.",
   "notify.done.partner_gone": "Cette dépense n'existe plus.",
+  "notify.done.partner_stale": "Cette demande n'est plus à jour.",
   "notify.done.partner_refused": "Demande refusée."
 }

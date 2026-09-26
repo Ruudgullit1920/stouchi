@@ -1,8 +1,72 @@
-/* Stouchi's service worker (Phase 4): web push only. It has no fetch handler;
- * offline caching comes in Phase 7. Registered by main.tsx in production builds. */
+/* Stouchi's service worker: web push (Phase 4), and the offline shell with
+ * "Nouvelle version — Recharger" (Phase 7, spec §8.3). Registered by main.tsx in
+ * production builds. The build fills the two marked lines (scripts/sw-inject). */
 
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+const VERSION = 'dev'; // __VERSION__
+const PRECACHE = []; // __PRECACHE__
+const CACHE = `stouchi-${VERSION}`;
+
+/* A new version installs, then WAITS: the page offers "Recharger", and only that
+   tap (SKIP_WAITING) lets it take over, so nothing reloads under the user. */
+self.addEventListener('install', (event) =>
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))),
+);
+self.addEventListener('activate', (event) =>
+  event.waitUntil(
+    (async () => {
+      /* keep the version before too: a window still on it may lazy-load a chunk
+         that is gone from the server (caches.keys() lists oldest first) */
+      const older = (await caches.keys()).filter((key) => key.startsWith('stouchi-') && key !== CACHE);
+      for (const key of older.slice(0, -1)) await caches.delete(key);
+      await self.clients.claim();
+    })(),
+  ),
+);
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+/* Only this site's pages and built assets. Supabase, /api/* and writes always
+   go to the network: data has its own offline path (the outbox, IndexedDB). */
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (request.mode === 'navigate') {
+    event.respondWith(page(request));
+    return;
+  }
+  if (url.pathname.startsWith('/assets/')) event.respondWith(fromCache(request));
+});
+
+/* Network first, but a connection that is up and never answers (weak Wi-Fi)
+   gets the cached shell after 3 s instead of a white screen. A first visit,
+   with nothing cached yet, waits for the network. */
+async function page(request) {
+  const network = fetch(request);
+  /* this version's shell first: caches.match would find the older one first */
+  const cached =
+    (await (await caches.open(CACHE)).match('/index.html', MATCH)) ||
+    (await caches.match('/index.html', MATCH));
+  if (!cached) return network;
+  const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 3000));
+  return Promise.race([network.catch(() => cached), slow]);
+}
+
+/* Built assets are content-hashed: a cached copy is always the right one, so a
+   Vary header (Vary: Origin from some servers) must not turn it into a miss. */
+const MATCH = { ignoreVary: true };
+async function fromCache(request) {
+  const hit = await caches.match(request, MATCH);
+  if (hit) return hit;
+  const response = await fetch(request);
+  if (response.ok) {
+    const cache = await caches.open(CACHE);
+    await cache.put(request, response.clone());
+  }
+  return response;
+}
 
 const windows = () => self.clients.matchAll({ type: 'window', includeUncontrolled: true });
 

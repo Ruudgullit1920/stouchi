@@ -1,12 +1,12 @@
 /* The rows an export needs, read from the server with the caller's JWT (plan
  * D3): the device only keeps 12 pay periods, the export can go further back.
  * It needs a connection and says so; any failed page fails the whole export. */
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Db } from './supabase';
 import type { ExportInput, ExportRange } from '../shared/exportCsv';
 
 export const EXPORT_PAGE = 1000;
 
-type Query = ReturnType<ReturnType<SupabaseClient['from']>['select']>;
+type Query = ReturnType<ReturnType<Db['from']>['select']>;
 
 /** Every row the query matches, one page at a time (stable order by id). */
 async function all<T>(build: () => Query): Promise<T[]> {
@@ -21,11 +21,7 @@ async function all<T>(build: () => Query): Promise<T[]> {
   }
 }
 
-export async function fetchExportRows(
-  client: SupabaseClient,
-  userId: string,
-  range: ExportRange,
-): Promise<ExportInput> {
+export async function fetchExportRows(client: Db, userId: string, range: ExportRange): Promise<ExportInput> {
   const mine = (table: string) => client.from(table).select('*').eq('user_id', userId);
   const dated = (table: string, col: string) => () => {
     const q = mine(table).lte(col, range.to);

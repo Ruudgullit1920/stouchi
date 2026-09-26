@@ -26,4 +26,11 @@ if (bad) {
   console.error(`build-notify: ${outfile} still imports ${[...new Set(bad)].join(', ')}`);
   process.exit(1);
 }
-console.log(`build-notify: ${outfile} (${(code.length / 1024).toFixed(1)} kB)`);
+/* 78 kB without zod; 824 kB the day aam/load's schemas leaked in (Phase 6 M11) */
+const MAX_KB = 200;
+const kb = code.length / 1024;
+if (kb > MAX_KB) {
+  console.error(`build-notify: ${outfile} is ${kb.toFixed(1)} kB, over ${MAX_KB} kB — something heavy got bundled`);
+  process.exit(1);
+}
+console.log(`build-notify: ${outfile} (${kb.toFixed(1)} kB)`);

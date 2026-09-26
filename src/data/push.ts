@@ -2,7 +2,7 @@
  * off, and what the service worker tells the page. The subscription row is
  * written with the user's own session (RLS lets them insert and delete their
  * rows); the notify-run function reads it with the service key. */
-import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Db } from './supabase';
 
 const DAY = 86_400_000;
 const LATER_KEY = 'stouchi:push-later';
@@ -91,7 +91,7 @@ export interface PushTable {
   remove(userId: string, endpoint: string): Promise<void>;
 }
 
-export function pushTable(client: SupabaseClient): PushTable {
+export function pushTable(client: Db): PushTable {
   return {
     async add(row) {
       const { error } = await client

@@ -1,7 +1,7 @@
 /* Phase 1 flows on a real backend (spec §8.6): log, edit, delete + undo,
  * search, month switch, and an offline log that syncs later. */
 import { expect, test, type Page } from '@playwright/test';
-import { blockingViolations, cleanUp, HAS_ACCOUNT, readMil, RUN, STORAGE_STATE } from './helpers';
+import { blockingViolations, cleanUp, HAS_ACCOUNT, logExpense, readMil, RUN, STORAGE_STATE } from './helpers';
 
 test.skip(!HAS_ACCOUNT, 'no test account in .env');
 test.use({ storageState: STORAGE_STATE });
@@ -24,17 +24,6 @@ async function settledReste(page: Page): Promise<number> {
     )
     .toBe(true);
   return last;
-}
-
-async function logExpense(page: Page, keys: string, label: string) {
-  await page.getByRole('button', { name: 'Ajouter une dépense' }).click();
-  await page.getByRole('button', { name: /Saisie manuelle/ }).click();
-  const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
-  for (const k of keys)
-    await sheet.getByRole('button', { name: k === ',' ? 'Virgule' : k, exact: true }).click();
-  await sheet.getByLabel('Note').fill(label);
-  await sheet.getByRole('button', { name: 'Enregistrer' }).click();
-  await expect(sheet).toBeHidden();
 }
 
 test.beforeEach(async ({ page }) => {

@@ -21,11 +21,16 @@
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run test:coverage",
     "backfill": "tsx scripts/backfill/cli.ts",
     "check:supabase": "tsx scripts/check-supabase.ts",
+    "check:size": "tsx scripts/check-size.ts",
     "eval": "tsx scripts/eval-aam-salah.js"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@preact/signals": "^2.11.2",
+    "@sentry/browser": "^11.0.0",
+    "@sentry/node": "^11.0.0",
+    "@supabase/auth-js": "^2.117.1",
+    "@supabase/postgrest-js": "^2.117.1",
     "@supabase/supabase-js": "^2.117.1",
     "idb": "^8.0.3",
     "lucide-preact": "^1.47.0",

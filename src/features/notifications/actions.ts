@@ -11,6 +11,7 @@ import type { LocalDb } from '../../data/localdb';
 import { markRead } from '../../data/notifications';
 import { createRepos, payBill, settleDebt } from '../../data/repos';
 import type { Store } from '../../data/store';
+import { potOf } from '../../shared/categories';
 import { addDays, payPeriod, todayTunis } from '../../shared/dates';
 import { t } from '../../shared/i18n/t';
 import { formatTnd } from '../../shared/money';
@@ -108,6 +109,15 @@ export async function runAction(
       const change = PartnerChange.safeParse(action.change);
       if (!change.success || e.user_id !== userId)
         return remember(ctx, row.id, t('notify.done.partner_invalid'));
+      /* no longer current: I stopped sharing, the row went private, or it was
+         edited after the request (both stamps are the server's) */
+      const home = store.household.value;
+      if (
+        home?.status !== 'on' ||
+        e.household_id !== home.household_id ||
+        Date.parse(e.updated_at) > Date.parse(row.created_at)
+      )
+        return remember(ctx, row.id, t('notify.done.partner_stale'));
       if (change.data.kind === 'delete') {
         await expenses.remove(e.id);
         showToast({
@@ -117,7 +127,12 @@ export async function runAction(
         return remember(ctx, row.id, t('notify.done.partner_deleted'));
       }
       try {
-        await expenses.update(e.id, change.data.fields);
+        const { fields } = change.data;
+        /* a new category without a pot takes its category's pot, as in the chat */
+        await expenses.update(
+          e.id,
+          fields.category && !fields.pot ? { ...fields, pot: potOf(fields.category) } : fields,
+        );
       } catch {
         return remember(ctx, row.id, t('notify.done.partner_invalid'));
       }

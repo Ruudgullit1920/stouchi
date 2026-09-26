@@ -11,6 +11,7 @@ import {
   type OutboxEntry,
 } from '../../../src/data/outbox';
 import { RemoteError } from '../../../src/data/remote';
+import { setSyncFailureReporter } from '../../../src/data/report';
 import { writeRow } from '../../../src/data/write';
 import { expense, goal, move, USER, uuidN } from '../fixtures';
 import { FakeRemote } from './fakeRemote';
@@ -115,6 +116,16 @@ describe('outbox', () => {
     await discard(db, again.failed[0].key);
     expect(await pendingFor(db, USER)).toHaveLength(0);
     expect(await db.get('expenses', again.failed[0].row.id as string)).toBeUndefined();
+  });
+
+  it('reports a refused write for the error tracker: its table, kind and code, nothing of the row', async () => {
+    const seen: unknown[] = [];
+    setSyncFailureReporter((f) => seen.push(f));
+    await writeRow(db, USER, 'expenses', expense({ label: 'Carrefour', amount_mil: 45_000 }));
+    remote.failNext('invalid', 1, '23514');
+    await flush(db, remote, USER);
+    setSyncFailureReporter(() => {});
+    expect(seen).toEqual([{ table: 'expenses', kind: 'invalid', code: '23514' }]);
   });
 
   it('pauses on an expired session without dropping anything', async () => {

@@ -19,6 +19,10 @@ jobs:
       - name: Types, lint, format, unit + db + component tests (coverage ≥ 90 % on src/shared)
         run: npm run check
       - run: npm run build
+      - name: First-load JS ≤ 150 kB gzipped (spec §8.4)
+        run: npm run check:size
+      - name: notify-run bundle builds, under its 200 kB cap
+        run: npm run build:notify
       - name: Runtime dependencies have no high or critical advisories
         run: npm audit --omit=dev --audit-level=high
 

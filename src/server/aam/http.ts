@@ -75,6 +75,8 @@ export async function serveAam(
   req: AamRequest,
   env: Record<string, string | undefined>,
   pipeline: Pick<TurnDeps, 'handleAam' | 'safe'>,
+  /** the error tracker (src/server/monitoring); never changes the answer */
+  report: (error: unknown) => Promise<void> = () => Promise.resolve(),
 ): Promise<TurnResult> {
   const started = Date.now();
   const recordResponse = (status: number) => {
@@ -89,6 +91,7 @@ export async function serveAam(
   if (!deps) {
     logEvent(env, 'error', '[aam] SUPABASE_URL / SUPABASE_ANON_KEY are not set');
     recordResponse(503);
+    await report(new Error('aam: SUPABASE_URL / SUPABASE_ANON_KEY are not set'));
     await flushTelemetry(env);
     return { status: 503, body: { error: t('aam.error.down') } };
   }
@@ -102,6 +105,7 @@ export async function serveAam(
       detail: e instanceof Error ? (e.stack ?? e.message) : String(e),
     });
     recordResponse(500);
+    await report(e);
     await flushTelemetry(env);
     return { status: 500, body: { error: t('aam.error.down') } };
   }

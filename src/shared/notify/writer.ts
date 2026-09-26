@@ -14,11 +14,7 @@ export interface AiCallContext {
   traceId: string;
 }
 
-export type CallModel = (
-  prompt: string,
-  signal: AbortSignal,
-  context?: AiCallContext,
-) => Promise<string>;
+export type CallModel = (prompt: string, signal: AbortSignal, context?: AiCallContext) => Promise<string>;
 
 const TIMEOUT_MS = 6_000;
 const TITLE_MAX = 40;

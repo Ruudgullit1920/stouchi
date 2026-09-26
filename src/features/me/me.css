@@ -488,6 +488,17 @@
   overflow: hidden;
   transition: flex 0.18s var(--ease);
 }
+/* White 15px text needs 4.5:1 (WCAG AA): the pot colours give 2.7–4.2:1, their
+   ink shades 5–6:1 (Phase 7 accessibility sweep) */
+.split-ed .seg.bg-needs {
+  background: var(--need-ink);
+}
+.split-ed .seg.bg-wants {
+  background: var(--want-ink);
+}
+.split-ed .seg.bg-savings {
+  background: var(--save-ink);
+}
 .split-ed .seg:nth-child(1) {
   border-radius: 18px 0 0 18px;
 }

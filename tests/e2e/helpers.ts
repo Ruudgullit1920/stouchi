@@ -4,7 +4,7 @@
  * TEST_USER_EMAIL and TEST_USER_PASSWORD in .env; without them the core specs skip. */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import AxeBuilder from '@axe-core/playwright';
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 export const HAS_ACCOUNT = Boolean(
   process.env.VITE_SUPABASE_URL &&
@@ -149,4 +149,16 @@ export function readMil(text: string): number {
     .split(',');
   const sign = whole.startsWith('-') ? -1 : 1;
   return sign * (Math.abs(Number(whole)) * 1000 + Number(dec.padEnd(3, '0')));
+}
+
+/** Logs an expense by keypad from Budget: the keys, then the note. */
+export async function logExpense(page: Page, keys: string, label: string) {
+  await page.getByRole('button', { name: 'Ajouter une dépense' }).click();
+  await page.getByRole('button', { name: /Saisie manuelle/ }).click();
+  const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
+  for (const k of keys)
+    await sheet.getByRole('button', { name: k === ',' ? 'Virgule' : k, exact: true }).click();
+  await sheet.getByLabel('Note').fill(label);
+  await sheet.getByRole('button', { name: 'Enregistrer' }).click();
+  await expect(sheet).toBeHidden();
 }
