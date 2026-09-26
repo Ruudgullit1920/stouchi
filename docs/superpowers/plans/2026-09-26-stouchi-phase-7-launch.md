@@ -258,6 +258,18 @@ Run `npm run check` before every commit and `npm run e2e` at the end of Sessions
 - **Finding for the user (sync loop, not fixed):** after a reconnect, if the first round fails (the network isn't usable yet), nothing retries until the 60 s interval. `postgrest-js`'s own 1/2/4 s GET retry partly hides this. `core.spec:93` on iPhone 13 is flaky because of it (old client 1/5, new client 6/9). The proposed fix: after a round that failed on the network while `navigator.onLine`, retry in ~2 s (`src/data/sync.ts`).
 - **Next:** Tasks 4 and 5, in a fresh session.
 
+### Session A progress (Task 4)
+
+- **`tests/e2e/a11y.spec.ts`:** 29/29 on iPhone 13 and Pixel 7. It covers every screen and sub-screen, Historique search, and the add and chat sheets. The onboarding steps and login are already in `onboarding.spec.ts`.
+- **Fixed:** the split editor's segments had white 15px text on the pot colours (2.7–4.2:1). They now use the colours' `-ink` shades (5–6:1).
+- **Lighthouse** (2026-09-26, mobile with 4G throttling, `vite preview`, signed out):
+  - performance score 98;
+  - FCP 1.8 s;
+  - LCP 2.2 s (budget 2.5 s);
+  - TBT 30 ms;
+  - CLS 0;
+  - Speed Index 1.8 s.
+
 ---
 
 ## Session B — getting ready to cut over
