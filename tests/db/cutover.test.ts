@@ -189,6 +189,11 @@ describe('validate_constraints.sql', () => {
       );
     expect(out.expenses.some((e) => e.household_id)).toBe(true);
     for (const e of out.expenses) await insertAsOwner('expenses', { ...e, user_id: e.user_id });
+    /* the backfill writes no incomes: give the incomes check rows of both kinds */
+    const income = { user_id: ALICE, amount_mil: 5_000, received_on: today };
+    await insertAsOwner('incomes', { ...income, household_id: HH, pot: 'needs', label: 'Remboursement' });
+    await insertAsOwner('incomes', { ...income, pot: 'wants', label: 'Prime' });
+    expect(await asOwner('select count(*)::int as n from public.incomes')).toEqual([{ n: 2 }]);
     await cutover('validate_constraints');
     expect(await validated()).toEqual({ expenses_shared_needs_only: true, incomes_shared_needs_only: true });
   });
@@ -240,6 +245,18 @@ describe('archive_legacy.sql (day +14)', () => {
       /^STC-/,
     );
     expect(await asOwner(`select nspname from pg_namespace where nspname = 'cutover'`)).toEqual([]);
+  });
+
+  it('takes household_shared_data out of realtime, and drops every overload of a legacy function', async () => {
+    await asOwner(`create function public.join_household(p_code text) returns void language sql as 'select'`);
+    await cutover('archive_legacy');
+    expect(
+      await asOwner(
+        `select tablename from pg_publication_tables
+          where pubname = 'supabase_realtime' and tablename = 'household_shared_data'`,
+      ),
+    ).toEqual([]);
+    expect(await asOwner(`select 1 from pg_proc where proname = 'join_household'`)).toEqual([]);
   });
 
   it('still lets an account holding legacy rows delete itself', async () => {

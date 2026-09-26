@@ -22,6 +22,15 @@ drop schema if exists cutover cascade;
 drop trigger if exists budget_data_touch on public.budget_data;
 drop function if exists public.touch_budget_data();
 
+/* the legacy app's realtime channel on the shared row: nobody listens any more */
+do $$
+begin
+  if exists (select 1 from pg_publication_tables
+              where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'household_shared_data') then
+    alter publication supabase_realtime drop table public.household_shared_data;
+  end if;
+end $$;
+
 alter table public.budget_data set schema archive;
 alter table public.household_shared_data set schema archive;
 revoke all on archive.budget_data, archive.household_shared_data from public, anon, authenticated;
@@ -31,13 +40,22 @@ alter table archive.household_shared_data
   add constraint household_shared_data_updated_by_fkey
     foreign key (updated_by) references auth.users(id) on delete set null;
 
-drop function public.create_household(text, jsonb);
-drop function public.join_household(text, text, jsonb);
-drop function public.merge_household_data(jsonb);
-drop function public.set_household_display_name(text);
-drop function public.get_household();
-drop function public.hh_state_for(uuid);
-drop function public.hh_merge_data(jsonb, jsonb, boolean);
+/* by name, so an overload made by hand on production goes too */
+do $$
+declare
+  f regprocedure;
+begin
+  for f in
+    select p.oid::regprocedure from pg_catalog.pg_proc p
+     where p.pronamespace = 'public'::regnamespace
+       and p.proname = any (array[
+         'create_household', 'join_household', 'merge_household_data', 'set_household_display_name',
+         'get_household', 'hh_state_for', 'hh_merge_data'
+       ])
+  loop
+    execute format('drop function %s', f);
+  end loop;
+end $$;
 
 /* 20260929_phase6_couple.sql's version, minus the household_shared_data line */
 create or replace function public.delete_my_account()
