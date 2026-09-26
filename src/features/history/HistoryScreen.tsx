@@ -19,6 +19,7 @@ import { monthName } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { groupByDay, historyLine, periodTotals, potBreakdown, titleOf } from '../../shared/ledger';
 import { formatTnd, splitSalary } from '../../shared/money';
+import { planFor } from '../../shared/plan';
 import { searchExpenses } from '../../shared/search';
 import type { Expense } from '../../shared/schemas';
 import '../pot/pot.css';
@@ -128,14 +129,21 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
 
   const inPeriod = expenses.filter((e) => e.deleted_at === null && isInPeriod(e.spent_on, period));
   const total = totals[index].needs + totals[index].wants;
-  const own = splitSalary(profile.salary_mil, {
-    needs: profile.split_needs,
-    wants: profile.split_wants,
-    savings: profile.split_savings,
-  });
+  const current = index === periods.length - 1;
+  /* the plan in force for that period, as on Budget */
+  const plan = planFor(profile, period);
+  const own = splitSalary(plan.salary_mil, plan.split);
   /* Tout shows the household's Besoins, so it is set against the household's
-     budget, as on Budget (plan D2); Moi against my own */
-  const budgets = paired && !mine ? { ...own, needs: own.needs + couple.partner.needs_mil } : own;
+     budget, as on Budget (plan D2); Moi against my own. A period from before
+     the pairing holds no shared row (the join shares only the current one),
+     so it keeps my own budget. */
+  const sharedPeriod =
+    paired &&
+    (current ||
+      store.expenses.value.some(
+        (e) => e.household_id === couple.household_id && isInPeriod(e.spent_on, period),
+      ));
+  const budgets = sharedPeriod && !mine ? { ...own, needs: own.needs + couple.partner.needs_mil } : own;
   /* my own deposits (plan D2), whichever filter */
   const saved = store.savingsMoves.value
     .filter((m) => m.user_id === profile.user_id && isInPeriod(m.occurred_on, period))
@@ -147,7 +155,6 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
   const active = cat && cats.some((c) => c.key === cat) ? cat : null;
   const shown = inPeriod.filter((e) => !active || e.category === active);
   const line = historyLine(expenses, period, previous);
-  const current = index === periods.length - 1;
 
   return (
     <>

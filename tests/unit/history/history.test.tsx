@@ -194,6 +194,35 @@ describe('HistoryScreen — couple mode', () => {
       expect(card('Besoins')).not.toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
     });
 
+    it('a period before the pairing (no shared row) keeps my own budget in Tout (review I1)', () => {
+      render(<HistoryScreen store={store} />);
+      fireEvent.click(screen.getByRole('option', { name: /^Août 2026/ }));
+      expect(card('Besoins')).toContain(formatTnd(myNeeds(), { unit: false }));
+    });
+
+    it('a past period holding a shared row counts as the household’s', () => {
+      store.expenses.value = [
+        ...store.expenses.value,
+        expense({ user_id: PARTNER, household_id: HOUSEHOLD, amount_mil: 20_000, spent_on: '2026-08-20' }),
+      ];
+      render(<HistoryScreen store={store} />);
+      fireEvent.click(screen.getByRole('option', { name: /^Août 2026/ }));
+      expect(card('Besoins')).toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
+    });
+
+    it('uses the plan in force for the period, like Budget (review m2)', () => {
+      store.household.value = SOLO;
+      store.profile.value = profile({
+        next_salary_mil: 3_000_000,
+        next_split_needs: 50,
+        next_split_wants: 30,
+        next_split_savings: 20,
+        next_from: '2026-09-01',
+      });
+      render(<HistoryScreen store={store} />);
+      expect(card('Besoins')).toContain(formatTnd(1_500_000, { unit: false }));
+    });
+
     it('Épargne counts my deposits only, in Tout and in Moi', () => {
       render(<HistoryScreen store={store} />);
       expect(card('Épargne')).toContain(formatTnd(100_000, { unit: false }));
