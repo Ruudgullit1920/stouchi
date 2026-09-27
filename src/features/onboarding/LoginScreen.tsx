@@ -1,10 +1,13 @@
-/* Login and sign-up on one screen, ported from prototype #f-login (spec §4.2). */
-import { ArrowRight, AtSign, Eye, EyeOff, ShieldCheck, Wallet } from 'lucide-preact';
+/* Login and sign-up on one screen (spec §4.2), Onboarding v2 look
+ * (prototype/onboarding-v2.html, 04 Connexion): Google first, then the e-mail. */
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from 'lucide-preact';
 import { useState } from 'preact/hooks';
 import { signIn, signInWithGoogle, signUp, validateCredentials } from '../../data/auth';
+import { Icon3D, i3dFile } from '../../design/i3d';
 import { t, type StringKey } from '../../shared/i18n/t';
-import { Blob, Illo, Orb, Paths } from './Illo';
+import { Stage, Title } from './Scene';
 import './onboarding.css';
+import './onb.css';
 
 export interface AuthApi {
   signIn: typeof signIn;
@@ -47,24 +50,33 @@ export function LoginScreen({ onSignedIn, api = LIVE }: { onSignedIn: () => void
     else onSignedIn();
   }
 
-  /* the label is keyed on the refusal count, so each refusal remounts it and replays the shake */
-  const fieldClass = (f: Field) => (problem?.field === f ? 'uline bad shake' : 'uline');
+  /* the field is keyed on the refusal count, so each refusal remounts it and replays the shake */
+  const fieldClass = (f: Field) => (problem?.field === f ? 'field bad shake' : 'field');
   const invalid = (f: Field) => (problem?.field === f ? 'true' : undefined);
 
   return (
-    <main class="flow login">
-      <Illo wide>
-        <Blob x={40} y={40} w={140} h={120} color="#FFE1D8" />
-        <Paths viewBox="0 0 390 200" d={['M-10 150 C 60 90, 120 190, 200 120 S 330 50, 400 90']} stretch />
-        <Orb x={78} y={84} size="md" icon={ShieldCheck} color="var(--need)" delay={0} />
-        <Orb x={262} y={34} size="sm" icon={Wallet} color="var(--acc)" delay={2} />
-      </Illo>
-      <div class="login-body">
-        <span class="wordmark">
-          stouchi
-          <i />
-        </span>
-        <h1>{t(signup ? 'signup.title' : 'login.title')}</h1>
+    <main class="onb login play">
+      <Stage h={HUB_H}>
+        <div class="hub">
+          <div class="orbit">
+            {ORBIT.map(([icon, left, top]) => (
+              <span key={icon} class="o" style={{ left, top }}>
+                <Icon3D src={i3dFile(icon)} />
+              </span>
+            ))}
+          </div>
+          <div class="tile pop" style={{ '--d': '.1s' }}>
+            <span>
+              s<b />
+            </span>
+          </div>
+          <span class="wave">
+            <Icon3D src={i3dFile('waving_hand')} />
+          </span>
+        </div>
+      </Stage>
+      <div class="onb-sheet">
+        <Title text={t(signup ? 'signup.title' : 'login.title')} />
         {checkMail ? (
           <div class="checkmail" role="status">
             <h2>{t('signup.checkMail.title')}</h2>
@@ -81,39 +93,44 @@ export function LoginScreen({ onSignedIn, api = LIVE }: { onSignedIn: () => void
             </button>
           </div>
         ) : (
-          <form class="login-body" noValidate onSubmit={(e) => void submit(e)}>
-            <p class="login-sub">{t(signup ? 'signup.sub' : 'login.sub')}</p>
-            <label class={fieldClass('email')} key={`e${problem?.field === 'email' ? problem.n : 0}`}>
-              <span>{t('login.email')}</span>
-              <div>
+          <>
+            <p>{t(signup ? 'signup.sub' : 'login.sub')}</p>
+            <button type="button" class="gbtn" onClick={() => void api.signInWithGoogle()}>
+              <GoogleMark />
+              {t('login.google')}
+            </button>
+            <div class="or">{t('login.or')}</div>
+            <form noValidate onSubmit={(e) => void submit(e)}>
+              <label class={fieldClass('email')} key={`e${problem?.field === 'email' ? problem.n : 0}`}>
+                <Mail aria-hidden="true" />
                 <input
                   type="email"
                   autocomplete="email"
                   inputMode="email"
                   placeholder="toi@exemple.tn"
                   value={email}
+                  aria-label={t('login.email')}
                   aria-invalid={invalid('email')}
                   aria-describedby="l-err"
                   onInput={(e) => setEmail(e.currentTarget.value)}
                 />
-                <AtSign aria-hidden="true" />
-              </div>
-            </label>
-            <div class={fieldClass('password')} key={`p${problem?.field === 'password' ? problem.n : 0}`}>
-              <label for="l-pass">{t('login.password')}</label>
-              <div>
+              </label>
+              <div class={fieldClass('password')} key={`p${problem?.field === 'password' ? problem.n : 0}`}>
+                <Lock aria-hidden="true" />
                 <input
                   id="l-pass"
                   type={shown ? 'text' : 'password'}
                   autocomplete={signup ? 'new-password' : 'current-password'}
-                  placeholder="••••••••"
+                  placeholder={t('login.password')}
                   value={password}
+                  aria-label={t('login.password')}
                   aria-invalid={invalid('password')}
                   aria-describedby="l-err"
                   onInput={(e) => setPassword(e.currentTarget.value)}
                 />
                 <button
                   type="button"
+                  class="eye"
                   aria-label={t('login.showPassword')}
                   aria-pressed={shown}
                   onClick={() => setShown(!shown)}
@@ -121,48 +138,43 @@ export function LoginScreen({ onSignedIn, api = LIVE }: { onSignedIn: () => void
                   {shown ? <EyeOff aria-hidden="true" /> : <Eye aria-hidden="true" />}
                 </button>
               </div>
-            </div>
-            <div class="l-err" id="l-err" role="alert">
-              {problem ? t(problem.key) : ''}
-            </div>
-            <div class="login-go">
-              <button
-                type="submit"
-                class="roundbtn"
-                aria-label={t(signup ? 'signup.go' : 'login.go')}
-                aria-busy={busy}
-                disabled={busy}
-              >
-                {busy ? <span class="spin" /> : <ArrowRight aria-hidden="true" />}
+              <div class="l-err" id="l-err" role="alert">
+                {problem ? t(problem.key) : ''}
+              </div>
+              <button type="submit" class="cta" aria-busy={busy} disabled={busy}>
+                {busy ? <span class="spin" /> : t(signup ? 'signup.go' : 'login.go')}
+                {!busy && <ArrowRight aria-hidden="true" />}
               </button>
-              <p>
-                {t(signup ? 'signup.hasAccount' : 'login.noAccount')}
-                <br />
-                <button
-                  type="button"
-                  class="link-acc"
-                  onClick={() => {
-                    setMode(signup ? 'signin' : 'signup');
-                    setProblem(null);
-                  }}
-                >
-                  {t(signup ? 'signup.toLogin' : 'login.toSignup')}
-                </button>
-              </p>
-            </div>
-          </form>
+            </form>
+            <p class="foot">
+              {t(signup ? 'signup.hasAccount' : 'login.noAccount')}{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setMode(signup ? 'signin' : 'signup');
+                  setProblem(null);
+                }}
+              >
+                {t(signup ? 'signup.toLogin' : 'login.toSignup')}
+              </button>
+            </p>
+          </>
         )}
-        <div class="or">
-          <span>{t('login.or')}</span>
-        </div>
-        <button type="button" class="gbtn" onClick={() => void api.signInWithGoogle()}>
-          <GoogleMark />
-          {t('login.google')}
-        </button>
       </div>
     </main>
   );
 }
+
+/* the hub's height on the 322-wide stage: the orbit, and the waving hand above it */
+const HUB_H = 280;
+/* five category icons around the logo, at the prototype's angles */
+const ORBIT: [string, string, string][] = [
+  ['house', '50%', '0'],
+  ['sparkles', '97.5%', '34.5%'],
+  ['money_bag', '79.4%', '90.5%'],
+  ['hot_beverage', '20.6%', '90.5%'],
+  ['shopping_cart', '2.5%', '34.5%'],
+];
 
 /** Google's own mark (its brand rules ask for it on the button). */
 function GoogleMark() {

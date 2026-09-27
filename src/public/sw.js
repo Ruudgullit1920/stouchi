@@ -71,8 +71,7 @@ self.addEventListener('fetch', (event) => {
 async function page(request) {
   const network = fetch(request);
   /* this version's shell first: caches.match would find the older one first */
-  const cached =
-    (await (await caches.open(CACHE)).match(SHELL, MATCH)) || (await caches.match(SHELL, MATCH));
+  const cached = (await (await caches.open(CACHE)).match(SHELL, MATCH)) || (await caches.match(SHELL, MATCH));
   if (!cached) return network;
   const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 3000));
   return Promise.race([network.catch(() => cached), slow]);

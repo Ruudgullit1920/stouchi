@@ -24,10 +24,10 @@ test.describe('signed out', () => {
 
   test('intro → Passer → login', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('réparti tout seul');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('C’est noté');
     await noViolations(page);
     await page.getByRole('button', { name: 'Passer' }).click();
-    await expect(page.getByRole('heading', { level: 1, name: 'Connexion' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /enfin tranquille/ })).toBeVisible();
     await noViolations(page);
   });
 

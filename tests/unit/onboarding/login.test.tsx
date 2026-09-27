@@ -25,7 +25,7 @@ describe('LoginScreen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Se connecter' }));
     expect(screen.getByRole('alert').textContent).toBe('Cette adresse e-mail ne semble pas complète.');
     expect(screen.getByLabelText('Adresse e-mail').getAttribute('aria-invalid')).toBe('true');
-    expect(screen.getByLabelText('Adresse e-mail').closest('.uline')?.classList.contains('bad')).toBe(true);
+    expect(screen.getByLabelText('Adresse e-mail').closest('.field')?.classList.contains('bad')).toBe(true);
     expect(a.signIn).not.toHaveBeenCalled();
   });
 

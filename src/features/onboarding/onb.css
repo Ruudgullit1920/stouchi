@@ -1,0 +1,1172 @@
+/* Onboarding v2 (prototype/onboarding-v2.html): the intro slides and the login.
+   Each screen is a small animated scene on a 322 × 400 stage (Scene.tsx) above
+   a frosted sheet. Every rule sits under .onb and keyframes carry an ob- prefix:
+   this file stays loaded after the login, and class names are global.
+   Contrast (§5.6): white text never sits on --acc, small coloured text uses the
+   *-ink shades. */
+.onb {
+  --acc2: #ff9a5b;
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+}
+.onb .wordmark {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.onb .wordmark i {
+  display: inline-block;
+  width: 0.22em;
+  height: 0.22em;
+  margin-left: 0.08em;
+  border-radius: 50%;
+  background: var(--acc);
+}
+.onb .onb-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: calc(env(safe-area-inset-top) + 8px) 20px 0;
+}
+/* progress segments: 4 px bars inside 44 px tabs */
+.onb .seg {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+.onb .seg button {
+  flex: 1;
+  height: 44px;
+  display: grid;
+  align-items: center;
+}
+.onb .seg i {
+  position: relative;
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: #0e0f1214;
+  overflow: hidden;
+}
+.onb .seg i.done::after,
+.onb .seg i.cur::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  border-radius: 2px;
+  transform-origin: left;
+}
+.onb .seg i.cur::after {
+  animation: ob-fill 7s linear both;
+}
+.onb .skip {
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.onb.intro .slides {
+  display: flex;
+  width: 300%;
+  height: 100%;
+  transition: transform 0.55s var(--ease);
+  touch-action: pan-y;
+}
+.onb.intro .slide {
+  width: calc(100% / 3);
+  display: flex;
+  flex-direction: column;
+  background: var(--mesh);
+  padding: calc(env(safe-area-inset-top) + 52px) 0 calc(env(safe-area-inset-bottom) + 10px);
+}
+.onb .onb-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+.onb .onb-scene {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+.onb .onb-sheet {
+  position: relative;
+  margin: 0 10px;
+  padding: 22px 20px 16px;
+  border-radius: 30px;
+  text-align: center;
+  background: #ffffffd9;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -12px #1b1f3a26;
+}
+.onb .onb-sheet h1 {
+  font-size: 26px;
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.onb .onb-sheet h1 em {
+  font-style: normal;
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.onb .onb-sheet p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--mut);
+  margin: 10px auto 0;
+  max-width: 260px;
+}
+.onb .cta {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 54px;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.15s var(--ease);
+}
+.onb .cta:active {
+  transform: scale(0.97);
+}
+.onb .cta:disabled {
+  opacity: 0.7;
+}
+.onb .cta svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s var(--ease);
+}
+.onb .cta:hover svg {
+  transform: translateX(3px);
+}
+.onb .cta::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  background: linear-gradient(100deg, transparent, #ffffff2e, transparent);
+  animation: ob-shimmer 3.2s 1.5s ease-in-out infinite;
+}
+
+/* shared bits */
+.onb .i3d {
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 8px #1b1f3a26);
+}
+.onb .float {
+  position: absolute;
+  animation: ob-bob 4.5s ease-in-out infinite;
+}
+.onb .float .i3d {
+  width: 100%;
+  height: 100%;
+}
+.onb .spark {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  animation: ob-twinkle 2.6s ease-in-out infinite;
+}
+.onb .spark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sc, #fff);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+}
+.onb .glass {
+  background: #ffffffe6;
+  border-radius: 22px;
+  box-shadow:
+    0 18px 40px -18px #1b1f3a40,
+    0 0 0 1px #ffffffaa inset;
+}
+/* entrances wait for .play (the current slide), each with its own delay */
+.onb .in {
+  opacity: 0;
+}
+.onb.play .in,
+.onb .play .in {
+  animation: ob-up 0.6s var(--ease) both;
+  animation-delay: var(--d, 0s);
+}
+.onb.play .pop,
+.onb .play .pop {
+  animation: ob-pop 0.55s var(--spring) both;
+  animation-delay: var(--d, 0s);
+}
+
+/* 1 · Noter */
+.onb .s1 {
+  --mesh:
+    radial-gradient(90% 55% at 15% 8%, #ffd6c2 0, transparent 70%),
+    radial-gradient(70% 45% at 95% 30%, #ffe8d2 0, transparent 70%), linear-gradient(#fff5ee, #ffffff 78%);
+  --grad: linear-gradient(90deg, var(--acc), var(--acc2));
+}
+.onb .chat {
+  position: absolute;
+  left: 36px;
+  right: 36px;
+  top: 40px;
+  padding: 14px;
+  text-align: left;
+}
+.onb .s1 .float {
+  z-index: 2;
+}
+.onb .chat-h {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.onb .chat-h .av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--acc-soft);
+  display: grid;
+  place-items: center;
+}
+.onb .chat-h .av .i3d {
+  width: 26px;
+  height: 26px;
+}
+.onb .chat-h b {
+  font-size: 14px;
+  display: block;
+}
+.onb .chat-h small {
+  font-size: 11.5px;
+  color: var(--save-ink);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.onb .chat-h small::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--save);
+}
+.onb .msg {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.onb .bub {
+  padding: 9px 14px;
+  border-radius: 18px 18px 6px 18px;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  transform-origin: right bottom;
+}
+.onb .typing {
+  display: flex;
+  gap: 4px;
+  width: 52px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border-radius: 18px 18px 18px 6px;
+  background: var(--bg);
+  opacity: 0;
+}
+.onb .typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b7bbc4;
+  animation: ob-dot 1s ease-in-out infinite;
+}
+.onb .typing i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.onb .typing i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.onb.play .typing,
+.onb .play .typing {
+  animation: ob-blink 1.1s 0.8s both;
+}
+.onb .rc {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  margin-top: -30px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #f7f8fa;
+  transform-origin: left top;
+  opacity: 0;
+}
+.onb .rc .t {
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  background: var(--need-soft);
+  display: grid;
+  place-items: center;
+}
+.onb .rc .t .i3d {
+  width: 28px;
+  height: 28px;
+}
+.onb .rc b {
+  font-size: 14px;
+  display: block;
+}
+.onb .rc span span {
+  font-size: 12px;
+  color: var(--mut);
+}
+.onb .rc .amt {
+  font-size: 15px;
+  font-weight: 800;
+}
+.onb .ok {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.onb .ok .yes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--save-ink);
+}
+.onb .ok .yes svg {
+  width: 18px;
+  height: 18px;
+}
+.onb .ok .yes path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+}
+.onb.play .ok .yes path,
+.onb .play .ok .yes path {
+  animation: ob-draw 0.4s 2.3s var(--ease) forwards;
+}
+.onb .ok .undo {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--ink2);
+}
+.onb .mic {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: max-content;
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 6px 6px;
+  border-radius: 999px;
+  background: #ffffffcc;
+  backdrop-filter: blur(8px);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink2);
+  box-shadow: 0 8px 20px -10px #1b1f3a33;
+  white-space: nowrap;
+}
+.onb .mic .m {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  display: grid;
+  place-items: center;
+  animation: ob-ring 1.8s ease-out infinite;
+}
+.onb .mic .m svg {
+  width: 18px;
+  height: 18px;
+  color: #fff;
+}
+
+/* 2 · Répartir */
+.onb .s2 {
+  --mesh:
+    radial-gradient(90% 55% at 85% 5%, #e3d9ff 0, transparent 70%),
+    radial-gradient(70% 50% at 5% 35%, #dce7ff 0, transparent 70%), linear-gradient(#f6f3ff, #ffffff 78%);
+  --grad: linear-gradient(90deg, var(--want), var(--need));
+}
+.onb .pay {
+  position: absolute;
+  left: 50%;
+  top: 34px;
+  width: 210px;
+  margin-left: -105px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+.onb .pay .i3d {
+  width: 44px;
+  height: 44px;
+}
+.onb .pay small {
+  font-size: 11.5px;
+  color: var(--mut);
+  font-weight: 600;
+  display: block;
+}
+.onb .pay b {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.onb .pay b em {
+  font-style: normal;
+  font-size: 13px;
+  color: var(--mut);
+  font-weight: 700;
+  margin-left: 4px;
+}
+.onb .wires {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.onb .wires path {
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 6 7;
+  opacity: 0.55;
+}
+.onb .wires .flow {
+  stroke-width: 3.5;
+  stroke-dasharray: 0 200;
+  opacity: 0;
+}
+.onb.play .wires .flow,
+.onb .play .wires .flow {
+  animation: ob-travel 1.1s var(--d) ease-in forwards;
+}
+.onb .pots3 {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 212px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.onb .pt {
+  padding: 12px 6px;
+  text-align: center;
+  border-radius: 20px;
+}
+.onb .pt--needs {
+  --c: var(--need-ink);
+  --soft: var(--need-soft);
+}
+.onb .pt--wants {
+  --c: var(--want-ink);
+  --soft: var(--want-soft);
+}
+.onb .pt--savings {
+  --c: var(--save-ink);
+  --soft: var(--save-soft);
+}
+.onb .pt .ic {
+  width: 46px;
+  height: 46px;
+  margin: 0 auto;
+  border-radius: 15px;
+  display: grid;
+  place-items: center;
+  background: var(--soft);
+}
+.onb .pt .ic .i3d {
+  width: 32px;
+  height: 32px;
+}
+.onb .pt .pc {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin-top: 8px;
+  color: var(--c);
+}
+.onb .pt .nm {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.onb .pt .am {
+  display: block;
+  font-size: 11.5px;
+  color: var(--mut);
+  font-weight: 600;
+  margin-top: 2px;
+}
+.onb .auto {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: max-content;
+  top: 360px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #ffffffcc;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+  white-space: nowrap;
+  box-shadow: 0 6px 16px -10px #1b1f3a40;
+}
+.onb .auto svg {
+  width: 14px;
+  height: 14px;
+  color: var(--want);
+  animation: ob-spin 3s linear infinite;
+}
+
+/* 3 · Suivre */
+.onb .s3 {
+  --mesh:
+    radial-gradient(90% 55% at 12% 6%, #cdf3e1 0, transparent 70%),
+    radial-gradient(70% 50% at 95% 35%, #ddebff 0, transparent 70%), linear-gradient(#f1fbf6, #ffffff 78%);
+  --grad: linear-gradient(90deg, var(--save), #1ba3c6);
+}
+.onb .today {
+  position: absolute;
+  left: 24px;
+  right: 40px;
+  top: 40px;
+  padding: 16px 18px 18px;
+  text-align: left;
+}
+.onb .today .h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--mut);
+}
+.onb .today .h .i3d {
+  width: 22px;
+  height: 22px;
+}
+.onb .today .big {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 6px;
+}
+.onb .today .big b {
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.onb .today .big span {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--mut);
+}
+.onb .today .bar {
+  height: 8px;
+  border-radius: 999px;
+  background: #eef0f3;
+  margin-top: 14px;
+  overflow: hidden;
+}
+.onb .today .bar i {
+  display: block;
+  height: 100%;
+  width: 62%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--save), #3ddc97);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+.onb.play .today .bar i,
+.onb .play .today .bar i {
+  animation: ob-grow 1s 0.5s var(--ease) forwards;
+}
+.onb .today .f {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mut);
+}
+.onb .goal {
+  position: absolute;
+  right: 22px;
+  left: 70px;
+  top: 222px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+.onb .ringw {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  flex: none;
+}
+.onb .ringw svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.onb .ringw circle {
+  fill: none;
+  stroke-width: 6;
+}
+.onb .ringw .bg {
+  stroke: var(--save-soft);
+}
+.onb .ringw .fg {
+  stroke: var(--save);
+  stroke-linecap: round;
+  stroke-dasharray: 163;
+  stroke-dashoffset: 163;
+}
+.onb.play .ringw .fg,
+.onb .play .ringw .fg {
+  animation: ob-ring24 1.2s 1.1s var(--ease) forwards;
+}
+.onb .ringw .i3d {
+  position: absolute;
+  inset: 14px;
+  width: 34px;
+  height: 34px;
+}
+.onb .goal b {
+  font-size: 15px;
+  display: block;
+}
+.onb .goal small {
+  font-size: 12px;
+  color: var(--mut);
+  font-weight: 600;
+}
+.onb .goal .plus {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--save-soft);
+  color: var(--save-ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+.onb.play .goal,
+.onb .play .goal {
+  animation:
+    ob-up 0.6s 0.9s var(--ease) both,
+    ob-bump 0.4s 2.35s var(--spring);
+}
+.onb .coin {
+  position: absolute;
+  left: 112px;
+  top: 120px;
+  width: 34px;
+  height: 34px;
+  opacity: 0;
+}
+.onb .coin .i3d {
+  width: 100%;
+  height: 100%;
+}
+.onb.play .coin,
+.onb .play .coin {
+  animation: ob-drop 0.9s 1.5s cubic-bezier(0.5, 0, 0.75, 0) both;
+}
+.onb .streak {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: max-content;
+  top: 340px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 8px;
+  border-radius: 999px;
+  background: #ffffffd9;
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 8px 20px -10px #1b1f3a40;
+}
+.onb .streak .i3d {
+  width: 24px;
+  height: 24px;
+}
+
+/* 4 · Connexion */
+.onb.login {
+  --mesh:
+    radial-gradient(80% 45% at 50% 0%, #ffdccb 0, transparent 70%),
+    radial-gradient(60% 40% at 100% 30%, #ece4ff 0, transparent 70%), linear-gradient(#fff7f2, #ffffff 70%);
+  --grad: linear-gradient(90deg, var(--acc), #e0457b);
+  background: var(--mesh);
+  padding: calc(env(safe-area-inset-top) + 8px) 0 calc(env(safe-area-inset-bottom) + 10px);
+}
+.onb .hub {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 0;
+  height: 0;
+}
+.onb .hub .tile {
+  position: absolute;
+  left: -44px;
+  top: -44px;
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  background: #131315;
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 18px 30px -12px #13131580,
+    0 0 0 1px #ffffff14 inset;
+}
+.onb .hub .tile span {
+  font-size: 50px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: -6px 0 0 4px;
+}
+.onb .hub .tile b {
+  display: inline-block;
+  width: 0.22em;
+  height: 0.22em;
+  margin-left: 0.08em;
+  border-radius: 50%;
+  background: var(--acc);
+}
+.onb .wave {
+  position: absolute;
+  left: 28px;
+  top: -66px;
+  width: 40px;
+  height: 40px;
+  transform-origin: 70% 90%;
+}
+.onb .wave .i3d {
+  width: 100%;
+  height: 100%;
+}
+.onb.play .wave,
+.onb .play .wave {
+  animation:
+    ob-pop 0.5s 0.5s var(--spring) both,
+    ob-wave 1.4s 1s ease-in-out 2;
+}
+.onb .orbit {
+  position: absolute;
+  left: -88px;
+  top: -88px;
+  width: 176px;
+  height: 176px;
+  border-radius: 50%;
+  border: 1.5px dashed #0e0f121f;
+  animation: ob-spin 36s linear infinite;
+}
+.onb .orbit .o {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+  border-radius: 50%;
+  background: #ffffffd9;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 18px -8px #1b1f3a40;
+  animation: ob-spin 36s linear infinite reverse;
+}
+.onb .orbit .o .i3d {
+  width: 28px;
+  height: 28px;
+}
+.onb.login .onb-sheet {
+  padding-top: 20px;
+}
+.onb.login .onb-sheet p {
+  margin-top: 6px;
+}
+.onb .gbtn {
+  width: 100%;
+  height: 50px;
+  margin-top: 16px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 0 0 1.5px var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14.5px;
+  font-weight: 700;
+  transition:
+    transform 0.15s,
+    box-shadow 0.2s;
+}
+.onb .gbtn:hover {
+  box-shadow: 0 0 0 1.5px #d5d7dd;
+}
+.onb .gbtn:active {
+  transform: scale(0.97);
+}
+.onb .gbtn svg {
+  width: 19px;
+  height: 19px;
+}
+.onb.login .or {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mut);
+}
+.onb.login .or::before,
+.onb.login .or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.onb.login .field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 16px;
+  margin-top: 8px;
+  border-radius: 16px;
+  background: #f5f6f8;
+  box-shadow: 0 0 0 1.5px transparent;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
+}
+.onb.login .field:focus-within {
+  background: #fff;
+  box-shadow:
+    0 0 0 1.5px var(--acc),
+    0 0 0 5px #ff5a361f;
+}
+.onb.login .field.bad {
+  box-shadow: 0 0 0 1.5px var(--danger);
+}
+.onb.login .field > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--mut);
+  flex: none;
+}
+.onb.login .field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  outline: 0;
+  font: inherit;
+  /* 16 px keeps iOS from zooming into the field */
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.onb.login .field input::placeholder {
+  color: #a9adb5;
+  font-weight: 500;
+}
+.onb.login .eye {
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  display: grid;
+  place-items: center;
+  color: var(--mut);
+}
+.onb.login .eye svg {
+  width: 18px;
+  height: 18px;
+}
+.onb.login .l-err {
+  margin-top: 8px;
+  text-align: left;
+}
+/* white text needs 4.5 : 1, so the prototype's orange runs a shade deeper (§5.6) */
+.onb.login .cta {
+  margin-top: 12px;
+  background: linear-gradient(135deg, var(--acc-ink), #d43f1c);
+}
+.onb.login .cta::after {
+  animation-delay: 2.5s;
+}
+.onb.login .onb-sheet .foot {
+  margin: 4px auto 0;
+  font-size: 13px;
+  color: var(--mut);
+  font-weight: 500;
+}
+.onb.login .foot button {
+  min-height: 44px;
+  font-weight: 800;
+  color: var(--acc-ink);
+}
+.onb.login .checkmail {
+  margin-top: 12px;
+  text-align: left;
+}
+.onb.login .checkmail h2 {
+  font-size: 18px;
+  font-weight: 800;
+}
+.onb.login .onb-sheet .checkmail p {
+  max-width: none;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink2);
+}
+
+@keyframes ob-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes ob-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes ob-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--r, 0deg));
+  }
+  50% {
+    transform: translateY(-9px) rotate(calc(var(--r, 0deg) * -1));
+  }
+}
+@keyframes ob-twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.55) rotate(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
+@keyframes ob-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+@keyframes ob-blink {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  15%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+@keyframes ob-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes ob-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes ob-grow {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes ob-ring {
+  0% {
+    box-shadow: 0 0 0 0 #ff5a3666;
+  }
+  100% {
+    box-shadow: 0 0 0 14px #ff5a3600;
+  }
+}
+@keyframes ob-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  55%,
+  100% {
+    transform: translateX(320%);
+  }
+}
+@keyframes ob-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes ob-travel {
+  0% {
+    opacity: 0;
+    stroke-dasharray: 0 200;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    stroke-dasharray: 200 0;
+  }
+}
+@keyframes ob-ring24 {
+  to {
+    stroke-dashoffset: 124;
+  }
+}
+@keyframes ob-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-50px) rotate(-20deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(150px) rotate(10deg) scale(0.6);
+  }
+}
+@keyframes ob-bump {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes ob-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(18deg);
+  }
+  75% {
+    transform: rotate(-10deg);
+  }
+}
+/* less motion: every entrance lands at once, nothing loops or slides */
+@media (prefers-reduced-motion: reduce) {
+  .onb.intro .slides {
+    transition: none;
+  }
+  .onb *,
+  .onb *::before,
+  .onb *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+  }
+}
