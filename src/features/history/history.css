@@ -146,6 +146,19 @@
   color: var(--mut);
   font-weight: 500;
 }
+.potmini__bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.potmini__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
 .insight {
   display: grid;
   grid-template-columns: 36px 1fr;

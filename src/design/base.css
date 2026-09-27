@@ -1,7 +1,11 @@
+/* the prototype's reset: no browser margins or paddings (on h1, p, ul…), so
+   every gap on screen is one the design chose */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 html {
   -webkit-text-size-adjust: 100%;

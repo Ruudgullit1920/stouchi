@@ -15,6 +15,9 @@
   padding: calc(env(safe-area-inset-top) + 20px) 16px calc(var(--nav-h) + 40px);
 }
 .screen.push {
+  background: var(--bg);
+}
+.screen.ledger {
   background: var(--card);
 }
 

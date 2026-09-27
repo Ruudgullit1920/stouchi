@@ -79,7 +79,7 @@ export function Sheet({ open, title, onClose, children, className }: Props) {
           <h2 id={titleId} class="sheet__title">
             {title}
           </h2>
-          <button type="button" class="icon-btn" aria-label={t('action.close')} onClick={onClose}>
+          <button type="button" class="icon-btn close" aria-label={t('action.close')} onClick={onClose}>
             <X size={20} aria-hidden="true" />
           </button>
         </div>

@@ -34,16 +34,34 @@
 
 /* Pill */
 .pill {
-  min-height: 44px;
+  position: relative;
+  flex: none;
+  height: 36px;
   min-width: 44px;
   padding: 0 16px;
   border-radius: var(--r-pill);
   background: var(--card);
-  color: var(--ink2);
+  color: var(--ink);
   font-weight: 600;
-  font-size: 14px;
-  box-shadow: inset 0 0 0 1.5px var(--line);
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: inset 0 0 0 1px var(--line);
   transition: transform var(--t-press) var(--ease);
+}
+/* the prototype's 36 px pill in the spec's 44 px touch target (§5.6) */
+.pill::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+/* a row of pills; the 4 px padding keeps the targets' overflow tappable */
+.filters {
+  display: flex;
+  gap: 8px;
+  margin: -4px 0 10px;
+  padding: 4px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 .pill:active {
   transform: scale(0.95);
@@ -111,17 +129,49 @@ span.ic.d3 .i3d,
   min-width: 0;
 }
 .ledger-row__title {
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ledger-row__sub {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--mut);
 }
-.ledger-row__amount {
-  font-size: 16px;
+.ledger-row .ledger-row__amount {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+}
+/* the prototype's .lrow: the unit sits small and grey under the figure */
+.ledger-row__amount .amount__unit {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--mut);
+  vertical-align: baseline;
+}
+/* Budget's short lists (the prototype's .row): a little tighter, no unit */
+.rows .ledger-row {
+  grid-template-columns: 40px 1fr auto;
+  min-height: 60px;
+  padding: 8px 0;
+}
+.rows .ledger-row__avatar,
+.rows .ledger-row__lead {
+  width: 40px;
+  height: 40px;
+}
+.rows .ledger-row__title {
+  font-size: 14px;
+}
+.rows .ledger-row__sub {
+  font-size: 12px;
+}
+.rows .amount__unit {
+  display: none;
 }
 
 /* Segmented bar */
@@ -188,12 +238,34 @@ span.ic.d3 .i3d,
   font-weight: 800;
 }
 .icon-btn {
-  width: 44px;
-  height: 44px;
+  position: relative;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: grid;
   place-items: center;
+  background: var(--card);
+  box-shadow: 0 1px 2px #0000000d;
+}
+/* the prototype's 40 px disc inside the spec's 44 px touch target (§5.6) */
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+}
+.icon-btn.line {
+  box-shadow: none;
+  border: 1px solid var(--line);
+}
+/* a sheet's close: the prototype's 36 px grey disc */
+.icon-btn.close {
+  width: 36px;
+  height: 36px;
   background: var(--bg);
+  box-shadow: none;
+}
+.icon-btn.close::after {
+  inset: -4px;
 }
 @keyframes slide-up {
   from {

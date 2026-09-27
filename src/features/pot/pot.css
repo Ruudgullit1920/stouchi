@@ -1,13 +1,4 @@
 /* Pot ledger, ported from prototype/index.html #s-pot. */
-.icon-btn.line {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: 1px solid var(--line);
-  background: var(--card);
-}
 .monthnav {
   display: flex;
   align-items: center;
@@ -23,7 +14,7 @@
 .monthnav button:disabled {
   opacity: 0.25;
 }
-.monthnav__label {
+.monthnav .monthnav__label {
   min-width: 96px;
   text-align: center;
   font-size: 16px;
@@ -49,13 +40,6 @@
   font: inherit;
   font-size: 15px;
   color: var(--ink);
-}
-.filters {
-  display: flex;
-  gap: 8px;
-  margin: 0 0 14px;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 /* Pot summary (prototype renderPot): a gradient hero in the pot's colour —
    what's left, the pace chip, one bar — then the breakdown on the pot's soft

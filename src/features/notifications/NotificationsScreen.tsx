@@ -65,7 +65,7 @@ export function NotificationsScreen({ store }: ScreenProps) {
   return (
     <>
       <header class="top">
-        <button type="button" class="icon-btn line" aria-label={t('action.back')} onClick={back}>
+        <button type="button" class="icon-btn" aria-label={t('action.back')} onClick={back}>
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
         <h1 class="notif-h1">{t('notify.title')}</h1>

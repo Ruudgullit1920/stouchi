@@ -1,11 +1,5 @@
 /* Setup, ported from prototype #f-setup. Contrast (§5.6): selected days and the
    CTA sit on --ink, coloured small text uses the *-ink shades. */
-.setup .icon-btn.line {
-  box-shadow: none;
-  border: 1px solid var(--line);
-  width: 44px;
-  height: 44px;
-}
 .su-head {
   display: grid;
   grid-template-columns: 44px 1fr 44px;

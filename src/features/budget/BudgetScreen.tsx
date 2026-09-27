@@ -123,6 +123,9 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
 
       <div class="sec">
         <h2>{t('budget.upcoming')}</h2>
+        <button type="button" class="link" onClick={() => navigate('#/me/bills')}>
+          {t('budget.bills')}
+        </button>
       </div>
       <UpcomingList items={facts.upcoming} hidden={hidden} />
 
@@ -132,7 +135,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           {t('budget.seeAll')}
         </button>
       </div>
-      <div class="list">
+      <div class="list rows">
         {facts.recent.length ? (
           facts.recent.map((e) => (
             <LedgerRow

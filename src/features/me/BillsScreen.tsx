@@ -42,7 +42,7 @@ export function BillsScreen({ store, write, onBack }: Props) {
   return (
     <div class="me">
       <header class="top">
-        <button type="button" class="icon-btn line" aria-label={t('action.back')} onClick={onBack}>
+        <button type="button" class="icon-btn" aria-label={t('action.back')} onClick={onBack}>
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
         <h1 class="set-h1">{t('me.bills')}</h1>

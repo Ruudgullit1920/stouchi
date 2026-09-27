@@ -88,7 +88,7 @@ export function PotScreen({ store, onOpenExpense }: ScreenProps) {
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
         <MonthSwitcher
-          label={monthName(period.label)}
+          label={`${monthName(period.label)} ${period.label.slice(0, 4)}`}
           onPrev={() => step(1)}
           onNext={() => step(-1)}
           canPrev={back_ < PERIODS_KEPT - 1}

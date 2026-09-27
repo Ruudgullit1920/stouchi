@@ -33,7 +33,7 @@ const next = () => screen.getByRole('button', { name: 'Période suivante' });
 describe('PotScreen', () => {
   it("lists this pot's expenses for the current period, grouped by day", () => {
     render(<PotScreen store={store} />);
-    expect(screen.getByRole('heading', { name: 'Septembre' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Septembre 2026' })).toBeTruthy();
     expect(screen.getByText('Carrefour')).toBeTruthy();
     expect(screen.getByText('Loyer', { selector: '.ledger-row__title' })).toBeTruthy();
     expect(screen.queryByText('Café')).toBeNull();
@@ -45,10 +45,10 @@ describe('PotScreen', () => {
     render(<PotScreen store={store} />);
     expect((next() as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(prev());
-    expect(screen.getByRole('heading', { name: 'Août' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Août 2026' })).toBeTruthy();
     expect(screen.getByText('Monoprix août')).toBeTruthy();
     for (let i = 0; i < 20; i++) fireEvent.click(prev());
-    expect(screen.getByRole('heading', { name: 'Octobre' })).toBeTruthy(); // 2025-10, 11 back
+    expect(screen.getByRole('heading', { name: 'Octobre 2025' })).toBeTruthy(); // 2025-10, 11 back
     expect((prev() as HTMLButtonElement).disabled).toBe(true);
   });
 

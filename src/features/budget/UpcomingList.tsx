@@ -18,7 +18,7 @@ export function UpcomingList({ items, hidden }: { items: Upcoming[]; hidden: boo
       </div>
     );
   return (
-    <ul class="list">
+    <ul class="list rows">
       {items.map((u) => {
         const incoming = u.kind === 'debt' && u.direction === 'owed_to_me';
         const src = u.kind === 'bill' ? billI3d(u.label) : i3dFile('money_with_wings');

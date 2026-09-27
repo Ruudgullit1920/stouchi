@@ -167,7 +167,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
 
       <section class="dark monthcard">
         <p class="monthcard__k">
-          {monthName(period.label)}
+          {monthName(period.label)} {period.label.slice(0, 4)}
           {current && ` · ${t('history.current')}`}
         </p>
         <p class="big num monthcard__total">
@@ -199,6 +199,14 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
             </span>
             <b class="num">{formatTnd(totals[index][p], { unit: false })}</b>
             <small>{t('budget.of', { amount: formatTnd(budgets[p], { unit: false }) })}</small>
+            <span class="potmini__bar" aria-hidden="true">
+              <i
+                style={{
+                  width: `${budgets[p] > 0 ? Math.min(1, totals[index][p] / budgets[p]) * 100 : 0}%`,
+                  background: COLOR[p],
+                }}
+              />
+            </span>
           </button>
         ))}
         <button type="button" onClick={() => navigate('#/goal')}>
@@ -208,6 +216,9 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
           </span>
           <b class="num">{formatTnd(saved, { unit: false })}</b>
           <small>{t('budget.pot.saved')}</small>
+          <span class="potmini__bar" aria-hidden="true">
+            <i style={{ width: saved > 0 ? '100%' : '0%', background: 'var(--save)' }} />
+          </span>
         </button>
       </div>
 
