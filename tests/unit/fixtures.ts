@@ -27,6 +27,7 @@ export const profile = (p: Partial<Profile> = {}): Profile => ({
   split_wants: 30,
   split_savings: 20,
   onboarded_at: STAMP,
+  currency: 'TND',
   created_at: STAMP,
   updated_at: STAMP,
   ...p,
