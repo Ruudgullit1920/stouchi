@@ -528,6 +528,7 @@
   "carnet.today": "aujourd'hui",
   "carnet.late": "en retard de {days}",
   "carnet.biggest": "{cat}, {amount} {unit}",
+  "carnet.devise": "{code} ({unit}), {n} décimales",
   "carnet.rising": "{cat} : {now} {unit} ce mois, {before} {unit} à la même date le mois dernier",
   "carnet.sim.left": "il restera environ {amount} {unit} le {day}",
   "carnet.sim.short": "il manquera environ {amount} {unit} le {day}",

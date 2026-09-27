@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { AamAction, AamResult, handleAam as HandleAam } from '../../../lib/aam-salah/index.js';
 import { recordMetric } from '../../../lib/ai-observability.js';
 import { buildCarnet, type LastAction } from '../../shared/carnet';
+import { currencyOf } from '../../shared/currencies';
 import { todayTunis } from '../../shared/dates';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { loadRows } from './load';
@@ -46,14 +47,18 @@ const ID_KIND: Record<string, string> = {
 };
 const ACTION_TYPE = /^[a-z_]{2,30}$/;
 
-/** A TND amount the app can store: a whole number of millimes (12.5 yes, 0.0004 no). */
-const wholeMillimes = (x: unknown) =>
-  typeof x !== 'number' || (Number.isFinite(x) && Math.abs(x * 1000 - Math.round(x * 1000)) < 1e-6);
+/** An amount the app can store in this currency: a whole number of its smallest unit
+ * (TND 12.5 yes, 0.0004 no; EUR 12.35 yes, 12.345 no — refused, never rounded). */
+const fits = (decimals: number) => (x: unknown) => {
+  if (typeof x !== 'number') return true;
+  const scale = 10 ** decimals;
+  return Number.isFinite(x) && Math.abs(x * scale - Math.round(x * scale)) < 1e-6;
+};
 /* amount (add_*, savings_*, add_debt), changes.amount (edit_expense), target (update_goal) */
-const amountsOk = (a: AamAction) =>
-  wholeMillimes(a.amount) &&
-  wholeMillimes(a.target) &&
-  wholeMillimes((a.changes as { amount?: unknown } | undefined)?.amount);
+const amountsOk = (decimals: number) => (a: AamAction) => {
+  const ok = fits(decimals);
+  return ok(a.amount) && ok(a.target) && ok((a.changes as { amount?: unknown } | undefined)?.amount);
+};
 
 const fail = (status: number, key: StringKey): TurnResult => ({ status, body: { error: t(key) } });
 
@@ -150,8 +155,9 @@ export async function runTurn(deps: TurnDeps, token: string, body: unknown): Pro
   const { reply, chips, lang, model, dropped } = res.body;
   const actions: TurnAction[] = [];
   let ours = 0;
+  const amountOk = amountsOk(currencyOf(profile.currency).decimals);
   for (const a of res.body.actions) {
-    if (!amountsOk(a)) {
+    if (!amountOk(a)) {
       ours++;
       continue;
     }

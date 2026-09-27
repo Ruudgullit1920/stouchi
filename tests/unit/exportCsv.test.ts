@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setCurrentCurrency } from '../../src/shared/currentCurrency';
 import {
   csvCell,
   csvMoney,
@@ -193,5 +194,34 @@ describe('exportFileName', () => {
     const input = { ...empty(), expenses: [expense({ spent_on: '2025-03-04' })], incomes: [income()] };
     expect(exportFileName(ALL, input)).toBe('stouchi-2025-03-04-2026-09-30.csv');
     expect(exportFileName(ALL, empty())).toBe('stouchi-2026-09-30-2026-09-30.csv');
+  });
+});
+
+describe('the export in another currency', () => {
+  afterEach(() => setCurrentCurrency('TND'));
+
+  it('writes two decimals in EUR, rounding an old third one half-up', () => {
+    setCurrentCurrency('EUR');
+    expect(csvMoney(12_500)).toBe('12,50');
+    expect(csvMoney(12_345)).toBe('12,35');
+    expect(csvMoney(-4_000)).toBe('-4,00');
+    expect(csvMoney(12_345, 'TND')).toBe('12,345');
+  });
+
+  it('names the currency in the header', () => {
+    setCurrentCurrency('EUR');
+    const csv = toCsv(
+      {
+        expenses: [expense({ spent_on: '2026-09-12', amount_mil: 12_500 })],
+        incomes: [],
+        savingsMoves: [],
+        bills: [],
+        debts: [],
+        goals: [],
+      },
+      { from: null, to: '2026-09-30' },
+    );
+    expect(lines(csv)[0]).toBe('Date;Type;Pot;Catégorie;Libellé;Montant (EUR)');
+    expect(lines(csv)[1]).toMatch(/;-12,50$/);
   });
 });

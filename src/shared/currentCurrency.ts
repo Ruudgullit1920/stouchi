@@ -12,3 +12,16 @@ export const currentCurrency = (): CurrencyCode => current.value;
 export function setCurrentCurrency(code: CurrencyCode): void {
   current.value = code;
 }
+
+/** Run `fn` with `code` as the current currency, then put the previous one back.
+ * For server code that builds text synchronously for one user (the carnet): no await
+ * can run in between, so another request never sees it. */
+export function withCurrency<T>(code: CurrencyCode, fn: () => T): T {
+  const before = current.peek();
+  current.value = code;
+  try {
+    return fn();
+  } finally {
+    current.value = before;
+  }
+}

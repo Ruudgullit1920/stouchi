@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { formatMoney } from '../../../src/shared/money';
 import { evaluate, type Candidate, type Sent, type UserSnapshot } from '../../../src/shared/notify/rules';
+import { templateFor } from '../../../src/shared/notify/writer';
 import { dueDeposits, tunisInstant } from '../../../src/shared/payday';
 import {
   bill,
@@ -361,5 +362,31 @@ describe('couple mode (plan D2, Task 7)', () => {
     expect(kinds(run(snap({ expenses: [mine, partners], couple }), at('2026-09-24', 10)))).toContain(
       'quiet_week',
     );
+  });
+});
+
+describe('the profile currency', () => {
+  const payday = (currency: 'EUR' | 'TND', salary_mil = 2_000_000) =>
+    only(
+      'payday',
+      run(
+        snap({ profile: profile({ onboarded_at: '2026-08-10T10:00:00+01:00', currency, salary_mil }) }),
+        at('2026-09-01', 8),
+      ),
+    )[0];
+
+  it('a EUR profile reads "2 000 € : …" and carries its unit', () => {
+    const c = payday('EUR');
+    expect(c.facts.unit).toBe('€');
+    expect(templateFor('payday', c.facts).body.replace(/\s/g, ' ')).toMatch(/^2 000 € : 1 000 en Besoins/);
+  });
+
+  it('a TND profile is unchanged', () => {
+    expect(templateFor('payday', payday('TND').facts).body.replace(/\s/g, ' ')).toMatch(/^2 000 TND : /);
+  });
+
+  it('figures follow the currency decimals, not the server default', () => {
+    expect(payday('EUR', 2_000_500).facts.salaire.replace(/\s/g, ' ')).toBe('2 000,50');
+    expect(payday('TND', 2_000_500).facts.salaire.replace(/\s/g, ' ')).toBe('2 000,5');
   });
 });
