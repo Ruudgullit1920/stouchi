@@ -72,6 +72,20 @@
   box-shadow: none;
 }
 
+/* A labelled field in sheets (the prototype's .field): small grey label, .tin under it */
+.field {
+  display: block;
+  margin-top: 16px;
+}
+.field > span {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mut);
+  letter-spacing: 0.02em;
+}
+
 /* Text input in sheets (the prototype's .tin) */
 .tin {
   width: 100%;
