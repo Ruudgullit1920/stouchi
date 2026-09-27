@@ -125,6 +125,10 @@ export function BillSheet({ store, bill, write, onDone }: Props) {
           {t('me.bill.nameError')}
         </p>
       )}
+      {/* the input carries the same words as its name */}
+      <p class="flabel" aria-hidden="true">
+        {t('me.bill.amount')}
+      </p>
       <AmountInput
         label={t('me.bill.amount')}
         value={amount}
