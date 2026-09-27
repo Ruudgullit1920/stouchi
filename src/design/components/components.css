@@ -72,6 +72,35 @@
   box-shadow: none;
 }
 
+/* Text input in sheets (the prototype's .tin) */
+.tin {
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.tin:focus {
+  border-color: var(--acc);
+}
+.tin[readonly] {
+  background: var(--bg);
+  color: var(--ink2);
+  border-color: transparent;
+}
+.tin.bad,
+.tin[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
 /* Amount */
 .amount {
   white-space: nowrap;
@@ -210,6 +239,8 @@ span.ic.d3 .i3d,
   position: absolute;
   inset: 0;
   background: rgb(14 15 18 / 0.4);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
   animation: fade 240ms ease-out both;
 }
 .sheet {
@@ -218,24 +249,33 @@ span.ic.d3 .i3d,
   max-height: 90dvh;
   overflow: auto;
   background: var(--card);
-  border-radius: var(--r-card) var(--r-card) 0 0;
-  padding: 8px var(--gutter) calc(24px + env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  padding: 10px var(--gutter) calc(16px + env(safe-area-inset-bottom));
   animation: slide-up var(--t-sheet) var(--ease) both;
 }
 .sheet:focus {
   outline: none;
+}
+.sheet__grab {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--line);
+  margin: 0 auto 12px;
 }
 .sheet__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 56px;
+  min-height: 40px;
+  margin-bottom: 8px;
 }
 .sheet__title {
   margin: 0;
   font-size: 18px;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .icon-btn {
   position: relative;

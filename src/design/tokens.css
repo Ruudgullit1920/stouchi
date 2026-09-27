@@ -11,6 +11,10 @@
   --acc: #ff5a36;
   --acc-soft: #ffe9e3;
   --acc-ink: #c2391b;
+  /* the prototype's orange CTAs, one shade deeper so white text is 4.6 : 1;
+     disabled, the prototype's peach */
+  --acc-cta: #d43f1c;
+  --acc-cta-off: #ffc3b5;
   --need: #3e7bfa;
   --need-soft: #e7efff;
   --need-ink: #2b5fd9;

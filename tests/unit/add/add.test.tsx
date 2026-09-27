@@ -68,6 +68,7 @@ describe('AddSheet', () => {
     render(<AddSheet store={store} repo={repo} onDone={onDone} />);
     key('1');
     key('2');
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter une note' }));
     fireEvent.input(screen.getByLabelText('Note'), { target: { value: '  Café Ali ' } });
     fireEvent.click(save());
     fireEvent.click(save());

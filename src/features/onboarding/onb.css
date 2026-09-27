@@ -962,7 +962,7 @@
 /* white text needs 4.5 : 1, so the prototype's orange runs a shade deeper (§5.6) */
 .onb.login .cta {
   margin-top: 12px;
-  background: linear-gradient(135deg, var(--acc-ink), #d43f1c);
+  background: linear-gradient(135deg, var(--acc-ink), var(--acc-cta));
 }
 .onb.login .cta::after {
   animation-delay: 2.5s;

@@ -75,6 +75,7 @@ export function Sheet({ open, title, onClose, children, className }: Props) {
         aria-labelledby={titleId}
         tabIndex={-1}
       >
+        <div class="sheet__grab" aria-hidden="true" />
         <div class="sheet__head">
           <h2 id={titleId} class="sheet__title">
             {title}

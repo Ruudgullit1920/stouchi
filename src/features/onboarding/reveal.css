@@ -119,7 +119,7 @@
 .rv-cta {
   height: 56px;
   border-radius: 18px;
-  background: var(--ink);
+  background: var(--acc-cta);
   color: #fff;
   font-size: 16px;
   font-weight: 700;

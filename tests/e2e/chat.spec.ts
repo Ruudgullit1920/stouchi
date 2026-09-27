@@ -68,6 +68,7 @@ async function logByKeypad(page: Page, keys: string, label: string): Promise<str
   await page.getByRole('button', { name: /Saisie manuelle/ }).click();
   const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
   for (const k of keys) await sheet.getByRole('button', { name: k, exact: true }).click();
+  await sheet.getByRole('button', { name: 'Ajouter une note' }).click();
   await sheet.getByLabel('Note').fill(label);
   await sheet.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(sheet).toBeHidden();

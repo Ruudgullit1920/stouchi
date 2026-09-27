@@ -67,6 +67,7 @@ async function logExpense(page: Page, keys: string, label: string, pot: 'Besoins
   const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
   await sheet.getByRole('button', { name: new RegExp(`^${pot}`) }).click();
   for (const k of keys) await sheet.getByRole('button', { name: k, exact: true }).click();
+  await sheet.getByRole('button', { name: 'Ajouter une note' }).click();
   await sheet.getByLabel('Note').fill(label);
   await sheet.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(sheet).toBeHidden();
