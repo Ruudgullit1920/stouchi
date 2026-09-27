@@ -23,6 +23,7 @@ async function precache() {
     PRECACHE.map(async (path) => {
       const response = await fetch(path, { cache: 'reload' });
       if (!response.ok) throw new Error(`precache ${path}: ${response.status}`);
+      if (path !== SHELL && isPage(response)) throw new Error(`precache ${path}: the app's page`);
       return [path, response.redirected ? await plain(response) : response];
     }),
   );
@@ -78,13 +79,19 @@ async function page(request) {
 }
 
 /* Built assets are content-hashed: a cached copy is always the right one, so a
-   Vary header (Vary: Origin from some servers) must not turn it into a miss. */
+   Vary header (Vary: Origin from some servers) must not turn it into a miss.
+   Cloudflare Pages answers a file it does not have (yet, mid-deploy) with the
+   app's page, 200 and the year-long immutable header of /assets/*: that page is
+   never an asset. Such a copy, in a cache or the HTTP cache, is fetched again. */
 const MATCH = { ignoreVary: true };
+const isPage = (response) => (response.headers.get('content-type') || '').startsWith('text/html');
 async function fromCache(request) {
-  const hit = await caches.match(request, MATCH);
-  if (hit) return hit;
-  const response = await fetch(request);
-  if (response.ok) {
+  /* this version's cache first: an older one may hold a page kept before this fix */
+  const hit = (await (await caches.open(CACHE)).match(request, MATCH)) || (await caches.match(request, MATCH));
+  if (hit && !isPage(hit)) return hit;
+  let response = await fetch(request);
+  if (isPage(response)) response = await fetch(request, { cache: 'reload' });
+  if (response.ok && !isPage(response)) {
     const cache = await caches.open(CACHE);
     await cache.put(request, response.clone());
   }
