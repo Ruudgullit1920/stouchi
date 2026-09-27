@@ -86,11 +86,13 @@ runs 25 → 24. Every "ce mois", every per-day figure, every month in Historique
    "Créer un compte" uses the same screen. Google pre-fills the first name.
 3. **Setup**, one question per screen, progress bar, back allowed, each asked by Aam Salah:
    1. Prénom.
-   2. Salaire net mensuel — live 50/30/20 preview.
-   3. Jour de paie — 1er, 5, 10, 15, 20, 25, 28, fin du mois.
-   4. Factures fixes — toggle cards with editable monthly amount; live "réservé dans Besoins" meter,
+   2. Devise — nine currencies with round flags, the time zone's suggestion first and chosen
+      (display only, never converted; see `2026-09-27-currency-design.md`).
+   3. Salaire net mensuel — live 50/30/20 preview, in the chosen currency.
+   4. Jour de paie — 1er, 5, 10, 15, 20, 25, 28, fin du mois.
+   5. Factures fixes — toggle cards with editable monthly amount; live "réservé dans Besoins" meter,
       amber above 80 %, explanation above 100 %. Can be skipped ("Je n'ai pas de factures fixes").
-   5. Objectif — six goal types, target (pre-filled per type; Sécurité = 3 × salary), already saved,
+   6. Objectif — six goal types, target (pre-filled per type; Sécurité = 3 × salary), already saved,
       live target date.
 4. **Reveal**: salary coin, three pots drop in with counting amounts, confetti, "Ouvrir mon budget".
 
@@ -158,7 +160,7 @@ always reads blue and Envies purple.
 
 ### 5.2 Type
 Plus Jakarta Sans 400–800. Numbers: 800 weight, tight tracking (−0.045 em), tabular figures, unit
-("TND") set smaller and raised. Labels: 11 px, uppercase, 0.12 em tracking. Amounts are formatted with
+(the household's currency: "TND", "€" …) set smaller and raised. Labels: 11 px, uppercase, 0.12 em tracking. Amounts are formatted with
 `Intl.NumberFormat('fr-TN')` and **non-breaking** thousands separators.
 
 ### 5.3 Icons and logos
@@ -215,12 +217,14 @@ Replaces today's single JSON document per user (`budget_data.data`) and per hous
 expenses by id; search spans a year; partners write concurrently; the JSON merge functions have had to
 be rewritten for every new key.
 
-**Money is stored as integer millimes** (1 TND = 1 000 millimes) — never floats. Dates are `date`
+**Money is stored as integer millimes** (1 TND = 1 000 millimes; other currencies keep the same
+thousandths, so 2-decimal ones end in 0) — never floats. The currency is a display label only
+(`profiles.currency`, `src/shared/currencies.ts`); switching it converts nothing. Dates are `date`
 (local, Africa/Tunis); instants are `timestamptz`.
 
 | Table | Key columns |
 |---|---|
-| `profiles` | `user_id` PK, `first_name`, `salary_mil`, `payday` (1–28 or 0 = last day), `split_needs/wants/savings` (sum 100), `onboarded_at` |
+| `profiles` | `user_id` PK, `first_name`, `salary_mil`, `payday` (1–28 or 0 = last day), `split_needs/wants/savings` (sum 100), `onboarded_at`, `currency` (TND EUR USD GBP CAD CHF MAD DZD LYD, default TND; one per household: `set_currency(code)` updates me and my partner, `couple_join` copies the host's) |
 | `households`, `household_members` | kept from today |
 | `expenses` | `id` uuid (client-generated), `user_id`, `household_id` null, `amount_mil` > 0, `category`, `pot` (`needs`/`wants`), `label` ≤ 60, `spent_on` date, `source` (`manual`/`chat`/`bill`), `bill_id` null, `created_at`, `updated_at`, `deleted_at` |
 | `bills` | `id`, `user_id`, `household_id` null, `label`, `amount_mil`, `frequency` (`monthly`/`bimonthly`/`quarterly`/`yearly`), `day`, `starts_on` (anchors non-monthly bills), `active` |

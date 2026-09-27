@@ -26,6 +26,8 @@ import { computeFacts, type Facts, type FactsInput, type PotFacts } from './fact
 import { monthName } from './format';
 import { t, type StringKey } from './i18n/t';
 import { periodTotals, potBreakdown } from './ledger';
+import { currencyOf } from './currencies';
+import { currentCurrency, withCurrency } from './currentCurrency';
 import { MIL_PER_TND, type Mil } from './money';
 import { isSavingsOpportunity, spendPace } from './nudges';
 import { activeGoal, goalEta } from './payday';
@@ -87,6 +89,8 @@ export interface Carnet {
     prochaine_paie: ISODate;
   };
   utilisateur: { prenom: string; mode: 'solo' } | { prenom: string; mode: 'couple'; partenaire: string };
+  /** "EUR (€), 2 décimales": every amount here is in this unit (currency spec §5) */
+  devise: string;
   plan: { salaire: Tnd; jour_de_paie: string; repartition: string; jours_restants: number };
   reste_a_depenser: { total: Tnd; par_jour: Tnd };
   pots: {
@@ -189,7 +193,7 @@ function potLine(p: PotFacts): PotLine {
 type Row = Expense | Bill | Debt | Reminder | Goal | Income;
 /** What the last action's row is, in a few words — built from the row, never from client text. */
 function describe(table: (typeof UNDOABLE)[string], row: Row): string {
-  const money = (mil: Mil) => `${tnd(mil)} TND`;
+  const money = (mil: Mil) => `${tnd(mil)} ${currencyOf(currentCurrency()).suffix}`;
   switch (table) {
     case 'expenses': {
       const e = row as Expense;
@@ -219,11 +223,15 @@ function byCategory(expenses: Expense[], start: ISODate, end: ISODate): Map<Cate
 }
 const total = (m: Map<CategoryKey, Mil>) => [...m.values()].reduce((s, v) => s + v, 0);
 
-export function buildCarnet(given: CarnetInput): {
-  carnet: Carnet;
-  refs: Map<string, string>;
-  nudgeKey: string | null;
-} {
+type Built = { carnet: Carnet; refs: Map<string, string>; nudgeKey: string | null };
+
+/** The model's view of the user, in their currency: every {unit} in the sentences is the
+ * profile's, on the server too (it has no current currency of its own). */
+export function buildCarnet(given: CarnetInput): Built {
+  return withCurrency(currencyOf(given.profile.currency).code, () => carnetOf(given));
+}
+
+function carnetOf(given: CarnetInput): Built {
   const partner = given.couple && given.partner ? given.partner : null;
   const input = scoped(given, partner);
   const { profile, now } = input;
@@ -363,6 +371,7 @@ export function buildCarnet(given: CarnetInput): {
     utilisateur: partner
       ? { prenom: clean(input.firstName, 40), mode: 'couple', partenaire: partnerName }
       : { prenom: clean(input.firstName, 40), mode: 'solo' },
+    devise: t('carnet.devise', { n: currencyOf(profile.currency).decimals }),
     plan: {
       salaire: tnd(facts.salary),
       jour_de_paie:

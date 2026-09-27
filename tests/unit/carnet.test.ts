@@ -79,6 +79,7 @@ describe('buildCarnet — from the eval fixture', () => {
           prochaine_paie: '',
         },
         utilisateur: { prenom: '', mode: '' },
+        devise: '',
         plan: { salaire: 0, jour_de_paie: '', repartition: '', jours_restants: 0 },
         reste_a_depenser: { total: 0, par_jour: 0 },
         pots: {
@@ -543,11 +544,13 @@ describe('couple mode (plan Task 8, Aam Salah spec §4)', () => {
       ...p,
     });
 
-  it('a solo carnet is byte-identical to before Phase 6', () => {
+  it('a solo carnet is byte-identical to before Phase 6, but for the currency line', () => {
     const { carnet } = buildCarnet(input());
-    expect(createHash('sha256').update(JSON.stringify(carnet)).digest('hex')).toBe(
-      'daaffff74213fd94d8854c0d1d2ef6ddb2085c8bf240d127dc7736f6f0f6adff',
-    );
+    expect(
+      createHash('sha256')
+        .update(JSON.stringify({ ...carnet, devise: undefined }))
+        .digest('hex'),
+    ).toBe('daaffff74213fd94d8854c0d1d2ef6ddb2085c8bf240d127dc7736f6f0f6adff');
   });
 
   it('names the partner, and who logged each expense', () => {
@@ -607,5 +610,20 @@ describe('review I1: a partner with no first name', () => {
     );
     expect(carnet.utilisateur).toMatchObject({ mode: 'couple', partenaire: 'Partenaire' });
     expect(carnet.depenses_recentes.find((e) => e.label === 'Aziza')?.qui).toBe('Partenaire');
+  });
+});
+
+describe('the currency', () => {
+  it('states it, and every sentence uses its unit (the server has no current currency)', () => {
+    const { carnet } = buildCarnet(input({ profile: { ...fixture.profile, currency: 'EUR' } }));
+    expect(carnet.devise).toBe('EUR (€), 2 décimales');
+    expect(carnet.tendances.plus_gros_poste_hors_loyer).toBe('courses, 150 €');
+    /* the reminder text and the given summary are the fixture's own words */
+    const { tendances, simulations, a_signaler } = carnet;
+    expect(JSON.stringify({ tendances, simulations, a_signaler })).not.toMatch(/\bTND\b/);
+  });
+
+  it('TND by default', () => {
+    expect(buildCarnet(input()).carnet.devise).toBe('TND (TND), 3 décimales');
   });
 });

@@ -13,7 +13,7 @@ import {
   type ExportRange,
 } from '../../shared/exportCsv';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { HIDDEN, hideAmounts } from '../budget/hideAmounts';
 
 type Props = {
@@ -74,7 +74,7 @@ export function ExportSheet({ store, fetchRows, download, onDone }: Props) {
             {sum
               ? t(sum.lines > 1 ? 'export.sum.many' : 'export.sum.one', {
                   n: sum.lines,
-                  amount: hideAmounts.value ? HIDDEN : formatTnd(sum.spentMil),
+                  amount: hideAmounts.value ? HIDDEN : formatMoney(sum.spentMil),
                 })
               : read.status === 'loading'
                 ? t('export.loading')

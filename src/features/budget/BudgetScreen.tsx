@@ -17,7 +17,7 @@ import { computeFacts } from '../../shared/facts';
 import { initials, monthName, shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { titleOf } from '../../shared/ledger';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { Bell } from '../notifications/Bell';
 import { HIDDEN, hideAmounts, toggleHideAmounts } from './hideAmounts';
 import { activeGoal } from '../../shared/payday';
@@ -38,7 +38,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
     return <EmptyState title={t('budget.noProfile.title')} body={t('budget.noProfile.body')} />;
 
   const hidden = hideAmounts.value;
-  const money = (m: number, unit = false) => (hidden ? HIDDEN : formatTnd(m, { unit }));
+  const money = (m: number, unit = false) => (hidden ? HIDDEN : formatMoney(m, { unit }));
   const { needs, wants, savings } = facts.pots;
 
   return (
@@ -69,7 +69,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
       <div class="hero">
         <p class={facts.left < 0 ? 'big num big--over' : 'big num'}>
           {money(left)}
-          <span class="unit">{t('unit.tnd')}</span>
+          <span class="unit">{t('unit.money')}</span>
         </p>
         <p class="perday">
           <b class="num">{t('budget.perDay', { amount: money(facts.perDay) })}</b>

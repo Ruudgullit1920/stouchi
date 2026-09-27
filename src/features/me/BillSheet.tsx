@@ -6,7 +6,7 @@ import type { Row } from '../../data/localdb';
 import type { Store } from '../../data/store';
 import { todayTunis } from '../../shared/dates';
 import { t } from '../../shared/i18n/t';
-import { MAX_MIL, MIL_PER_TND, formatTnd } from '../../shared/money';
+import { MAX_MIL, MIL_PER_TND, formatMoney } from '../../shared/money';
 import type { Bill } from '../../shared/schemas';
 import { AmountInput } from '../onboarding/AmountInput';
 import { BILL_PRESETS, billLabel } from '../onboarding/draft';
@@ -81,7 +81,7 @@ export function BillSheet({ store, bill, write, onDone }: Props) {
     });
   };
 
-  const money = formatTnd(amount);
+  const money = formatMoney(amount);
   return (
     <div class="me-sheet bill-sheet">
       {suggestions.length > 0 && (
@@ -134,7 +134,7 @@ export function BillSheet({ store, bill, write, onDone }: Props) {
         value={amount}
         onChange={setAmount}
         digits={6}
-        unit={t('unit.tnd')}
+        unit={t('unit.money')}
       />
       <p class="flabel">{t('me.bill.freq')}</p>
       <div class="seg2 four">

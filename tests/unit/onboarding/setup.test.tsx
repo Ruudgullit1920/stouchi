@@ -2,6 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/preact';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SetupScreen, type SetupProps } from '../../../src/features/onboarding/SetupScreen';
+import { currentCurrency, setCurrentCurrency } from '../../../src/shared/currentCurrency';
 import { USER } from '../fixtures';
 
 type Write = SetupProps['write'];
@@ -13,9 +14,12 @@ beforeEach(() => {
   write = vi.fn<Write>().mockResolvedValue(undefined);
   finish = vi.fn<() => void>();
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setCurrentCurrency('TND');
+});
 
-const open = () =>
+const open = (timeZone = 'Africa/Tunis') =>
   render(
     <SetupScreen
       userId={USER}
@@ -23,6 +27,7 @@ const open = () =>
       write={write}
       onFinish={finish}
       today="2026-09-24"
+      timeZone={timeZone}
       loadName={() => Promise.resolve('')}
     />,
   );
@@ -32,8 +37,11 @@ const tables = () => write.mock.calls.map(([table]) => table);
 const type = (label: string | RegExp, value: string) =>
   fireEvent.input(screen.getByLabelText(label), { target: { value } });
 
-async function answerUpTo(step: 'salary' | 'payday' | 'bills' | 'goal') {
+async function answerUpTo(step: 'currency' | 'salary' | 'payday' | 'bills' | 'goal') {
   type('Ton prénom', 'Amel');
+  fireEvent.click(next());
+  await screen.findByText('Ta devise');
+  if (step === 'currency') return;
   fireEvent.click(next());
   await screen.findByText('Tu gagnes combien par mois ?');
   if (step === 'salary') return;
@@ -53,7 +61,7 @@ describe('SetupScreen', () => {
   it('asks one question at a time with a progress count', () => {
     open();
     expect(question()).toBe('Comment tu t’appelles ?');
-    expect(screen.getByText('1/5')).toBeTruthy();
+    expect(screen.getByText('1/6')).toBeTruthy();
     expect(screen.getByText(/Moi c’est Aam Salah/)).toBeTruthy();
   });
 
@@ -64,7 +72,7 @@ describe('SetupScreen', () => {
     expect((next() as HTMLButtonElement).disabled).toBe(true);
     type('Ton prénom', 'Amel');
     fireEvent.click(next());
-    await screen.findByText('Tu gagnes combien par mois ?');
+    await screen.findByText('Ta devise');
     expect(write).toHaveBeenCalledWith(
       'profiles',
       expect.objectContaining({ first_name: 'Amel', onboarded_at: null }),
@@ -105,6 +113,8 @@ describe('SetupScreen', () => {
     await answerUpTo('payday');
     fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
     expect(screen.getByLabelText<HTMLInputElement>(/Salaire net/).value).toBe('2000');
+    fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
+    expect(screen.getByRole('radio', { name: /Dinar tunisien/ }).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
     expect(screen.getByLabelText<HTMLInputElement>('Ton prénom').value).toBe('Amel');
   });
@@ -187,5 +197,27 @@ describe('SetupScreen', () => {
       />,
     );
     await waitFor(() => expect(screen.getByLabelText<HTMLInputElement>('Ton prénom').value).toBe('Sofiene'));
+  });
+
+  it('suggests the currency of the time zone, and the salary is asked in it', async () => {
+    open('Europe/Paris');
+    await answerUpTo('currency');
+    expect(screen.getByRole('radio', { name: /Euro/ }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getAllByRole('radio')[0].textContent).toContain('Suggérée');
+    fireEvent.click(next());
+    await screen.findByText('Tu gagnes combien par mois ?');
+    expect(currentCurrency()).toBe('EUR');
+    expect(screen.getByLabelText(/Salaire net/).parentElement?.textContent).toContain('€');
+    expect(write).toHaveBeenLastCalledWith('profiles', expect.objectContaining({ currency: 'EUR' }));
+  });
+
+  it('keeps another choice and writes it with the profile', async () => {
+    open();
+    await answerUpTo('currency');
+    fireEvent.click(screen.getByRole('radio', { name: /Dirham marocain/ }));
+    expect(currentCurrency()).toBe('MAD');
+    fireEvent.click(next());
+    await screen.findByText('Tu gagnes combien par mois ?');
+    expect(write).toHaveBeenLastCalledWith('profiles', expect.objectContaining({ currency: 'MAD' }));
   });
 });

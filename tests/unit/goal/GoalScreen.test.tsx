@@ -6,7 +6,7 @@ import { createStore, type Store } from '../../../src/data/store';
 import { HIDDEN } from '../../../src/design/components/Amount';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { GoalScreen } from '../../../src/features/goal/GoalScreen';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { coupleOn, goal, HOUSEHOLD, move, PARTNER, profile } from '../fixtures';
 
 /* 2 000 TND, payday 1, 50/30/20 → 400 TND a month to savings; today 2026-09-10 */
@@ -37,15 +37,15 @@ describe('GoalScreen', () => {
     render(<GoalScreen store={store} />);
     expect(text()).toContain('Mon voyage');
     expect(text()).toContain('10 %');
-    expect(text()).toContain(norm(formatTnd(600_000, { unit: false })));
-    expect(text()).toContain(norm(`sur ${formatTnd(6_000_000)}`));
-    expect(text()).toContain(norm(`Au rythme de ${formatTnd(400_000)} / mois`));
+    expect(text()).toContain(norm(formatMoney(600_000, { unit: false })));
+    expect(text()).toContain(norm(`sur ${formatMoney(6_000_000)}`));
+    expect(text()).toContain(norm(`Au rythme de ${formatMoney(400_000)} / mois`));
     /* 5 400 left at 400 a month: 14 months → novembre 2027 */
     expect(text()).toContain('Novembre 2027');
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
     expect(text()).toContain('Épargne de septembreAutomatique · 1 sept.');
     expect(text()).toContain('VersementVersement manuel · 5 sept.');
-    expect(text()).toContain(norm(`2 · ${formatTnd(600_000)}`));
+    expect(text()).toContain(norm(`2 · ${formatMoney(600_000)}`));
   });
 
   it('names a payday move by its month, with d’ before a vowel', () => {
@@ -90,7 +90,7 @@ describe('GoalScreen', () => {
     store.savingsMoves.value = [move({ goal_id: G.id, amount_mil: 600_000, from_pot: null })];
     render(<GoalScreen store={store} />);
     expect(text()).toContain(HIDDEN);
-    expect(text()).not.toContain(norm(formatTnd(600_000, { unit: false })));
+    expect(text()).not.toContain(norm(formatMoney(600_000, { unit: false })));
   });
 
   it('opens the Verser sheet, the goal sheet, and the new-goal sheet', () => {

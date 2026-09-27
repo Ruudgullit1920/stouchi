@@ -1,8 +1,10 @@
 /* The export (plan D3): one CSV Excel opens as is. UTF-8 with a BOM, `;`
- * between cells, CRLF lines, amounts as `12,500`. Expenses, incomes and
+ * between cells, CRLF lines, amounts as `12,500` (`12,50` in a 2-decimal currency). Expenses, incomes and
  * savings moves are one row each, in date order; the bills and debts follow
  * as their own sections. Text cells can never start a formula. */
 import { categoryLabel } from './categories';
+import { currencyOf, type CurrencyCode } from './currencies';
+import { currentCurrency } from './currentCurrency';
 import { payPeriod, periodsBack, todayTunis, type ISODate, type Payday } from './dates';
 import { t, type StringKey } from './i18n/t';
 import { MIL_PER_TND, type Mil } from './money';
@@ -28,12 +30,15 @@ const BOM = '﻿';
 const SEP = ';';
 const EOL = '\r\n';
 
-/** 12 500 millimes → "12,500"; negative amounts keep their sign. */
-export function csvMoney(mil: Mil): string {
-  const abs = Math.abs(mil);
-  const tnd = Math.trunc(abs / MIL_PER_TND);
-  const rest = String(abs % MIL_PER_TND).padStart(3, '0');
-  return `${mil < 0 ? '-' : ''}${tnd},${rest}`;
+/** 12 500 millimes → "12,500" in TND, "12,50" in EUR (an old third decimal rounded
+ * half-up, as on screen); negative amounts keep their sign. */
+export function csvMoney(mil: Mil, currency: CurrencyCode = currentCurrency()): string {
+  const decimals = currencyOf(currency).decimals;
+  const step = 10 ** (3 - decimals);
+  const abs = Math.round(Math.abs(mil) / step) * step;
+  const whole = Math.trunc(abs / MIL_PER_TND);
+  const rest = String((abs % MIL_PER_TND) / step).padStart(decimals, '0');
+  return `${mil < 0 ? '-' : ''}${whole},${rest}`;
 }
 
 /** A text cell: a formula start gets a leading `'`, then `;`, `"` or a line

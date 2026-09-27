@@ -100,7 +100,7 @@ async function cleanUpFor(client: SupabaseClient): Promise<void> {
 }
 
 /** The onboarded profile the core specs expect (payday 1, 2 000 TND, 50/30/20,
- * no change pending). */
+ * no change pending, TND). */
 export async function restoreOnboarded(client?: SupabaseClient, firstName = 'Test'): Promise<void> {
   const c = client ?? (await testClient());
   const { data } = await c.auth.getUser();
@@ -117,9 +117,13 @@ export async function restoreOnboarded(client?: SupabaseClient, firstName = 'Tes
     next_split_wants: null,
     next_split_savings: null,
     next_from: null,
+    currency: 'TND',
     onboarded_at: new Date().toISOString(),
   });
   if (error) throw error;
+  /* once onboarded, the currency changes only through set_currency (a trigger keeps it otherwise) */
+  const reset = await c.rpc('set_currency', { p_code: 'TND' });
+  if (reset.error) throw reset.error;
 }
 
 /** Back to a first run: not onboarded, no active goal, no active bill. */

@@ -8,7 +8,7 @@ import { BillSheet } from '../../../src/features/me/BillSheet';
 import { BillsScreen } from '../../../src/features/me/BillsScreen';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { computeFacts } from '../../../src/shared/facts';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { bill, profile, USER } from '../fixtures';
 
 const write = vi.fn<(table: 'bills', row: Row) => Promise<void>>().mockResolvedValue(undefined);
@@ -49,7 +49,7 @@ describe('BillsScreen', () => {
     openScreen();
     const row = screen.getByRole('button', { name: /STEG/ });
     expect(row.textContent).toContain('Le 15 · Chaque mois');
-    expect(row.textContent).toContain(formatTnd(80_000, { unit: false }));
+    expect(row.textContent).toContain(formatMoney(80_000, { unit: false }));
     expect(screen.queryByText('Ancienne')).toBeNull();
     fireEvent.click(row);
     expect(sheet.value?.title).toBe('Modifier la facture');
@@ -59,7 +59,7 @@ describe('BillsScreen', () => {
     hideAmounts.value = true;
     store.bills.value = [bill({ label: 'STEG', amount_mil: 80_000 })];
     openScreen();
-    expect(document.body.textContent).not.toContain(formatTnd(80_000, { unit: false }));
+    expect(document.body.textContent).not.toContain(formatMoney(80_000, { unit: false }));
     hideAmounts.value = false;
   });
 
@@ -76,7 +76,7 @@ describe('BillsScreen', () => {
     store.bills.value = [bill({ amount_mil: 1_100_000 })];
     openScreen();
     expect(screen.getByTestId('bills-meter').textContent).toContain(
-      `dépassent tes Besoins de ${formatTnd(100_000)}`,
+      `dépassent tes Besoins de ${formatMoney(100_000)}`,
     );
   });
 });

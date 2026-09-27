@@ -6,7 +6,7 @@ import { createStore, type Store } from '../../../src/data/store';
 import { BudgetScreen } from '../../../src/features/budget/BudgetScreen';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { computeFacts } from '../../../src/shared/facts';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { bill, coupleOn, expense, HOUSEHOLD, PARTNER, profile } from '../fixtures';
 
 let store: Store;
@@ -61,7 +61,7 @@ describe('BudgetScreen', () => {
     });
     const { container } = render(<BudgetScreen store={store} />);
     expect(norm(container.querySelector('.hero')?.textContent ?? '')).toContain(
-      norm(formatTnd(f.left, { unit: false })),
+      norm(formatMoney(f.left, { unit: false })),
     );
     expect(screen.getByText('21 jours restants')).toBeTruthy();
     const pots = container.querySelectorAll('.pot');
@@ -86,7 +86,7 @@ describe('BudgetScreen', () => {
     store.expenses.value = [expense({ amount_mil: 650_000, category: 'cafe', pot: 'wants' })];
     ready(store);
     render(<BudgetScreen store={store} />);
-    expect(norm(screen.getByText(/dépassé de/).textContent)).toContain(norm(formatTnd(50_000)));
+    expect(norm(screen.getByText(/dépassé de/).textContent)).toContain(norm(formatMoney(50_000)));
   });
 
   it('hides and shows the amounts with the eye, and remembers it', () => {

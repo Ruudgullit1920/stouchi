@@ -23,7 +23,8 @@ import {
 import { computeFacts, type Facts, type FactsInput } from '../facts';
 import { shortDate } from '../format';
 import { t } from '../i18n/t';
-import { formatTnd, type Mil } from '../money';
+import { currencyOf, type CurrencyCode } from '../currencies';
+import { formatMoney, type Mil } from '../money';
 import { isSavingsOpportunity, spendPace } from '../nudges';
 import { activeGoal, dueDeposits, paydayId, paydayOpensAt, tunisInstant } from '../payday';
 import type { Expense, Goal, NewSavingsMove, NotificationActionT, Reminder } from '../schemas';
@@ -62,7 +63,8 @@ const SPIKE_NUM = 13;
 const SPIKE_DEN = 10;
 const RECAP_HOUR = 19;
 
-const n = (mil: Mil) => formatTnd(mil, { unit: false });
+/* The server has no current currency: figures take the profile's decimals, and {unit} its suffix. */
+const moneyIn = (currency: CurrencyCode) => (mil: Mil) => formatMoney(mil, { unit: false, currency });
 const CLOCK = new Intl.DateTimeFormat('fr-FR', {
   timeZone: 'Africa/Tunis',
   hour: '2-digit',
@@ -78,12 +80,16 @@ interface Ctx {
   today: ISODate;
   facts: Facts;
   live: Expense[];
+  /** a figure in the profile's currency, without the unit */
+  n: (mil: Mil) => string;
 }
 
 export function evaluate(s: UserSnapshot, now: Date, sentToday: Sent[], sentKeys: Set<string>): Candidate[] {
   if (!s.profile.onboarded_at) return [];
   const today = todayTunis(now);
+  const currency = currencyOf(s.profile.currency);
   const ctx: Ctx = {
+    n: moneyIn(currency.code),
     s,
     now,
     today,
@@ -101,7 +107,9 @@ export function evaluate(s: UserSnapshot, now: Date, sentToday: Sent[], sentKeys
     ...savings(ctx),
     ...recap(ctx),
     ...quietWeek(ctx),
-  ].filter((c) => !sentKeys.has(c.dedupeKey) && (!quiet || c.trigger === 'user_reminder'));
+  ]
+    .filter((c) => !sentKeys.has(c.dedupeKey) && (!quiet || c.trigger === 'user_reminder'))
+    .map((c) => ({ ...c, facts: { ...c.facts, unit: currency.suffix } }));
 
   const capUsed = sentToday.some((x) => isTrigger(x.trigger) && TRIGGERS[x.trigger].capped);
   const capped = due
@@ -112,7 +120,7 @@ export function evaluate(s: UserSnapshot, now: Date, sentToday: Sent[], sentKeys
 
 const PAYDAY_CATCH_UP_DAYS = 2;
 
-function payday({ s, now, today, facts }: Ctx): Candidate[] {
+function payday({ s, now, today, facts, n }: Ctx): Candidate[] {
   const { period, pots } = facts;
   const onboardedOn = todayTunis(new Date(s.profile.onboarded_at as string));
   /* on payday from 08:00; if every run failed that day (an outage), within the
@@ -142,7 +150,7 @@ function payday({ s, now, today, facts }: Ctx): Candidate[] {
   ];
 }
 
-function billsDue({ s, today, facts, live }: Ctx): Candidate[] {
+function billsDue({ s, today, facts, live, n }: Ctx): Candidate[] {
   const liveIds = new Set(live.map((e) => e.id));
   const next = payPeriod(addDays(facts.period.end, 1), s.profile.payday);
   const out: Candidate[] = [];
@@ -192,7 +200,7 @@ function reminders({ s, now }: Ctx): Candidate[] {
     }));
 }
 
-function pots({ facts }: Ctx): Candidate[] {
+function pots({ facts, n }: Ctx): Candidate[] {
   const out: Candidate[] = [];
   for (const pot of ['needs', 'wants'] as const) {
     const p = facts.pots[pot];
@@ -220,7 +228,7 @@ function pots({ facts }: Ctx): Candidate[] {
   return out;
 }
 
-function owed({ s, now, today }: Ctx): Candidate[] {
+function owed({ s, now, today, n }: Ctx): Candidate[] {
   return s.debts
     .filter((d) => d.direction === 'owed_to_me' && d.settled_at === null && d.deleted_at === null)
     .filter((d) => now.getTime() - Date.parse(d.created_at) > OWED_AFTER_DAYS * DAY_MS)
@@ -241,7 +249,7 @@ function byCategory(expenses: Expense[], period: PayPeriod): Map<CategoryKey, Mi
   return out;
 }
 
-function spike({ s, today, live }: Ctx): Candidate[] {
+function spike({ s, today, live, n }: Ctx): Candidate[] {
   const [current, ...before] = periodsBack(today, s.profile.payday, 4);
   const now = byCategory(live, current);
   const past = before.map((p) => byCategory(live, p));
@@ -264,7 +272,7 @@ function spike({ s, today, live }: Ctx): Candidate[] {
   ];
 }
 
-function savings({ s, today, facts }: Ctx): Candidate[] {
+function savings({ s, today, facts, n }: Ctx): Candidate[] {
   const pace = spendPace(s.expenses, facts.period, today);
   const hasGoal = Boolean(activeGoal(s.goals));
   if (!isSavingsOpportunity({ left: facts.left, daysLeft: facts.daysLeft, pace, hasGoal })) return [];
@@ -278,7 +286,7 @@ function savings({ s, today, facts }: Ctx): Candidate[] {
   ];
 }
 
-function recap({ now, today, live }: Ctx): Candidate[] {
+function recap({ now, today, live, n }: Ctx): Candidate[] {
   if (!isSunday(today) || now < tunisInstant(today, RECAP_HOUR)) return [];
   const week = live.filter((e) => e.spent_on >= addDays(today, -6) && e.spent_on <= today);
   if (!week.length) return [];

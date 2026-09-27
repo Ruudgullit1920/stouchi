@@ -4,7 +4,7 @@ import { categoryLabel } from './categories';
 import { isInPeriod, type PayPeriod } from './dates';
 import { t } from './i18n/t';
 import { titleOf } from './ledger';
-import { parseTnd, type Mil } from './money';
+import { parseMoney, type Mil } from './money';
 import type { Expense } from './schemas';
 
 const MARKS = /[̀-ͯ]/g;
@@ -37,7 +37,7 @@ export interface SearchGroup {
 export function searchExpenses(expenses: Expense[], query: string, periods: PayPeriod[]): SearchGroup[] {
   const q = normalize(query.trim());
   if (!q) return [];
-  const amount = parseTnd(query);
+  const amount = parseMoney(query);
   const matches = (e: Expense) =>
     e.amount_mil === amount ||
     [titleOf(e), categoryLabel(e.category), t(`pot.${e.pot}`)].some((s) => normalize(s).includes(q));

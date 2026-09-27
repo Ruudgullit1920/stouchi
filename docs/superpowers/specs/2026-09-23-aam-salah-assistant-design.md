@@ -226,6 +226,7 @@ CARNET de Sofiene — lu par l'app le 2026-09-22 à 14:05. Ce sont les seuls chi
     "fin_du_mois": "2026-09-30", "prochaine_paie": "2026-10-01"
   },
   "utilisateur": {"prenom": "Sofiene", "mode": "solo"},
+  "devise": "TND (TND), 3 décimales",
   "plan": {"salaire": 2000, "jour_de_paie": "le 1er", "repartition": "50/30/20", "jours_restants": 9},
   "reste_a_depenser": {"total": 475, "par_jour": 52.777},
   "pots": {

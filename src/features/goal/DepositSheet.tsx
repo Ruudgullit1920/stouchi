@@ -7,7 +7,7 @@ import { payPeriod, todayTunis } from '../../shared/dates';
 import { monthYear } from '../../shared/format';
 import { depositGain, goalView } from '../../shared/goal';
 import { t } from '../../shared/i18n/t';
-import { MIL_PER_TND, formatTnd, splitSalary } from '../../shared/money';
+import { MIL_PER_TND, formatMoney, splitSalary } from '../../shared/money';
 import { planFor } from '../../shared/plan';
 import type { Goal, NewSavingsMove } from '../../shared/schemas';
 import { hideAmounts } from '../budget/hideAmounts';
@@ -36,7 +36,7 @@ export function DepositSheet({ store, goal, write, undo, onDone }: Props) {
   const monthly = plan ? splitSalary(plan.salary_mil, plan.split).savings : 0;
   const { saved } = goalView(goal, store.savingsMoves.value, monthly, today);
   const gain = amount > 0 ? depositGain(goal, saved, amount, monthly, today) : null;
-  const money = (m: number, unit = true) => (hideAmounts.value ? HIDDEN : formatTnd(m, { unit }));
+  const money = (m: number, unit = true) => (hideAmounts.value ? HIDDEN : formatMoney(m, { unit }));
   const name = lower(goal.name);
 
   const save = async () => {
@@ -52,7 +52,7 @@ export function DepositSheet({ store, goal, write, undo, onDone }: Props) {
     });
     onDone();
     showToast({
-      text: t('goal.deposit.done', { amount: formatTnd(amount) }),
+      text: t('goal.deposit.done', { amount: formatMoney(amount) }),
       action: { label: t('action.undo'), run: () => void undo(id) },
     });
   };
@@ -64,7 +64,7 @@ export function DepositSheet({ store, goal, write, undo, onDone }: Props) {
         label={t('goal.deposit.amount')}
         value={amount}
         onChange={setAmount}
-        unit={t('unit.tnd')}
+        unit={t('unit.money')}
       />
       <div class="qchips">
         {QUICK.map((n) => (
@@ -75,7 +75,7 @@ export function DepositSheet({ store, goal, write, undo, onDone }: Props) {
             class={amount === n * MIL_PER_TND ? 'on' : undefined}
             onClick={() => setAmount(n * MIL_PER_TND)}
           >
-            {formatTnd(n * MIL_PER_TND, { unit: false })}
+            {formatMoney(n * MIL_PER_TND, { unit: false })}
           </button>
         ))}
       </div>

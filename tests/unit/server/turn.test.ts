@@ -431,6 +431,39 @@ describe('runTurn — review fixes', () => {
     expect(sb.inserts[0].row.outcome).toBe('validation_drop');
   });
 
+  describe('in a 2-decimal currency (Review Focus 5)', () => {
+    const eur = () =>
+      fakeSupabase({ rows: { ...TABLE_ROWS, profiles: [{ ...fixture.profile, currency: 'EUR' }] } });
+    const act = (amount: number) => ({
+      type: 'add_expense',
+      amount,
+      category: 'cafe',
+      pot: 'envies',
+      kind: 'direct' as const,
+    });
+
+    it('drops 12.345 in EUR, never stores it rounded', async () => {
+      const { d, sb } = deps({ handleAam: () => Promise.resolve(answer({ actions: [act(12.345)] })) }, eur());
+      const out = await runTurn(d, 't', say());
+      expect(out.body).toMatchObject({ reply: SAFE.fr, actions: [] });
+      expect(sb.inserts[0].row.outcome).toBe('validation_drop');
+    });
+
+    it('keeps 12.35 in EUR, and 12.345 in TND', async () => {
+      const { d } = deps({ handleAam: () => Promise.resolve(answer({ actions: [act(12.35)] })) }, eur());
+      expect((await runTurn(d, 't', say())).body).toMatchObject({ actions: [{ amount: 12.35 }] });
+      const tnd = deps({ handleAam: () => Promise.resolve(answer({ actions: [act(12.345)] })) });
+      expect((await runTurn(tnd.d, 't', say())).body).toMatchObject({ actions: [{ amount: 12.345 }] });
+    });
+
+    it('tells the model the currency', async () => {
+      const { d, handleAam } = deps({}, eur());
+      await runTurn(d, 't', say());
+      const carnet = handleAam.mock.calls[0][0].carnet as Carnet;
+      expect(carnet.devise).toBe('EUR (€), 2 décimales');
+    });
+  });
+
   it('keeps 12.5 and 0.001 TND', async () => {
     const actions = [
       { type: 'add_expense', amount: 12.5, category: 'cafe', pot: 'envies', kind: 'direct' as const },

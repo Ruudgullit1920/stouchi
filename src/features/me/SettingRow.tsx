@@ -10,15 +10,28 @@ type RowProps = {
   /** the sub-line is a change waiting for the next payday */
   pending?: boolean;
   value?: string;
+  /** a picture in place of the icon (the currency's flag); decorative */
+  image?: string;
+  disabled?: boolean;
   onClick?: () => void;
 };
 
 /** A settings row that opens something (the prototype's `srow`). */
-export function SettingRow({ icon: Icon, tone = 'plain', title, sub, pending, value, onClick }: RowProps) {
+export function SettingRow({
+  icon: Icon,
+  tone = 'plain',
+  title,
+  sub,
+  pending,
+  value,
+  image,
+  disabled,
+  onClick,
+}: RowProps) {
   return (
-    <button type="button" class="srow" onClick={onClick}>
-      <span class={`ic tone-${tone}`}>
-        <Icon aria-hidden="true" />
+    <button type="button" class="srow" disabled={disabled} onClick={onClick}>
+      <span class={image ? 'ic img' : `ic tone-${tone}`}>
+        {image ? <img src={image} alt="" width={40} height={40} /> : <Icon aria-hidden="true" />}
       </span>
       <span class="tx">
         <span class="t">{title}</span>

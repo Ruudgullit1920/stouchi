@@ -6,7 +6,7 @@ import { billsDueTotal } from '../../shared/bills';
 import { nextPayday, payPeriod, todayTunis } from '../../shared/dates';
 import { monthName, shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
-import { MIL_PER_TND, formatTnd, splitSalary } from '../../shared/money';
+import { MIL_PER_TND, formatMoney, splitSalary } from '../../shared/money';
 import { currentPlan, nextPlanPatch, pendingPlan } from '../../shared/plan';
 import { AmountInput } from '../onboarding/AmountInput';
 import { WhenSwitch, changes, type When } from './When';
@@ -54,17 +54,17 @@ export function SalarySheet({ store, write, onDone }: Props) {
     showToast(
       when === 'now'
         ? {
-            text: t('me.salary.saved', { amount: formatTnd(salary) }),
+            text: t('me.salary.saved', { amount: formatMoney(salary) }),
             action: { label: t('action.undo'), run: () => void write('profiles', p) },
           }
-        : { text: t('me.salary.savedNext', { amount: formatTnd(salary), date: next }) },
+        : { text: t('me.salary.savedNext', { amount: formatMoney(salary), date: next }) },
     );
   };
 
   return (
     <div class="me-sheet">
       <p class="hint">{t('setup.salary.hint')}</p>
-      <AmountInput label={t('me.salary')} value={salary} onChange={setSalary} unit={t('unit.tnd')} />
+      <AmountInput label={t('me.salary')} value={salary} onChange={setSalary} unit={t('unit.money')} />
       {salary > 0 && !ok && (
         <p class="field-error" role="alert">
           {t('setup.salary.min')}
@@ -83,9 +83,11 @@ export function SalarySheet({ store, write, onDone }: Props) {
               <i class={`bg-${k}`} aria-hidden="true" />
               <span>{t(`pot.${k}`)}</span>
               <span>
-                <b class="num">{formatTnd(after[k], { unit: false })}</b>
+                <b class="num">{formatMoney(after[k], { unit: false })}</b>
                 {d !== 0 && (
-                  <small class={d > 0 ? 'd up' : 'd down'}>{formatTnd(d, { unit: false, sign: true })}</small>
+                  <small class={d > 0 ? 'd up' : 'd down'}>
+                    {formatMoney(d, { unit: false, sign: true })}
+                  </small>
                 )}
               </span>
             </div>
@@ -99,8 +101,8 @@ export function SalarySheet({ store, write, onDone }: Props) {
           </span>
           <span>
             {t('me.salary.warn', {
-              salary: formatTnd(salary),
-              bills: formatTnd(bills),
+              salary: formatMoney(salary),
+              bills: formatMoney(bills),
               pct: Math.round((bills * 100) / after.needs),
             })}
           </span>

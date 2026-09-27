@@ -81,9 +81,11 @@ export function CoupleScreen({ store, api, onBack }: Props) {
       t('couple.join.title'),
       <JoinSheet
         join={api.join}
-        onJoined={() => {
+        onJoined={(currency) => {
           closeSheet();
-          showToast({ text: t('couple.on.title') });
+          showToast({
+            text: currency ? t('couple.join.currency', { code: currency }) : t('couple.on.title'),
+          });
         }}
       />,
     );

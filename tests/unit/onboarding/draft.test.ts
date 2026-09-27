@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   BILL_PRESETS,
+  DONE,
+  STEPS,
   clearDraft,
   goalTarget,
   loadDraft,
@@ -121,12 +123,13 @@ describe('goalTarget', () => {
 });
 
 describe('rowsForStep', () => {
-  it('writes the profile, not yet onboarded, on the first three steps', () => {
-    const [{ table, row }] = rowsForStep(answered({ name: ' Amel ' }), 'salary', TODAY);
+  it('writes the profile, not yet onboarded, on the first four steps', () => {
+    const [{ table, row }] = rowsForStep(answered({ name: ' Amel ', currency: 'TND' }), 'salary', TODAY);
     expect(table).toBe('profiles');
     expect(row).toEqual({
       user_id: USER,
       first_name: 'Amel',
+      currency: 'TND',
       salary_mil: 2_000_000,
       payday: 25,
       split_needs: 50,
@@ -201,5 +204,55 @@ describe('openingDeposit', () => {
       occurred_on: TODAY,
     });
     expect(openingDeposit({ ...d, goal: { ...d.goal!, saved_mil: 0 } }, TODAY)).toBeNull();
+  });
+});
+
+describe('the currency step', () => {
+  it('comes second, between the name and the salary', () => {
+    expect(STEPS).toEqual(['name', 'currency', 'salary', 'payday', 'bills', 'goal']);
+  });
+
+  it('pre-selects the currency the time zone suggests', () => {
+    expect(newDraft(USER, { timeZone: 'Europe/Paris' }, ids).currency).toBe('EUR');
+    expect(newDraft(USER, { timeZone: 'Asia/Tokyo' }, ids).currency).toBe('TND');
+    expect(newDraft(USER, { currency: 'MAD', timeZone: 'Europe/Paris' }, ids).currency).toBe('MAD');
+  });
+
+  it('is valid for any of the nine codes', () => {
+    expect(stepValid(answered({ currency: 'CHF' }), 'currency')).toBe(true);
+    expect(stepValid(answered({ currency: 'XXX' as never }), 'currency')).toBe(false);
+  });
+
+  it('writes the currency with every profile row', () => {
+    const [{ table, row }] = rowsForStep(answered({ currency: 'EUR' }), 'currency', TODAY);
+    expect(table).toBe('profiles');
+    expect(row).toMatchObject({ first_name: 'Amel', currency: 'EUR' });
+    expect(rowsForStep(answered({ currency: 'EUR' }), 'payday', TODAY)[0].row).toMatchObject({
+      currency: 'EUR',
+    });
+  });
+
+  it('resumes a draft by step name', () => {
+    const s = memory();
+    const d = answered({ step: STEPS.indexOf('bills') });
+    saveDraft(d, s);
+    expect(loadDraft(USER, s)).toEqual(d);
+  });
+
+  it('resumes a draft saved before this step on the same question (Review Focus 3)', () => {
+    const s = memory();
+    const old: Partial<Draft> = { ...answered() };
+    delete old.currency;
+    // before: ['name', 'salary', 'payday', 'bills', 'goal'], step 1 = salary, 5 = done
+    s.setItem(`stouchi.setup.${USER}`, JSON.stringify({ ...old, step: 1 }));
+    const back = loadDraft(USER, s, 'Europe/Paris');
+    expect(STEPS[back?.step ?? -1]).toBe('salary');
+    expect(back?.currency).toBe('EUR');
+    s.setItem(`stouchi.setup.${USER}`, JSON.stringify({ ...old, step: 0 }));
+    expect(STEPS[loadDraft(USER, s)?.step ?? -1]).toBe('name');
+    s.setItem(`stouchi.setup.${USER}`, JSON.stringify({ ...old, step: 4 }));
+    expect(STEPS[loadDraft(USER, s)?.step ?? -1]).toBe('goal');
+    s.setItem(`stouchi.setup.${USER}`, JSON.stringify({ ...old, step: 5 }));
+    expect(loadDraft(USER, s)?.step).toBe(DONE);
   });
 });

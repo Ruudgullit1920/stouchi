@@ -10,7 +10,7 @@ import { shortDate } from '../../shared/format';
 import { computeFacts } from '../../shared/facts';
 import { t } from '../../shared/i18n/t';
 import { keypadMil } from '../../shared/keypad';
-import { formatTnd, type Mil } from '../../shared/money';
+import { formatMoney, type Mil } from '../../shared/money';
 import { Keypad } from './Keypad';
 import './add.css';
 
@@ -32,7 +32,7 @@ type Props = {
 
 const POTS: Pot[] = ['needs', 'wants'];
 const COLOR: Record<Pot, string> = { needs: 'var(--need)', wants: 'var(--want)' };
-const typed = (mil: Mil) => formatTnd(mil, { unit: false }).replace(/[^0-9,]/g, '');
+const typed = (mil: Mil) => formatMoney(mil, { unit: false }).replace(/[^0-9,]/g, '');
 
 /** Amount on a keypad, Besoins/Envies, category, date, note — for adding and editing. */
 export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
@@ -71,7 +71,9 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
           : date
             ? shortDate(date)
             : t('add.date');
-  const mil = keypadMil(amount);
+  /* an old 3-decimal amount shows rounded in a 2-decimal currency: it stays as stored
+     unless the amount itself is edited (currency spec §4) */
+  const mil = initial && amount === typed(initial.amount_mil) ? initial.amount_mil : keypadMil(amount);
   const facts = profile ? computeFacts(factsInput(store, profile, today)) : null;
 
   const choosePot = (p: Pot) => {
@@ -92,7 +94,7 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
         <output class="big num" aria-label={t('add.amount')}>
           {amount || '0'}
         </output>
-        <span class="unit">{t('unit.tnd')}</span>
+        <span class="unit">{t('unit.money')}</span>
       </p>
       <div class="seg2">
         {POTS.map((p) => (
@@ -100,7 +102,7 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
             <i style={{ background: COLOR[p] }} aria-hidden="true" />
             {t('add.left', {
               pot: t(`pot.${p}`),
-              amount: facts ? formatTnd(facts.pots[p].left, { unit: false }) : '…',
+              amount: facts ? formatMoney(facts.pots[p].left, { unit: false }) : '…',
             })}
           </button>
         ))}

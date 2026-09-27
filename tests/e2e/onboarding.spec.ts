@@ -44,12 +44,17 @@ test.describe('signed out', () => {
 test.describe('signed in', () => {
   test.use({ storageState: STORAGE_STATE });
 
-  test('five questions, the reveal, then Budget with the expected Reste', async ({ page }) => {
+  test('six questions, the reveal, then Budget with the expected Reste', async ({ page }) => {
     const client = await resetOnboarding();
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1, name: 'Comment tu t’appelles ?' })).toBeVisible();
     await noViolations(page);
     await page.getByLabel('Ton prénom').fill('Amel');
+    await cta(page).click();
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Ta devise' })).toBeVisible();
+    await page.getByRole('radio', { name: /Dinar tunisien/ }).click();
+    await noViolations(page);
     await cta(page).click();
 
     await expect(page.getByRole('heading', { level: 1, name: 'Tu gagnes combien par mois ?' })).toBeVisible();
@@ -99,10 +104,12 @@ test.describe('signed in', () => {
       .not.toBeNull();
   });
 
-  test('a reload at step 3 resumes there with the earlier answers', async ({ page }) => {
+  test('a reload at step 4 resumes there with the earlier answers', async ({ page }) => {
     await resetOnboarding();
     await page.goto('/');
     await page.getByLabel('Ton prénom').fill('Amel');
+    await cta(page).click();
+    await page.getByRole('radio', { name: /Dinar tunisien/ }).click();
     await cta(page).click();
     await page.getByLabel(/Salaire net/).fill('2500');
     await cta(page).click();
@@ -112,6 +119,8 @@ test.describe('signed in', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Ton jour de paie ?' })).toBeVisible();
     await page.getByRole('button', { name: 'Retour' }).click();
     await expect(page.getByLabel(/Salaire net/)).toHaveValue('2500');
+    await page.getByRole('button', { name: 'Retour' }).click();
+    await expect(page.getByRole('radio', { name: /Dinar tunisien/ })).toHaveAttribute('aria-checked', 'true');
     await page.getByRole('button', { name: 'Retour' }).click();
     await expect(page.getByLabel('Ton prénom')).toHaveValue('Amel');
   });

@@ -1,6 +1,8 @@
 /* What the screens read: one signal per table, filled from the device's copy
  * and kept current by writes and pulls. */
 import { computed, signal } from '@preact/signals';
+import { currencyOf } from '../shared/currencies';
+import { setCurrentCurrency } from '../shared/currentCurrency';
 import type { FactsInput } from '../shared/facts';
 import type { ISODate } from '../shared/dates';
 import type {
@@ -109,7 +111,11 @@ export function applyRows(store: Store, table: Table, rows: Row[]): void {
   if (!rows.length) return;
   if (table === 'profiles') {
     const mine = rows.find((r) => r.user_id === store.userId.value);
-    if (mine) store.profile.value = mine as unknown as Profile;
+    if (mine) {
+      store.profile.value = mine as unknown as Profile;
+      /* my row carries the household's currency: a partner's change lands here too */
+      setCurrentCurrency(currencyOf(mine.currency as string | undefined).code);
+    }
     return;
   }
   const sig = store[LISTS[table]] as { value: Row[] };
@@ -140,6 +146,7 @@ export function removeRow(store: Store, table: Table | PatchTable, key: string):
 
 export function clearRows(store: Store): void {
   store.profile.value = null;
+  setCurrentCurrency('TND');
   for (const name of Object.values(LISTS)) (store[name] as { value: Row[] }).value = [];
   store.notifications.value = [];
   store.actedOn.value = {};

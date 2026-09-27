@@ -54,6 +54,13 @@ describe('RevealScreen', () => {
     expect(write).not.toHaveBeenCalled();
   });
 
+  it('keeps the chosen currency in the profile it writes (else the device reads TND)', async () => {
+    show(profile({ onboarded_at: null, currency: 'EUR' }));
+    await waitFor(() =>
+      expect(write).toHaveBeenCalledWith('profiles', expect.objectContaining({ currency: 'EUR' })),
+    );
+  });
+
   it('records "déjà épargné" with the setup draft’s id, then forgets the draft', async () => {
     const draft = {
       ...newDraft(USER),

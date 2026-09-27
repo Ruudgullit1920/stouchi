@@ -7,7 +7,7 @@ import { markIntroSeen } from '../../app/gate';
 import { Icon3D, i3dFile } from '../../design/i3d';
 import { reducedMotion } from '../../design/motion';
 import { useRolling } from '../../design/useRolling';
-import { formatTnd, MIL_PER_TND } from '../../shared/money';
+import { formatMoney, MIL_PER_TND } from '../../shared/money';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { Stage, Title, Wordmark } from './Scene';
 import './onboarding.css';
@@ -222,7 +222,7 @@ function SplitScene({ on }: { on: boolean }) {
         <span>
           <small>{t('intro.illo.payday')}</small>
           <b>
-            +<span class="num">{formatTnd(pay, { unit: false })}</span>
+            +<span class="num">{formatMoney(pay, { unit: false })}</span>
             <em>TND</em>
           </b>
         </span>

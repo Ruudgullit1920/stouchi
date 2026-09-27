@@ -2,15 +2,18 @@
  * reload resumes where it stopped. Ids are made once, so repeating a step
  * upserts the same rows instead of adding new ones. */
 import type { Table } from '../../data/localdb';
+import { deviceTimeZone, guessCurrency, isCurrencyCode, type CurrencyCode } from '../../shared/currencies';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { DEFAULT_SPLIT, MAX_MIL, MIL_PER_TND, splitSalary, type Mil } from '../../shared/money';
 import type { ISODate } from '../../shared/dates';
 import type { NewSavingsMove } from '../../shared/schemas';
 
-export const STEPS = ['name', 'salary', 'payday', 'bills', 'goal'] as const;
+export const STEPS = ['name', 'currency', 'salary', 'payday', 'bills', 'goal'] as const;
 export type StepName = (typeof STEPS)[number];
 /** step index once the goal is answered: the reveal comes next */
 export const DONE = STEPS.length;
+/** the steps before the currency one: a draft saved then holds an index into this list */
+const STEPS_BEFORE_CURRENCY = ['name', 'salary', 'payday', 'bills', 'goal'] as const;
 
 export const MIN_SALARY: Mil = 100 * MIL_PER_TND;
 export const NAME_MAX = 20;
@@ -49,6 +52,7 @@ export interface Draft {
   userId: string;
   step: number;
   name: string;
+  currency: CurrencyCode;
   salary_mil: Mil;
   /** 1–28, 0 = last day, null = not answered */
   payday: number | null;
@@ -60,13 +64,20 @@ export interface Draft {
 
 export function newDraft(
   userId: string,
-  seed: { name?: string; salary_mil?: Mil; payday?: number | null } = {},
+  seed: {
+    name?: string;
+    salary_mil?: Mil;
+    payday?: number | null;
+    currency?: CurrencyCode;
+    timeZone?: string;
+  } = {},
   uuid: () => string = () => crypto.randomUUID(),
 ): Draft {
   return {
     userId,
     step: 0,
     name: seed.name ?? '',
+    currency: seed.currency ?? guessCurrency(seed.timeZone ?? deviceTimeZone()),
     salary_mil: seed.salary_mil ?? 0,
     payday: seed.payday ?? null,
     bills: BILL_PRESETS.map((b) => ({
@@ -85,11 +96,36 @@ export function newDraft(
 type KeyValue = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 const keyFor = (userId: string) => `stouchi.setup.${userId}`;
 
-export function loadDraft(userId: string, storage: KeyValue = localStorage): Draft | null {
+/** On the device the step is kept by name, so adding a step never moves someone
+ * mid-way. A draft saved before the currency step holds an index into the old list,
+ * and no currency: it gets the time zone's suggestion (Review Focus 3). */
+type Stored = Omit<Draft, 'step' | 'currency'> & {
+  step: number;
+  stepName?: StepName | 'done';
+  currency?: string;
+};
+
+function stepIndex(stepName: Stored['stepName'], step: number): number {
+  const name = stepName ?? (step >= STEPS_BEFORE_CURRENCY.length ? 'done' : STEPS_BEFORE_CURRENCY[step]);
+  if (name === 'done') return DONE;
+  return Math.max(0, STEPS.indexOf(name));
+}
+
+export function loadDraft(
+  userId: string,
+  storage: KeyValue = localStorage,
+  timeZone: string = deviceTimeZone(),
+): Draft | null {
   try {
     const raw = storage.getItem(keyFor(userId));
-    const d = raw ? (JSON.parse(raw) as Draft) : null;
-    return d?.userId === userId ? d : null;
+    const s = raw ? (JSON.parse(raw) as Stored) : null;
+    if (s?.userId !== userId) return null;
+    const { stepName, currency, ...rest } = s;
+    return {
+      ...rest,
+      step: stepIndex(stepName, s.step),
+      currency: isCurrencyCode(currency) ? currency : guessCurrency(timeZone),
+    };
   } catch {
     return null;
   }
@@ -97,7 +133,8 @@ export function loadDraft(userId: string, storage: KeyValue = localStorage): Dra
 
 export function saveDraft(d: Draft, storage: KeyValue = localStorage): void {
   try {
-    storage.setItem(keyFor(d.userId), JSON.stringify(d));
+    const stored: Stored = { ...d, stepName: d.step >= DONE ? 'done' : STEPS[d.step] };
+    storage.setItem(keyFor(d.userId), JSON.stringify(stored));
   } catch {
     /* private mode: the rows are on the server already, only the resume point is lost */
   }
@@ -117,6 +154,8 @@ export function stepValid(d: Draft, step: StepName): boolean {
   switch (step) {
     case 'name':
       return d.name.trim().length > 0 && d.name.trim().length <= NAME_MAX;
+    case 'currency':
+      return isCurrencyCode(d.currency);
     case 'salary':
       return d.salary_mil >= MIN_SALARY && d.salary_mil <= MAX_MIL;
     case 'payday':
@@ -153,13 +192,14 @@ export function rowsForStep(
   step: StepName,
   today: ISODate,
 ): { table: Table; row: Record<string, unknown> }[] {
-  if (step === 'name' || step === 'salary' || step === 'payday')
+  if (step === 'name' || step === 'currency' || step === 'salary' || step === 'payday')
     return [
       {
         table: 'profiles',
         row: {
           user_id: d.userId,
           first_name: d.name.trim(),
+          currency: d.currency,
           salary_mil: d.salary_mil,
           payday: d.payday ?? 1,
           split_needs: DEFAULT_SPLIT.needs,
@@ -232,4 +272,6 @@ export interface StepProps {
   draft: Draft;
   set: (patch: Partial<Draft>) => void;
   today: ISODate;
+  /** the device's, for the currency suggestion */
+  timeZone: string;
 }
