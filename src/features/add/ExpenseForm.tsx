@@ -71,7 +71,9 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
           : date
             ? shortDate(date)
             : t('add.date');
-  const mil = keypadMil(amount);
+  /* an old 3-decimal amount shows rounded in a 2-decimal currency: it stays as stored
+     unless the amount itself is edited (currency spec §4) */
+  const mil = initial && amount === typed(initial.amount_mil) ? initial.amount_mil : keypadMil(amount);
   const facts = profile ? computeFacts(factsInput(store, profile, today)) : null;
 
   const choosePot = (p: Pot) => {

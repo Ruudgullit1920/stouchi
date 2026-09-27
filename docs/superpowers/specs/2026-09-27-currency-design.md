@@ -81,6 +81,14 @@ currency is one entry in this table plus the SQL check list (§4).
   household, their partner's. Touches no one else.
 - **`couple_join`**: copies the host's `currency` to the joiner inside the same transaction.
 - The local mirror carries `currency` like the other profile fields.
+- Once onboarded, the currency changes only through `set_currency` / `couple_join` (a trigger keeps
+  the old value otherwise), so a profile write queued before a partner's change can't split the
+  household again.
+- **Deploy order:** the migration goes to a backend **before** the app that writes `currency`
+  (PostgREST refuses an unknown column, so onboarding would fail). `stouchi-test` first (for E2E),
+  production only with explicit approval, after the 1 November launch.
+- There is no realtime: a partner's change reaches the other phone on its next pull (focus,
+  reconnect or the periodic sync).
 
 ## 5. Code
 

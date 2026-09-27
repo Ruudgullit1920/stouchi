@@ -9,6 +9,11 @@
  * - set_currency(code): mine, and my partner's when I'm in a household.
  * - couple_join: unchanged but for one statement — the joiner takes the host's
  *   currency — and it answers {"currency": <code>} when that changed it.
+ * - Once onboarded, the currency changes only through those two functions (they
+ *   set the transaction-local flag stouchi.currency_rpc, which a client can't: each
+ *   API request is its own transaction and set_config isn't exposed). The app
+ *   writes the whole profile row, so a write queued before a partner's change
+ *   would otherwise put the household back on two currencies.
  */
 
 alter table public.profiles add column if not exists currency text not null default 'TND';
@@ -16,6 +21,19 @@ alter table public.profiles drop constraint if exists profiles_currency_known;
 alter table public.profiles add constraint profiles_currency_known check (
   currency in ('TND', 'EUR', 'USD', 'GBP', 'CAD', 'CHF', 'MAD', 'DZD', 'LYD')
 );
+
+create or replace function public.profiles_keep_currency()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  if old.onboarded_at is not null
+     and new.currency is distinct from old.currency
+     and coalesce(current_setting('stouchi.currency_rpc', true), '') <> 'on' then
+    new.currency := old.currency;
+  end if;
+  return new;
+end $$;
+create or replace trigger profiles_keep_currency before update on public.profiles
+  for each row execute function public.profiles_keep_currency();
 
 create or replace function public.set_currency(p_code text)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
@@ -30,18 +48,21 @@ begin
     return jsonb_build_object('error', 'CURRENCY_INVALID');
   end if;
   select m.household_id into home from public.household_members m where m.user_id = me;
+  perform set_config('stouchi.currency_rpc', 'on', true);
   begin
     update public.profiles p set currency = p_code
      where p.user_id = me
         or (home is not null
             and p.user_id in (select m.user_id from public.household_members m where m.household_id = home));
   exception when check_violation then
+    perform set_config('stouchi.currency_rpc', 'off', true);
     return jsonb_build_object('error', 'CURRENCY_INVALID');
   end;
+  perform set_config('stouchi.currency_rpc', 'off', true);
   return '{}'::jsonb;
 end $$;
 
-/* Copied from 20260929_phase6_couple.sql; only the host-currency statement is new. */
+/* Copied from 20260929_phase6_couple.sql; only the host-currency statements are new. */
 create or replace function public.couple_join(p_code text)
 returns jsonb language plpgsql volatile security definer set search_path = '' as $$
 declare
@@ -102,9 +123,11 @@ begin
   perform set_config('stouchi.couple_rpc', 'off', true);
   /* One currency per household: the joiner takes the host's. */
   select p.currency into host_currency from public.profiles p where p.user_id = host;
+  perform set_config('stouchi.currency_rpc', 'on', true);
   update public.profiles p set currency = host_currency
    where p.user_id = me and host_currency is not null and p.currency <> host_currency;
   get diagnostics changed = row_count;
+  perform set_config('stouchi.currency_rpc', 'off', true);
   if changed > 0 then
     return jsonb_build_object('currency', host_currency);
   end if;

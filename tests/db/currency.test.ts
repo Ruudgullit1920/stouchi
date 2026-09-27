@@ -101,3 +101,49 @@ describe('couple_join and the currency', () => {
     expect(await pair(host, joiner)).toEqual({});
   });
 });
+
+describe('one currency per household, once onboarded (review Important 1)', () => {
+  const onboarded = { onboarded_at: '2026-09-01T10:00:00+01:00' };
+  const upsertMine = (who: string, currency: string) =>
+    asUser(
+      db,
+      who,
+      `insert into public.profiles (user_id, first_name, salary_mil, payday, onboarded_at, currency)
+       values ($1, 'X', 2500000, 1, '2026-09-01T10:00:00+01:00', $2)
+       on conflict (user_id) do update set salary_mil = excluded.salary_mil, currency = excluded.currency`,
+      [who, currency],
+    );
+
+  it("a stale write of my whole profile keeps the partner's change", async () => {
+    const a = await user(onboarded);
+    const b = await user(onboarded);
+    await pair(a, b);
+    await rpc(a, 'set_currency($1)', ['EUR']);
+    await upsertMine(b, 'TND');
+    expect([await currency(a), await currency(b)]).toEqual(['EUR', 'EUR']);
+    expect(
+      (await asOwner('select salary_mil from public.profiles where user_id = $1', [b]))[0].salary_mil,
+    ).toBe(2_500_000);
+  });
+
+  it('an onboarded user changes it only through set_currency', async () => {
+    const a = await user(onboarded);
+    await asUser(db, a, `update public.profiles set currency = 'GBP' where user_id = $1`, [a]);
+    expect(await currency(a)).toBe('TND');
+    await rpc(a, 'set_currency($1)', ['GBP']);
+    expect(await currency(a)).toBe('GBP');
+  });
+
+  it("joining still takes the host's currency", async () => {
+    const host = await user({ ...onboarded, currency: 'CHF' });
+    const joiner = await user(onboarded);
+    expect(await pair(host, joiner)).toEqual({ currency: 'CHF' });
+    expect(await currency(joiner)).toBe('CHF');
+  });
+
+  it('during onboarding the profile write sets it', async () => {
+    const a = await user();
+    await upsertMine(a, 'MAD');
+    expect(await currency(a)).toBe('MAD');
+  });
+});
