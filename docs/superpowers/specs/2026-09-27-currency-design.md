@@ -1,6 +1,6 @@
 # Currency choice — design
 
-Status: design approved in chat 2026-09-27 · Ships **after** the 1 November launch (not part of Session C).
+Status: design approved in chat 2026-09-27 · Ships **with** the 1 November launch (decided 2026-09-27; its migration is in the Session C list).
 Parent spec: `2026-09-23-stouchi-redesign-design.md` (§4 onboarding, §7 data model, §5 money display).
 
 ## 1. Why
@@ -86,7 +86,7 @@ currency is one entry in this table plus the SQL check list (§4).
   household again.
 - **Deploy order:** the migration goes to a backend **before** the app that writes `currency`
   (PostgREST refuses an unknown column, so onboarding would fail). `stouchi-test` first (for E2E),
-  production only with explicit approval, after the 1 November launch.
+  production at the cut-over (Session C), with explicit approval.
 - There is no realtime: a partner's change reaches the other phone on its next pull (focus,
   reconnect or the periodic sync).
 
