@@ -1,4 +1,5 @@
 import {
+  Banknote,
   Bell,
   Calendar,
   ChartPie,
@@ -16,9 +17,11 @@ import { back, navigate, route } from '../../app/router';
 import { ChatHost } from '../../app/ChatHost';
 import { closeSheet, openSheet } from '../../app/ui';
 import { Button } from '../../design/components/Button';
+import { currencyName, flagOf } from '../../design/components/CurrencyPicker';
 import { coupleActions, deleteAccount, exportRows, pushApi, signOut, writeMine } from '../../data/app';
 import type { Row } from '../../data/localdb';
 import { billsDueTotal } from '../../shared/bills';
+import { currencyOf } from '../../shared/currencies';
 import { nextPayday, payPeriod, periodsSince, todayTunis } from '../../shared/dates';
 import { initials, shortDate } from '../../shared/format';
 import { goalView } from '../../shared/goal';
@@ -34,6 +37,7 @@ import { SalarySheet } from './SalarySheet';
 import { SettingRow, ToggleRow } from './SettingRow';
 import { SplitScreen } from './SplitScreen';
 import { BillsScreen } from './BillsScreen';
+import { CurrencySheet } from './CurrencySheet';
 import { CoupleScreen } from './CoupleScreen';
 import { DeleteSheet } from './DeleteSheet';
 import { downloadCsv, ExportSheet } from './ExportSheet';
@@ -101,6 +105,15 @@ export function MeScreen({ store }: ScreenProps) {
     );
   const editPayday = () =>
     openSheet(t('me.payday'), <PaydaySheet store={store} write={writeProfile} onDone={closeSheet} />);
+  /* like the couple actions, a currency change needs the server */
+  const currency = currencyOf(p.currency).code;
+  const canChangeCurrency = store.sync.value.online && couple !== null;
+  const editCurrency = () =>
+    couple &&
+    openSheet(
+      t('me.currency'),
+      <CurrencySheet store={store} setCurrency={(code) => couple.setCurrency(code)} onDone={closeSheet} />,
+    );
 
   return (
     <div class="me">
@@ -178,6 +191,15 @@ export function MeScreen({ store }: ScreenProps) {
           sub={t('me.payday.sub', { date: shortDate(nextPayday(today, p.payday)) })}
           value={p.payday === 0 ? t('me.payday.end') : t('me.payday.day', { day: paydayDay(p.payday) })}
           onClick={editPayday}
+        />
+        <SettingRow
+          icon={Banknote}
+          image={flagOf(currency)}
+          title={t('me.currency')}
+          sub={canChangeCurrency ? currencyName(currency) : t('currency.offline')}
+          value={currency}
+          disabled={!canChangeCurrency}
+          onClick={editCurrency}
         />
       </div>
 

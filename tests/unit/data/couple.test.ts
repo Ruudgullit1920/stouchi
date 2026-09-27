@@ -8,6 +8,7 @@ import { createStore, type Store } from '../../../src/data/store';
 import { pushOnce, syncOnce, useUser } from '../../../src/data/sync';
 import { writeRow } from '../../../src/data/write';
 import { payPeriod, todayTunis } from '../../../src/shared/dates';
+import { currentCurrency, setCurrentCurrency } from '../../../src/shared/currentCurrency';
 import type { CoupleStateT } from '../../../src/shared/schemas';
 import { bill, debt, expense, goal, income, profile, USER, uuidN } from '../fixtures';
 import { FakeRemote } from './fakeRemote';
@@ -264,5 +265,47 @@ describe('coupleApi', () => {
   it('offline with nothing known, state says so', async () => {
     remote.rpcAnswers.couple_state = new RemoteError('network', '', 'down');
     await expect(api().state('2026-09-10')).rejects.toMatchObject({ key: 'couple.err.offline' });
+  });
+});
+
+describe('the household currency', () => {
+  const api = () => coupleApi(db, remote, store);
+  beforeEach(() => {
+    store.profile.value = profile();
+  });
+  afterEach(() => setCurrentCurrency('TND'));
+
+  it('a join that changed my currency says so and shows it at once', async () => {
+    remote.rpcAnswers.couple_join = { currency: 'EUR' };
+    remote.rpcAnswers.couple_state = ON;
+    expect(await api().join('STC-ABCDEF')).toEqual({ currency: 'EUR' });
+    expect(currentCurrency()).toBe('EUR');
+    expect(store.profile.value?.currency).toBe('EUR');
+  });
+
+  it('a join that kept it changes nothing', async () => {
+    remote.rpcAnswers.couple_join = {};
+    remote.rpcAnswers.couple_state = ON;
+    expect(await api().join('STC-ABCDEF')).toEqual({ currency: null });
+    expect(currentCurrency()).toBe('TND');
+  });
+
+  it('setCurrency asks the server once, then switches, and syncs', async () => {
+    remote.rpcAnswers.set_currency = {};
+    const writes = store.sync.value.writes;
+    await api().setCurrency('GBP');
+    expect(remote.rpcCalls).toEqual([{ fn: 'set_currency', args: { p_code: 'GBP' } }]);
+    expect(currentCurrency()).toBe('GBP');
+    expect(store.profile.value?.currency).toBe('GBP');
+    expect(store.sync.value.writes).toBe(writes + 1);
+  });
+
+  it('a refused or unsent change keeps the old currency', async () => {
+    remote.rpcAnswers.set_currency = { error: 'CURRENCY_INVALID' };
+    await expect(api().setCurrency('GBP')).rejects.toMatchObject({ key: 'couple.err.generic' });
+    remote.rpcAnswers.set_currency = new RemoteError('network', '', 'down');
+    await expect(api().setCurrency('GBP')).rejects.toMatchObject({ key: 'couple.err.offline' });
+    expect(currentCurrency()).toBe('TND');
+    expect(store.profile.value?.currency).toBe('TND');
   });
 });

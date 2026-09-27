@@ -775,6 +775,7 @@
   "couple.join.label": "Code d'invitation",
   "couple.join.placeholder": "STC-XXXXXX",
   "couple.join.go": "Rejoindre le foyer",
+  "couple.join.currency": "Ta devise passe à {code}",
   "couple.unshare.title": "Arrêter le partage avec {name} ?",
   "couple.unshare.body": "Chacun garde ses propres dépenses. Les Besoins communs repartent dans vos deux budgets.",
   "couple.stopped": "Partage arrêté",
@@ -808,5 +809,9 @@
   "currency.name.CHF": "Franc suisse",
   "currency.name.MAD": "Dirham marocain",
   "currency.name.DZD": "Dinar algérien",
-  "currency.name.LYD": "Dinar libyen"
+  "currency.name.LYD": "Dinar libyen",
+  "me.currency": "Devise",
+  "currency.notice": "Tes montants ne sont pas convertis.",
+  "currency.notice.couple": "Le changement vaut aussi pour ton ou ta partenaire.",
+  "currency.offline": "Connecte-toi pour changer de devise."
 }

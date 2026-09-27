@@ -296,3 +296,27 @@ describe('Moi — Partager à deux', () => {
     coupleActions.mockReturnValue(null);
   });
 });
+
+describe('Moi — Devise', () => {
+  it('shows the currency with its flag and opens the sheet', () => {
+    coupleActions.mockReturnValue({});
+    store.profile.value = profile({ currency: 'EUR' });
+    open();
+    const row = screen.getByRole('button', { name: /Devise/ });
+    expect(row.textContent).toContain('EUR');
+    expect(row.querySelector('img')?.getAttribute('alt')).toBe('');
+    fireEvent.click(row);
+    expect(sheet.value?.title).toBe('Devise');
+    coupleActions.mockReturnValue(null);
+  });
+
+  it('offline, the row is disabled and says why', () => {
+    coupleActions.mockReturnValue({});
+    store.sync.value = { ...store.sync.value, online: false };
+    open();
+    const row = screen.getByRole<HTMLButtonElement>('button', { name: /Devise/ });
+    expect(row.disabled).toBe(true);
+    expect(row.textContent).toContain('Connecte-toi pour changer de devise.');
+    coupleActions.mockReturnValue(null);
+  });
+});

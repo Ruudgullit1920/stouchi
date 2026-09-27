@@ -1,6 +1,8 @@
 /* Couple mode on the device (plan D8): the household state the server gives,
  * the stamp that shares a write, and the rebuild when the household changes.
  * The server decides who is in a household; the device only follows. */
+import { isCurrencyCode, type CurrencyCode } from '../shared/currencies';
+import { setCurrentCurrency } from '../shared/currentCurrency';
 import { payPeriod, todayTunis, type ISODate } from '../shared/dates';
 import type { StringKey } from '../shared/i18n/t';
 import { CoupleState, type CoupleStateT, type PartnerChangeT } from '../shared/schemas';
@@ -121,6 +123,13 @@ export function coupleApi(db: LocalDb, remote: Remote, store: Store) {
     store.sync.value = { ...store.sync.value, writes: store.sync.value.writes + 1 };
   }
 
+  /** The server changed my profile's currency: every figure follows now, the pull brings the row. */
+  function showCurrency(code: CurrencyCode): void {
+    const p = store.profile.value;
+    if (p) store.profile.value = { ...p, currency: code };
+    setCurrentCurrency(code);
+  }
+
   return {
     /** offline: the last state known on this device */
     async state(on: ISODate): Promise<CoupleStateT> {
@@ -144,9 +153,19 @@ export function coupleApi(db: LocalDb, remote: Remote, store: Store) {
       await call('couple_cancel');
       await changed();
     },
-    async join(code: string): Promise<void> {
-      await call('couple_join', { p_code: code.trim().toUpperCase() });
+    /** `currency`: the host's, when joining changed mine (currency spec §2) */
+    async join(code: string): Promise<{ currency: CurrencyCode | null }> {
+      const row = await call('couple_join', { p_code: code.trim().toUpperCase() });
+      const currency = isCurrencyCode(row.currency) ? row.currency : null;
+      if (currency) showCurrency(currency);
       await changed();
+      return { currency };
+    },
+    /** Mine and my partner's (set_currency); nothing changes on the device until the server says yes. */
+    async setCurrency(code: CurrencyCode): Promise<void> {
+      await call('set_currency', { p_code: code });
+      showCurrency(code);
+      store.sync.value = { ...store.sync.value, writes: store.sync.value.writes + 1 };
     },
     async leave(): Promise<void> {
       await call('couple_leave');
