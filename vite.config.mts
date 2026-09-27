@@ -85,9 +85,10 @@ export default defineConfig({
     manifest: true,
     /* Never inline fonts as data: URIs: the CSP is font-src 'self', so an
        inlined font would be blocked and log a console CSP error. The 3D icons
-       stay files too: inlined, they would land in the first-load JS. */
+       and the currency flags stay files too: inlined, they would land in the
+       first-load JS. */
     assetsInlineLimit: (filePath) =>
-      /\.(woff2?|ttf|otf)$/.test(filePath) || /[\\/]i3d[\\/]/.test(filePath) ? false : undefined,
+      /\.(woff2?|ttf|otf)$/.test(filePath) || /[\\/](i3d|flags)[\\/]/.test(filePath) ? false : undefined,
   },
   preview: { port: 4173 },
 });

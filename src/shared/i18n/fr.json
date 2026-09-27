@@ -448,6 +448,9 @@
   "setup.name.say": "Ahla bik ! Moi c’est Aam Salah. Je vais tenir tes comptes avec toi.",
   "setup.name.q": "Comment tu t’appelles ?",
   "setup.name.placeholder": "Ton prénom",
+  "setup.currency.say": "Parfait {name} ! Dis-moi dans quelle devise on compte.",
+  "setup.currency.q": "Ta devise",
+  "setup.currency.hint": "Tous tes montants s’afficheront dans cette devise.",
   "setup.salary.say": "Enchanté {name} ! Dès que ton salaire tombe, je le partage en trois. Tu vas voir, c’est simple.",
   "setup.salary.q": "Tu gagnes combien par mois ?",
   "setup.salary.hint": "Le net, ce qui arrive sur ton compte.",
@@ -794,5 +797,16 @@
   "notify.done.partner_invalid": "Cette demande n'est pas valable.",
   "notify.done.partner_gone": "Cette dépense n'existe plus.",
   "notify.done.partner_stale": "Cette demande n'est plus à jour.",
-  "notify.done.partner_refused": "Demande refusée."
+  "notify.done.partner_refused": "Demande refusée.",
+  "currency.suggested": "Suggérée",
+  "currency.example": "Exemple : {amount}",
+  "currency.name.TND": "Dinar tunisien",
+  "currency.name.EUR": "Euro",
+  "currency.name.USD": "Dollar américain",
+  "currency.name.GBP": "Livre sterling",
+  "currency.name.CAD": "Dollar canadien",
+  "currency.name.CHF": "Franc suisse",
+  "currency.name.MAD": "Dirham marocain",
+  "currency.name.DZD": "Dinar algérien",
+  "currency.name.LYD": "Dinar libyen"
 }

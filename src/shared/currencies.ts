@@ -174,3 +174,12 @@ export function currencyOf(code: string | null | undefined): Currency {
 export function guessCurrency(timeZone: string): CurrencyCode {
   return CURRENCIES.find((c) => c.zones.includes(timeZone))?.code ?? 'TND';
 }
+
+/** The device's IANA time zone ('' when the browser won't say). */
+export function deviceTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+  } catch {
+    return '';
+  }
+}
