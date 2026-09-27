@@ -6,7 +6,7 @@ import { nextPayday, todayTunis, type ISODate } from '../../shared/dates';
 import { computeFacts, inOpeningPeriod, openingBudget } from '../../shared/facts';
 import { shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import type { Expense, Profile } from '../../shared/schemas';
 import { AmountInput } from '../onboarding/AmountInput';
 
@@ -50,7 +50,7 @@ export function OpeningSheet({ store, write, onDone }: { store: Store; write: Wr
     await write('profiles', { ...p, opening_mil });
     onDone();
     showToast({
-      text: t('opening.saved', { amount: formatTnd(balance) }),
+      text: t('opening.saved', { amount: formatMoney(balance) }),
       action: { label: t('action.undo'), run: () => void write('profiles', p) },
     });
   };
@@ -58,12 +58,12 @@ export function OpeningSheet({ store, write, onDone }: { store: Store; write: Wr
   return (
     <div class="me-sheet opening">
       <p class="hint">{t('opening.why', { date: shortDate(nextPayday(today, p.payday)) })}</p>
-      <AmountInput label={t('opening.label')} value={balance} onChange={setBalance} unit={t('unit.tnd')} />
+      <AmountInput label={t('opening.label')} value={balance} onChange={setBalance} unit={t('unit.money')} />
       <p class="opening__preview" aria-live="polite" data-testid="opening-preview">
         {preview
           ? t('opening.preview', {
-              left: formatTnd(preview.left),
-              perDay: formatTnd(preview.perDay),
+              left: formatMoney(preview.left),
+              perDay: formatMoney(preview.perDay),
             })
           : t('opening.tip')}
       </p>
