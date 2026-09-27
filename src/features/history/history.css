@@ -49,6 +49,62 @@
   padding: 18px 18px 12px;
   margin-top: 14px;
 }
+.monthcard {
+  position: relative;
+}
+.mc-chip {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ffffff1f;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* the list's pot pills (prototype .fchip): white on the grey page */
+.hfilters {
+  display: flex;
+  gap: 8px;
+  margin: -9px 0 5px;
+}
+.hfilters button {
+  position: relative;
+  isolation: isolate;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+/* a 44 px target (§5.6), the prototype's 34 px pill drawn inside */
+.hfilters button::before {
+  content: '';
+  position: absolute;
+  inset: 5px 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--card);
+}
+.hfilters button i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.hfilters button[aria-pressed='true'] {
+  color: #fff;
+}
+.hfilters button[aria-pressed='true']::before {
+  background: var(--ink);
+}
 .monthcard__k {
   font-size: 13px;
   font-weight: 600;
@@ -145,6 +201,19 @@
   font-size: 11px;
   color: var(--mut);
   font-weight: 500;
+}
+.potmini__bar {
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  margin-top: 8px;
+  overflow: hidden;
+}
+.potmini__bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
 }
 .insight {
   display: grid;

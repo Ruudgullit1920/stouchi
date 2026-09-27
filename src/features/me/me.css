@@ -102,8 +102,9 @@
   font-weight: 600;
 }
 .srow .a {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mut);
 }
 .srow .chev {
   width: 18px;
@@ -779,6 +780,7 @@
 }
 .bill-row .a {
   text-align: right;
+  color: var(--ink);
 }
 .bill-row .a b {
   display: block;
@@ -880,11 +882,10 @@ ul.rem {
   margin-right: 6px;
 }
 .flabel {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--mut);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   margin: 16px 0 8px;
 }
 .seg2.four {

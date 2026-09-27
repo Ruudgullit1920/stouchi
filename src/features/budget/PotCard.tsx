@@ -1,15 +1,16 @@
-import { ChevronRight, Coins, House, Sparkles, type LucideIcon } from 'lucide-preact';
+import { ChevronRight, CircleCheck } from 'lucide-preact';
+import { Icon3D, i3dFile } from '../../design/i3d';
 import type { PotFacts } from '../../shared/facts';
 import { t } from '../../shared/i18n/t';
 import { formatTnd, type Mil } from '../../shared/money';
 import { HIDDEN } from './hideAmounts';
 
 type Kind = 'needs' | 'wants' | 'savings';
-const LOOK: Record<Kind, { icon: LucideIcon; color: string }> = {
+const LOOK: Record<Kind, { icon: string; color: string }> = {
   /* the *-ink shades: white text on them passes AA (spec §5.6) */
-  needs: { icon: House, color: 'var(--need-ink)' },
-  wants: { icon: Sparkles, color: 'var(--want-ink)' },
-  savings: { icon: Coins, color: 'var(--save-ink)' },
+  needs: { icon: 'house', color: 'var(--need-ink)' },
+  wants: { icon: 'sparkles', color: 'var(--want-ink)' },
+  savings: { icon: 'money_bag', color: 'var(--save-ink)' },
 };
 
 type Props = {
@@ -21,26 +22,29 @@ type Props = {
   hidden: boolean;
   /** couple mode: Besoins are the household's (plan D9) */
   shared?: boolean;
+  /** Épargne: the goal it goes to, shown as "→ Notre maison" (prototype) */
+  goal?: string;
   onOpen: () => void;
 };
 
-export function PotCard({ kind, pct, facts, budget, hidden, shared = false, onOpen }: Props) {
-  const { icon: Icon, color } = LOOK[kind];
+export function PotCard({ kind, pct, facts, budget, hidden, shared = false, goal, onOpen }: Props) {
+  const { icon, color } = LOOK[kind];
   const money = (m: Mil) => (hidden ? HIDDEN : formatTnd(m, { unit: false }));
   const over = facts && facts.left < 0;
   return (
     <button type="button" class="pot" style={{ background: color }} onClick={onOpen}>
       <span class="pot__tile" aria-hidden="true">
-        <Icon size={22} />
+        <Icon3D src={i3dFile(icon)} />
       </span>
       <span>
         <span class="pot__name">
           {t(`pot.${kind}`)}
           {shared && <span class="pot__tag">{t('budget.pot.shared')}</span>}
           {facts?.warn && !over && <span class="pot__tag">{t('budget.pot.warn')}</span>}
+          {kind === 'savings' && <CircleCheck size={16} aria-hidden="true" />}
         </span>
         <span class="pot__desc">
-          {pct} % · {t(`pot.${kind}.desc`)}
+          {pct} % · {goal ? t('budget.pot.toGoal', { goal }) : t(`pot.${kind}.desc`)}
         </span>
       </span>
       <span class="pot__amt">

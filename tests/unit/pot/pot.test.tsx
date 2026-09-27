@@ -33,7 +33,7 @@ const next = () => screen.getByRole('button', { name: 'Période suivante' });
 describe('PotScreen', () => {
   it("lists this pot's expenses for the current period, grouped by day", () => {
     render(<PotScreen store={store} />);
-    expect(screen.getByRole('heading', { name: 'Septembre' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Septembre 2026' })).toBeTruthy();
     expect(screen.getByText('Carrefour')).toBeTruthy();
     expect(screen.getByText('Loyer', { selector: '.ledger-row__title' })).toBeTruthy();
     expect(screen.queryByText('Café')).toBeNull();
@@ -45,20 +45,38 @@ describe('PotScreen', () => {
     render(<PotScreen store={store} />);
     expect((next() as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(prev());
-    expect(screen.getByRole('heading', { name: 'Août' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Août 2026' })).toBeTruthy();
     expect(screen.getByText('Monoprix août')).toBeTruthy();
     for (let i = 0; i < 20; i++) fireEvent.click(prev());
-    expect(screen.getByRole('heading', { name: 'Octobre' })).toBeTruthy(); // 2025-10, 11 back
+    expect(screen.getByRole('heading', { name: 'Octobre 2025' })).toBeTruthy(); // 2025-10, 11 back
     expect((prev() as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('shows what is left per day only for the current period', () => {
     render(<PotScreen store={store} />);
-    expect(screen.getByText('Il te reste')).toBeTruthy();
-    expect(screen.getByText(/\/ jour/)).toBeTruthy();
+    expect(screen.getByText('TND restants')).toBeTruthy();
+    expect(screen.getByText(/\/jour/)).toBeTruthy();
     fireEvent.click(prev());
-    expect(screen.getByText('Non dépensé')).toBeTruthy();
-    expect(screen.queryByText(/\/ jour/)).toBeNull();
+    expect(screen.getByText('TND non dépensés')).toBeTruthy();
+    expect(screen.getByText('Budget tenu')).toBeTruthy();
+    expect(screen.queryByText(/\/jour/)).toBeNull();
+  });
+
+  it('says whether the spending keeps pace with the period', () => {
+    render(<PotScreen store={store} />);
+    // 460 of a 1 000 budget on day 10 of 30: well ahead of the days gone
+    expect(screen.getByText('Rythme rapide')).toBeTruthy();
+    expect(screen.getByText('460 / 1 000 dépensés')).toBeTruthy();
+  });
+
+  it('filters the list from a breakdown row, and clears it on a second tap', () => {
+    render(<PotScreen store={store} />);
+    const row = screen.getByRole('button', { name: /^Courses, \d+ %$/ });
+    fireEvent.click(row);
+    expect(row.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByText('Loyer', { selector: '.ledger-row__title' })).toBeNull();
+    fireEvent.click(row);
+    expect(screen.getByText('Loyer', { selector: '.ledger-row__title' })).toBeTruthy();
   });
 
   it('narrows the list with a category pill', () => {

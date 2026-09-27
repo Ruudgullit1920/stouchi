@@ -5,12 +5,37 @@
 const VERSION = 'dev'; // __VERSION__
 const PRECACHE = []; // __PRECACHE__
 const CACHE = `stouchi-${VERSION}`;
+/* the app shell's key: '/', which hosts serve as is (Cloudflare Pages
+   redirects /index.html to /) */
+const SHELL = '/';
 
 /* A new version installs, then WAITS: the page offers "Recharger", and only that
    tap (SKIP_WAITING) lets it take over, so nothing reloads under the user. */
-self.addEventListener('install', (event) =>
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))),
-);
+self.addEventListener('install', (event) => event.waitUntil(precache()));
+
+/* Every file or none: a failed fetch fails the install, so a half-cached
+   version never takes over. A response that came through a redirect is stored
+   as a plain copy, because the browser refuses a redirected response as the
+   answer to a page load. */
+async function precache() {
+  const cache = await caches.open(CACHE);
+  const responses = await Promise.all(
+    PRECACHE.map(async (path) => {
+      const response = await fetch(path, { cache: 'reload' });
+      if (!response.ok) throw new Error(`precache ${path}: ${response.status}`);
+      return [path, response.redirected ? await plain(response) : response];
+    }),
+  );
+  for (const [path, response] of responses) await cache.put(path, response);
+}
+
+async function plain(response) {
+  return new Response(await response.blob(), {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
 self.addEventListener('activate', (event) =>
   event.waitUntil(
     (async () => {
@@ -46,9 +71,7 @@ self.addEventListener('fetch', (event) => {
 async function page(request) {
   const network = fetch(request);
   /* this version's shell first: caches.match would find the older one first */
-  const cached =
-    (await (await caches.open(CACHE)).match('/index.html', MATCH)) ||
-    (await caches.match('/index.html', MATCH));
+  const cached = (await (await caches.open(CACHE)).match(SHELL, MATCH)) || (await caches.match(SHELL, MATCH));
   if (!cached) return network;
   const slow = new Promise((resolve) => setTimeout(() => resolve(cached), 3000));
   return Promise.race([network.catch(() => cached), slow]);

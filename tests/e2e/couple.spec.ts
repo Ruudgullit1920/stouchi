@@ -1,8 +1,8 @@
 /* Phase 6 couple mode on a real backend (plan Task 11): two browser contexts,
  * the test user (A, "Test") and the partner (B, "Amira"). Needs
  * TEST_PARTNER_EMAIL / TEST_PARTNER_PASSWORD in .env (plan D10), else it skips.
- * Both accounts are unpaired before and after the run. The preview server has
- * no /api/aam, so Aam Salah's answer is stubbed; couple_request, the partner's
+ * Both accounts are unpaired before and after the run. Aam Salah's answer
+ * is stubbed (a model isn't deterministic); couple_request, the partner's
  * notification and Accepter are real. */
 import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import {
@@ -10,6 +10,8 @@ import {
   HAS_PARTNER,
   partnerClient,
   readMil,
+  REQUESTS_PER_DAY,
+  requestsToday,
   restoreOnboarded,
   RUN,
   signIn,
@@ -18,7 +20,8 @@ import {
 } from './helpers';
 
 test.skip(!HAS_PARTNER, 'no partner test account in .env (plan D10)');
-test.describe.configure({ mode: 'serial' });
+/* two devices on a real backend, each with its own first pull: slower than one */
+test.describe.configure({ mode: 'serial', timeout: 60_000 });
 
 let ctxA: BrowserContext;
 let ctxB: BrowserContext;
@@ -30,7 +33,7 @@ test.beforeAll(async ({ browser }, info) => {
   await restoreOnboarded();
   const partner = await partnerClient();
   await restoreOnboarded(partner, 'Amira');
-  const use = { ...info.project.use, baseURL: 'http://localhost:4173', serviceWorkers: 'block' as const };
+  const use = { ...info.project.use, baseURL: 'http://127.0.0.1:4173', serviceWorkers: 'block' as const };
   ctxA = await browser.newContext({ ...use, storageState: STORAGE_STATE });
   ctxB = await browser.newContext(use);
   a = await ctxA.newPage();
@@ -64,6 +67,7 @@ async function logExpense(page: Page, keys: string, label: string, pot: 'Besoins
   const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
   await sheet.getByRole('button', { name: new RegExp(`^${pot}`) }).click();
   for (const k of keys) await sheet.getByRole('button', { name: k, exact: true }).click();
+  await sheet.getByRole('button', { name: 'Ajouter une note' }).click();
   await sheet.getByLabel('Note').fill(label);
   await sheet.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(sheet).toBeHidden();
@@ -130,9 +134,22 @@ test("B's Besoins expense moves A's shared Besoins and shows B's badge", async (
   const info = test.info();
   await a.goto('/#/budget');
   await expect(a.locator('.pot', { hasText: 'Commun' })).toBeVisible();
-  const before = await besoinsLeft(a);
+  /* Phase 6 M6: A's first pull after the join may still be on its way; the
+     baseline is the figure once two reads a reload apart agree */
+  let before = Number.NaN;
+  await expect(async () => {
+    await a.reload();
+    const now = await besoinsLeft(a);
+    const settled = now === before;
+    before = now;
+    expect(settled).toBe(true);
+  }).toPass({ intervals: [1_000, 2_000], timeout: 20_000 });
   const label = `${RUN}-${info.project.name}-needs`;
   await logExpense(b, '45', label);
+  /* on the server first, shared with the household */
+  await expect
+    .poll(async () => (await serverRow(label))?.household_id ?? null, { timeout: 20_000 })
+    .not.toBeNull();
   await eventually(a, async () => {
     expect(await besoinsLeft(a)).toBe(before - 45_000);
     const row = a.getByRole('button', { name: new RegExp(label) });
@@ -166,6 +183,10 @@ test("Historique's Moi hides B's rows on A", async () => {
 });
 
 test("A asks Aam Salah to delete B's expense: a request card, B accepts, it is gone for both", async () => {
+  test.skip(
+    (await requestsToday()) >= REQUESTS_PER_DAY,
+    `couple_request's cap (${REQUESTS_PER_DAY} a day) is used up on stouchi-test; it resets at midnight, Tunis time`,
+  );
   const info = test.info();
   const label = `${RUN}-${info.project.name}-needs`;
   const row = await serverRow(label);

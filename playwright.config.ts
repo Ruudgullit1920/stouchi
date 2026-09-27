@@ -12,10 +12,13 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   /* The preview build registers sw.js; with a service worker in the way,
      WebKit's requests skip page.route stubs. The push specs fake it instead. */
-  use: { baseURL: 'http://localhost:4173', trace: 'on-first-retry', serviceWorkers: 'block' },
+  use: { baseURL: 'http://127.0.0.1:4173', trace: 'on-first-retry', serviceWorkers: 'block' },
+  /* The production host, locally: Cloudflare Pages (wrangler) serves dist/ with
+     src/public/_headers, its redirects (/index.html → /) and the /api/aam
+     Function, which reads .env like the dev server. */
   webServer: {
-    command: 'npm run build && npm run preview -- --port 4173 --strictPort',
-    url: 'http://localhost:4173',
+    command: 'npm run build && npm run preview:pages -- --port 4173',
+    url: 'http://127.0.0.1:4173',
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

@@ -29,13 +29,16 @@ export function milFromTnd(x: number): Mil | null {
 
 const NUMBER = new Intl.NumberFormat('fr-TN', { maximumFractionDigits: 3 });
 
-/** "1 200 TND" with non-breaking spaces; "−8" for negatives; "+200" when `sign`. */
+/** "1 200 TND" with non-breaking spaces; "−8" for negatives; "+200" when `sign`.
+ * Groups take a full no-break space, as in the prototype: Intl's narrow one
+ * all but disappears in the tight .num figures ("4800"). */
 export function formatTnd(
   mil: Mil,
   { unit = true, sign = false }: { unit?: boolean; sign?: boolean } = {},
 ): string {
   const prefix = mil < 0 ? '−' : sign && mil > 0 ? '+' : '';
-  return prefix + NUMBER.format(Math.abs(mil) / MIL_PER_TND) + (unit ? ' TND' : '');
+  const figure = NUMBER.format(Math.abs(mil) / MIL_PER_TND).replace(/\u202f/g, '\u00a0');
+  return prefix + figure + (unit ? ' TND' : '');
 }
 
 export interface Split {

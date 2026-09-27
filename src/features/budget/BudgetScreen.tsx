@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Plus } from 'lucide-preact';
 import type { ScreenProps } from '../../app/Shell';
 import { navigate } from '../../app/router';
-import { CATEGORY_ICON } from '../../design/components/CategoryIcon';
+import { CATEGORY_ICON, categoryI3d } from '../../design/components/CategoryIcon';
 import { EmptyState } from '../../design/components/EmptyState';
 import { ErrorState } from '../../design/components/ErrorState';
 import { LedgerRow } from '../../design/components/LedgerRow';
@@ -20,6 +20,7 @@ import { titleOf } from '../../shared/ledger';
 import { formatTnd } from '../../shared/money';
 import { Bell } from '../notifications/Bell';
 import { HIDDEN, hideAmounts, toggleHideAmounts } from './hideAmounts';
+import { activeGoal } from '../../shared/payday';
 import { PotCard } from './PotCard';
 import { UpcomingList } from './UpcomingList';
 import './budget.css';
@@ -117,12 +118,16 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           pct={facts.split.savings}
           budget={savings.budget}
           hidden={hidden}
+          goal={activeGoal(store.goals.value)?.name}
           onOpen={() => navigate('#/goal')}
         />
       </div>
 
       <div class="sec">
         <h2>{t('budget.upcoming')}</h2>
+        <button type="button" class="link" onClick={() => navigate('#/me/bills')}>
+          {t('budget.bills')}
+        </button>
       </div>
       <UpcomingList items={facts.upcoming} hidden={hidden} />
 
@@ -132,12 +137,13 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           {t('budget.seeAll')}
         </button>
       </div>
-      <div class="list">
+      <div class="list rows">
         {facts.recent.length ? (
           facts.recent.map((e) => (
             <LedgerRow
               key={e.id}
               icon={CATEGORY_ICON[e.category]}
+              img={categoryI3d(e.category)}
               tint={e.pot === 'needs' ? 'var(--need-soft)' : 'var(--want-soft)'}
               title={titleOf(e)}
               subtitle={`${categoryLabel(e.category)} · ${shortDate(e.spent_on)}`}

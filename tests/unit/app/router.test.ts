@@ -1,5 +1,6 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { parseRoute, routePath } from '../../../src/app/router';
+import { parseRoute, route, routePath, startRouter } from '../../../src/app/router';
 
 describe('parseRoute', () => {
   it('reads each place in the app from the hash', () => {
@@ -51,5 +52,19 @@ describe('parseRoute', () => {
       '#/me/couple',
     ])
       expect(routePath(parseRoute(h))).toBe(h);
+  });
+});
+
+describe('startRouter', () => {
+  /* the route is read when the module loads and the listener attaches after the
+     first render: a hash change in between (a tap, a test's goto while the app
+     boots) was lost and the old screen stayed */
+  it('picks up a hash that changed before it started listening', () => {
+    location.hash = '#/gallery';
+    route.value = parseRoute(location.hash);
+    history.replaceState(null, '', '#/me/couple');
+    const stop = startRouter();
+    expect(route.value).toEqual({ name: 'me', params: { sub: 'couple' } });
+    stop();
   });
 });

@@ -1,11 +1,12 @@
-import { Check } from 'lucide-preact';
+import { Calendar, Check, Pencil } from 'lucide-preact';
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { CATEGORY_ICON } from '../../design/components/CategoryIcon';
 import { PERIODS_KEPT } from '../../data/app';
 import { factsInput, type Store } from '../../data/store';
 import { categoriesIn, categoryLabel, potOf, type CategoryKey, type Pot } from '../../shared/categories';
-import { periodsBack, todayTunis, type ISODate } from '../../shared/dates';
+import { addDays, periodsBack, todayTunis, type ISODate } from '../../shared/dates';
+import { shortDate } from '../../shared/format';
 import { computeFacts } from '../../shared/facts';
 import { t } from '../../shared/i18n/t';
 import { keypadMil } from '../../shared/keypad';
@@ -41,6 +42,13 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
   const [category, setCategory] = useState<CategoryKey>(initial?.category ?? categoriesIn('needs')[0]);
   const [date, setDate] = useState<ISODate>(initial?.spent_on ?? today);
   const [note, setNote] = useState(initial?.label ?? '');
+  /* the note hides behind a pill until asked for (prototype #m-note-btn) */
+  const [noteOpen, setNoteOpen] = useState(Boolean(initial?.label));
+  const noteField = useRef<HTMLInputElement>(null);
+  const focusNote = useRef(false);
+  useEffect(() => {
+    if (noteOpen && focusNote.current) noteField.current?.focus();
+  }, [noteOpen]);
   const [saving, setSaving] = useState(false);
 
   const profile = store.profile.value;
@@ -53,6 +61,16 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
       : date < oldest
         ? 'add.dateTooOld'
         : null;
+  const dayLabel =
+    date === today
+      ? t('add.today')
+      : date === addDays(today, -1)
+        ? t('add.yesterday')
+        : date === addDays(today, -2)
+          ? t('add.dayBefore')
+          : date
+            ? shortDate(date)
+            : t('add.date');
   const mil = keypadMil(amount);
   const facts = profile ? computeFacts(factsInput(store, profile, today)) : null;
 
@@ -80,7 +98,10 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
         {POTS.map((p) => (
           <button key={p} type="button" aria-pressed={pot === p} onClick={() => choosePot(p)}>
             <i style={{ background: COLOR[p] }} aria-hidden="true" />
-            {t('add.left', { pot: t(`pot.${p}`), amount: facts ? formatTnd(facts.pots[p].left) : '…' })}
+            {t('add.left', {
+              pot: t(`pot.${p}`),
+              amount: facts ? formatTnd(facts.pots[p].left, { unit: false }) : '…',
+            })}
           </button>
         ))}
       </div>
@@ -107,29 +128,56 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
           );
         })}
       </div>
+      {/* the prototype's pills: the date one lays the native picker over itself,
+          so any day of the kept year stays reachable */}
       <div class="meta-row">
-        <label class="field">
-          <span>{t('add.date')}</span>
+        <label class="pill meta-pill">
+          <Calendar size={16} aria-hidden="true" />
+          <span aria-hidden="true">{dayLabel}</span>
           <input
             type="date"
+            class="meta-pill__date"
+            aria-label={t('add.date')}
             value={date}
             min={oldest}
             max={today}
             onInput={(e) => setDate(e.currentTarget.value)}
+            onClick={(e) => {
+              try {
+                e.currentTarget.showPicker();
+              } catch {
+                /* no showPicker (older browsers): the tap opens the picker itself */
+              }
+            }}
             aria-invalid={dateError !== null}
           />
         </label>
-        <label class="field field--grow">
-          <span>{t('add.note')}</span>
-          <input
-            type="text"
-            value={note}
-            maxLength={60}
-            placeholder={t('add.notePlaceholder')}
-            onInput={(e) => setNote(e.currentTarget.value)}
-          />
-        </label>
+        {!noteOpen && (
+          <button
+            type="button"
+            class="pill meta-pill"
+            onClick={() => {
+              focusNote.current = true;
+              setNoteOpen(true);
+            }}
+          >
+            <Pencil size={16} aria-hidden="true" />
+            {t('add.noteAdd')}
+          </button>
+        )}
       </div>
+      {noteOpen && (
+        <input
+          type="text"
+          class="tin note-in"
+          aria-label={t('add.note')}
+          value={note}
+          maxLength={60}
+          placeholder={t('add.notePlaceholder')}
+          ref={noteField}
+          onInput={(e) => setNote(e.currentTarget.value)}
+        />
+      )}
       {dateError && (
         <p class="field-error" role="alert">
           {t(dateError)}

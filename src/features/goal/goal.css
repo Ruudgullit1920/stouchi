@@ -198,17 +198,28 @@
   margin: 14px 0;
 }
 .deposit .qchips button {
-  min-height: 44px;
+  position: relative;
+  isolation: isolate;
+  height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--line);
   font-size: 13.5px;
   font-weight: 600;
 }
+.deposit .qchips button::before {
+  content: '';
+  position: absolute;
+  inset: 4px 0;
+  z-index: -1;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
 .deposit .qchips button.on {
-  background: var(--ink);
-  border-color: var(--ink);
   color: #fff;
+}
+.deposit .qchips button.on::before {
+  background: var(--ink);
+  box-shadow: none;
 }
 .deposit .aamtip {
   display: grid;

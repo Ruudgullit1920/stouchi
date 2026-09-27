@@ -4,6 +4,18 @@ updates:
     directory: /
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    # Pinned on purpose (CLAUDE.md "Tool versions"): typescript-eslint needs
+    # TypeScript < 6.1, and jsx-a11y needs ESLint 9. Babel 8 breaks the build
+    # until the preset supports it.
+    ignore:
+      - dependency-name: typescript
+        versions: ['>= 6.1']
+      - dependency-name: eslint
+        versions: ['>= 10']
+      - dependency-name: '@eslint/js'
+        versions: ['>= 10']
+      - dependency-name: '@babel/core'
+        versions: ['>= 8']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }

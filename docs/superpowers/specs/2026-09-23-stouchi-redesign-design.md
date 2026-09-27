@@ -162,7 +162,10 @@ Plus Jakarta Sans 400–800. Numbers: 800 weight, tight tracking (−0.045 em), 
 `Intl.NumberFormat('fr-TN')` and **non-breaking** thousands separators.
 
 ### 5.3 Icons and logos
-Lucide icons only, 1.5–2 px stroke; no emoji in the interface chrome. Merchant logos (STEG, Ooredoo,
+Lucide icons for the interface chrome, 1.5–2 px stroke. Categories, pots, bills and the onboarding
+scenes use **3D icons**: Microsoft Fluent Emoji 3D (MIT), bundled as 160 px WebP in `src/assets/i3d`
+(`src/design/i3d.tsx` maps each Lucide name to its 3D icon; a bill picks its icon from its label). They
+sit on a neutral grey disc in rows. Merchant logos (STEG, Ooredoo,
 Carrefour, Monoprix, Shell, Zara, Netflix…) sit at ~50–58 % inside a grey disc, no border. Logos are a
 **curated, bundled set** of the most common Tunisian merchants, matched by name; everything else shows
 the category icon. Logos are trademarks: ship only the curated set, and replace it with a licensed
@@ -173,8 +176,9 @@ Pot card · summary card with chunky segmented bar · ledger row (44 px round av
 right-aligned amount) · day header (big date, weekday pill, `MM.YYYY`, hairline) · month bar picker ·
 filter pills · search field with quick chips · bottom tab bar with raised + · speed-dial bubble · bottom
 sheet (keypad, chat, detail) · confirmation card (Oui / Non) · toast · notification item with actions ·
-onboarding: orb illustration, round arrow button, underlined inputs, amount input, day grid, bill toggle
-card, goal card, meter.
+onboarding v2 (`prototype/onboarding-v2.html`): three animated intro scenes and the login on a frosted
+sheet, segmented progress, Google first then rounded e-mail fields; setup: amount input, day grid, bill
+toggle card, goal card, meter.
 
 ### 5.5 Motion
 | Pattern | Spec |
@@ -192,10 +196,12 @@ animated element is interactive immediately.
 
 ### 5.6 Accessibility (WCAG 2.1 AA)
 Text contrast ≥ 4.5 : 1 (3 : 1 for ≥ 18 px bold) — check white-on-pot-colour cards; touch targets
-≥ 44 × 44 px; every icon button has a label; tabs, pills and toggles expose `aria-selected` /
+≥ 44 × 44 px (where the prototype draws a smaller button — 40 px icon buttons, 36 px pills and avatar —
+the button's box stays 44 px and a `::before` draws the prototype's shape inside it); every icon button has a label; tabs, pills and toggles expose `aria-selected` /
 `aria-pressed` / `aria-checked`; sheets and push screens trap focus and return it on close; live
 regions for chat replies and toasts; the month bar picker is keyboard-operable; no information by
-colour alone (pot names always shown next to colours).
+colour alone (pot names always shown next to colours). White text never sits on `--acc` (3.0 : 1): the
+prototype's orange CTAs use `--acc-cta` `#D43F1C` (4.6 : 1), disabled `--acc-cta-off` `#FFC3B5`.
 
 ## 6. Content and voice
 French, "tu", short sentences, no jargon, no guilt. Aam Salah speaks in the chat, the notifications,
@@ -261,7 +267,7 @@ Chat history stays on the device (IndexedDB, last 50 turns), not in the database
 ### 8.1 Architecture
 
 ```
-PWA (Vite + TypeScript + Preact)      Vercel serverless (TypeScript)        Supabase
+PWA (Vite + TypeScript + Preact)      Cloudflare Pages Function (TS)        Supabase
  ├ screens, design system              ├ /api/aam          (assistant)       ├ Auth (e-mail, Google)
  ├ state: signals + query cache        └ shared: facts, schemas, validators  ├ Postgres + RLS
  ├ outbox (IndexedDB) for writes  ───────────────────────────────────────►   ├ Edge Function notify-run
@@ -283,7 +289,7 @@ their own `push_subscriptions` rows, so the app writes them with the user's JWT.
 **Stack decision (proposed).** Today's single 5 400-line `app.js` cannot be safely rebuilt screen by
 screen. Proposed: **Vite + TypeScript (strict) + Preact** (React API, ~4 kB) with Preact Signals for
 state, plain CSS with the §5 tokens as custom properties, `lucide-preact`, and `zod` for every schema
-shared between client, server and assistant. The existing Node/Vercel/Supabase deployment stays.
+shared between client, server and assistant. Hosting moved from Vercel to Cloudflare Pages at launch (Phase 7, 2026-09-27).
 
 ### 8.2 Code organisation
 ```
@@ -322,11 +328,11 @@ animations (animate `transform` and `opacity` only); chat p95 ≤ 4 s.
 ### 8.5 Security and privacy
 - RLS forced on every table; server functions use the **caller's JWT**, never the service key, except
   the notification cron, which is scoped per user in code and audited. That cron is the `notify-run`
-  Edge Function: the service key is Supabase's own built-in secret there and never reaches Vercel or
+  Edge Function: the service key is Supabase's own built-in secret there and never reaches Cloudflare, Vercel or
   `.env`; the cron secret lives only in Supabase Vault.
-- Secrets only in environment variables (Vercel / `.env`, gitignored); rotation documented;
+- Secrets only in environment variables (Cloudflare Pages / `.env`, gitignored); rotation documented;
   API keys never reach the browser.
-- Content-Security-Policy, HSTS, `X-Content-Type-Options`, `Referrer-Policy` headers in `vercel.json`.
+- Content-Security-Policy, HSTS, `X-Content-Type-Options`, `Referrer-Policy` headers in `src/public/_headers` (Cloudflare Pages).
 - Every user-supplied string is escaped (Preact escapes by default; no `dangerouslySetInnerHTML`).
 - `/api/aam` rate-limited per user (30 turns / 10 min, counted from `ai_events`) and size-capped
   (32 kB); assistant output validated before use (Aam Salah spec §5, §7). The legacy app keeps
@@ -350,16 +356,17 @@ The eval gate fails loudly on a malformed `--min-rate` (including the `--min-rat
 0 cases run.
 
 GitHub's `schedule` trigger and Dependabot both only run from the repository's DEFAULT branch
-(`master`), never from a feature branch — so until this rebuild merges (Phase 7), the nightly eval
-does not run from `rebuild`. In the meantime, `.github/workflows/eval.yml`'s `push` trigger (paths
-`lib/aam-salah/**` and the eval script itself) still runs it on every push that touches those
-paths, and it can always be run locally: `npm run eval -- --min-rate 0.9167`.
+(`main` in the `stouchi` repo). `.github/workflows/eval.yml` runs nightly from it, on every push
+to `main` that touches `lib/aam-salah/**` or the eval script, and by hand; it can always be run
+locally: `npm run eval -- --min-rate 0.9167`.
 
-Every pull request: CI green + Vercel preview + checklist (states, a11y, reduced motion, strings in
-`fr.json`). `main` is always deployable; production deploys are promotions of a tested preview.
+Every pull request: CI green + Cloudflare Pages preview + checklist (states, a11y, reduced motion, strings in
+`fr.json`). `main` is always deployable; production is the `production` branch, updated by pushing a tested
+`main` to it (Phase 7 D11).
 
 ### 8.7 Observability
-Sentry (browser and functions) with release tags; structured JSON logs in functions (no PII); a
+Error tracking with release tags in the browser and in `/api/aam` (PostHog since Phase 7 D10;
+nothing the user typed is sent); structured JSON logs in functions (no PII); a
 small dashboard on `ai_events` (latency, fallback rate, validation drops) and sync failures. Alert when
 chat error rate > 5 % over 15 minutes or sync failures spike.
 

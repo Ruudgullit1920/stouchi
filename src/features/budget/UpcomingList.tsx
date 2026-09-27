@@ -1,5 +1,6 @@
-import { ArrowDownLeft, ArrowUpRight, CalendarCheck, Zap } from 'lucide-preact';
+import { CalendarCheck } from 'lucide-preact';
 import { Amount } from '../../design/components/Amount';
+import { Icon3D, billI3d, i3dFile } from '../../design/i3d';
 import type { Upcoming } from '../../shared/facts';
 import { shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
@@ -17,22 +18,18 @@ export function UpcomingList({ items, hidden }: { items: Upcoming[]; hidden: boo
       </div>
     );
   return (
-    <ul class="list">
+    <ul class="list rows">
       {items.map((u) => {
         const incoming = u.kind === 'debt' && u.direction === 'owed_to_me';
-        const Icon = u.kind === 'bill' ? Zap : incoming ? ArrowDownLeft : ArrowUpRight;
+        const src = u.kind === 'bill' ? billI3d(u.label) : i3dFile('money_with_wings');
         const title =
           u.kind === 'bill'
             ? u.label
             : t(incoming ? 'budget.debt.owed' : 'budget.debt.owe', { person: u.label });
         return (
           <li key={`${u.kind}-${u.id}-${u.due_on}`} class="ledger-row ledger-row--static">
-            <span
-              class="ledger-row__avatar"
-              style={{ background: incoming ? 'var(--save-soft)' : 'var(--need-soft)' }}
-              aria-hidden="true"
-            >
-              <Icon size={20} />
+            <span class="ledger-row__avatar ledger-row__avatar--3d" aria-hidden="true">
+              <Icon3D src={src} />
             </span>
             <span class="ledger-row__text">
               <span class="ledger-row__title">{title}</span>

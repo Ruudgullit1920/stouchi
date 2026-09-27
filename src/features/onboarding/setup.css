@@ -1,11 +1,5 @@
-/* Setup, ported from prototype #f-setup. Contrast (§5.6): selected days and the
-   CTA sit on --ink, coloured small text uses the *-ink shades. */
-.setup .icon-btn.line {
-  box-shadow: none;
-  border: 1px solid var(--line);
-  width: 44px;
-  height: 44px;
-}
+/* Setup, ported from prototype #f-setup. Contrast (§5.6): selected days sit on
+   --ink, the CTA on --acc-cta (4.6 : 1), coloured small text uses the *-ink shades. */
 .su-head {
   display: grid;
   grid-template-columns: 44px 1fr 44px;
@@ -43,8 +37,13 @@
   color: var(--mut);
   text-align: right;
 }
+/* the screen's height exactly, so the steps scroll and Continuer stays put */
+.flow.setup {
+  height: 100dvh;
+}
 .su-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   margin: 0 calc(-1 * var(--gutter-onb));
@@ -174,17 +173,29 @@
   margin-top: 14px;
 }
 .qchips button {
-  min-height: 44px;
+  position: relative;
+  isolation: isolate;
+  height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid var(--line);
   font-size: 13.5px;
   font-weight: 600;
 }
+/* a 44 px target (§5.6), the prototype's 36 px chip drawn inside */
+.qchips button::before {
+  content: '';
+  position: absolute;
+  inset: 4px 0;
+  z-index: -1;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
 .qchips button.on {
-  background: var(--ink);
-  border-color: var(--ink);
   color: #fff;
+}
+.qchips button.on::before {
+  background: var(--ink);
+  box-shadow: none;
 }
 .splitprev {
   margin-top: 24px;
@@ -495,14 +506,14 @@
 .su-cta {
   height: 56px;
   border-radius: 18px;
-  background: var(--ink);
+  background: var(--acc-cta);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
   width: 100%;
 }
 .su-cta:disabled {
-  opacity: 0.45;
+  background: var(--acc-cta-off);
 }
 @media (prefers-reduced-motion: reduce) {
   .su-step,

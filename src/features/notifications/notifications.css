@@ -1,5 +1,5 @@
 /* Notifications, ported from prototype/index.html #s-notif (.ngroup, .notif, .nbtn). */
-.notif-h1 {
+.top .notif-h1 {
   font-size: 18px;
 }
 .readall {

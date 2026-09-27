@@ -1,5 +1,5 @@
-/* Phase 3: Aam Salah's chat on a real backend (plan Task 10). The preview
- * server has no /api/aam function, so each test stubs it with canned replies;
+/* Phase 3: Aam Salah's chat on a real backend (plan Task 10). The model's
+ * answers aren't deterministic, so each test stubs /api/aam with canned replies;
  * everything the app does with them (the local repos, the outbox, sync) is real. */
 import { expect, test, type Page } from '@playwright/test';
 import { blockingViolations, cleanUp, HAS_ACCOUNT, readMil, RUN, STORAGE_STATE, testClient } from './helpers';
@@ -68,6 +68,7 @@ async function logByKeypad(page: Page, keys: string, label: string): Promise<str
   await page.getByRole('button', { name: /Saisie manuelle/ }).click();
   const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
   for (const k of keys) await sheet.getByRole('button', { name: k, exact: true }).click();
+  await sheet.getByRole('button', { name: 'Ajouter une note' }).click();
   await sheet.getByLabel('Note').fill(label);
   await sheet.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(sheet).toBeHidden();

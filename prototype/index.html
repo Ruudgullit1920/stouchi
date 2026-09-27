@@ -79,6 +79,10 @@ svg.lucide{width:20px;height:20px;stroke-width:2}
   text-align:left;width:100%;transition:transform .15s}
 .pot:active{transform:scale(.98)}
 .pot .tile{width:44px;height:44px;border-radius:14px;background:#ffffff2e;display:grid;place-items:center}
+.pot .tile img.i3d{width:34px;height:34px;filter:drop-shadow(0 2px 3px #0000002e)}
+/* 3D category icons (Fluent Emoji 3D) sit on a neutral disc, like the brand logos */
+.ic.d3{background:var(--bg)}
+.ic.d3 img{width:66%;height:66%;object-fit:contain;display:block;filter:drop-shadow(0 1px 2px #0000001f)}
 .pot .name{font-size:16px;font-weight:700;display:flex;align-items:center;gap:6px}
 .pot .desc{font-size:12px;opacity:.82;margin-top:2px;font-weight:500}
 .pot .amt{text-align:right}
@@ -139,20 +143,39 @@ svg.lucide{width:20px;height:20px;stroke-width:2}
 #h-month-view [hidden]{display:none!important}
 .pills .fchip{background:#fff;border:1px solid var(--line);height:36px;padding:0 16px}
 .pills .fchip.on{background:var(--ink);border-color:var(--ink)}
-.sumcard{border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;box-shadow:0 4px 16px #1b1f3a0a;margin-bottom:8px}
-.sumcard .head{display:flex;justify-content:space-between;align-items:baseline}
-.sumcard .head span{font-size:13px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:8px}
-.sumcard .head span i{width:10px;height:10px;border-radius:3px}
-.sumcard .head b{font-size:17px;font-weight:800}
-.sumcard .head b small{font-size:13px;color:var(--mut);font-weight:600}
-.chunks{display:flex;gap:4px;height:30px;margin:14px 0 12px}
-.chunks i{display:block;border-radius:7px;min-width:8px;transition:opacity .2s,flex .3s}
-.chunks i.dim{opacity:.25}
-.legend2{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
-.legend2 div{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:500;color:var(--ink2)}
-.legend2 i{width:8px;height:8px;border-radius:50%;flex:none}
-.legend2 b{margin-left:auto;font-weight:700;color:var(--ink)}
-.sumfoot{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding:10px 12px;border-radius:12px;font-size:13px;font-weight:600}
+/* pot summary: a gradient hero in the pot's colour (what's left, pace, one bar),
+ * then the breakdown on the pot's soft tint. Numbers first, few words. */
+.sumcard{border-radius:var(--r-lg);background:var(--s);padding:6px;margin-bottom:8px}
+.ps-hero{position:relative;overflow:hidden;border-radius:20px;padding:16px 18px 18px;color:#fff;
+  background:radial-gradient(120% 90% at 100% 0%,#ffffff33 0,#ffffff00 55%),linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 70%,#0E0F12))}
+.ps-hero::after{content:'';position:absolute;right:-40px;bottom:-60px;width:170px;height:170px;border-radius:50%;background:#ffffff14}
+.ps-top{position:relative;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.ps-pot{font-size:14px;font-weight:700}
+.ps-chip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:5px 10px;border-radius:999px;white-space:nowrap;background:#ffffff2e;backdrop-filter:blur(6px)}
+.ps-chip i{width:7px;height:7px;border-radius:50%;background:var(--d,#fff);box-shadow:0 0 0 2px #ffffff55}
+.ps-big{position:relative;display:flex;align-items:baseline;gap:8px;margin-top:10px}
+.ps-big b{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.ps-big span{font-size:14px;font-weight:600;opacity:.8}
+.ps-big em{margin-left:auto;font-style:normal;font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:#ffffff26}
+.ps-track{position:relative;margin-top:18px}
+.ps-bar{display:flex;gap:2px;height:10px;border-radius:999px;overflow:hidden;background:#ffffff33}
+.ps-bar i{display:block;height:100%;transition:opacity .2s,flex .3s}
+.ps-bar i.dim{opacity:.3}
+.ps-tick{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #0000001f}
+.ps-cap{position:relative;display:flex;justify-content:space-between;margin-top:8px;font-size:12px;font-weight:600;opacity:.85}
+.ps-list{padding:6px 8px 4px}
+.bk{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:12px;width:100%;padding:8px;border-radius:14px;background:none;border:0;text-align:left;font:inherit;color:inherit;transition:opacity .2s,background .2s}
+.bk.dim{opacity:.4}
+.bk.on{background:var(--card)}
+.bk-ic{width:34px;height:34px;border-radius:50%;background:var(--card);display:grid;place-items:center}
+.bk-ic img{width:21px;height:21px;object-fit:contain}
+.bk-ic svg.lucide{width:16px;height:16px}
+.bk.on .bk-ic,.bk.on .bk-bar{background:var(--s)}
+.bk-top{display:flex;align-items:baseline;gap:6px;font-size:14px}
+.bk-top b{font-weight:600}
+.bk-bar{display:block;height:5px;margin-top:6px;border-radius:999px;background:#ffffffb3;overflow:hidden}
+.bk-bar i{display:block;height:100%;border-radius:999px}
+.bk-amt{margin-left:auto;font-size:15px;font-weight:800}
 .dayhead{display:flex;align-items:center;gap:8px;margin:22px 0 4px}
 .dayhead b{font-size:20px;font-weight:800;letter-spacing:-.02em;min-width:26px}
 .dayhead .wd{font-size:11.5px;font-weight:600;color:var(--ink2);background:var(--bg);border-radius:6px;padding:2px 7px}
@@ -438,7 +461,7 @@ svg.lucide{width:20px;height:20px;stroke-width:2}
   .pad button:active{transform:scale(.88);background:var(--bg)}
   .rise>*{animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 45ms)}
   @keyframes rise{from{opacity:0;transform:translateY(16px)}}
-  .segbar i,.minibar i,.chunks i,.potmini .mb i,.catrow .tr i,.gbar{animation:growX .9s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
+  .segbar i,.minibar i,.ps-bar i,.bk-bar i,.potmini .mb i,.catrow .tr i,.gbar{animation:growX .9s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
   .mbar .col i{animation:growY .7s cubic-bezier(.2,.8,.2,1) both;transform-origin:bottom}
   @keyframes growX{from{transform:scaleX(0)}}
   @keyframes growY{from{transform:scaleY(0)}}
@@ -1134,10 +1157,30 @@ const dayName = dt => {
   return dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'short'});
 };
 const icons = () => lucide.createIcons({attrs:{'stroke-width':2}});
-/* Brand logo when we recognise the merchant, category icon otherwise. */
+/* 3D icons for categories, bills and pots: Microsoft Fluent Emoji 3D (MIT),
+ * pinned to one commit on jsDelivr. Lucide name → Fluent folder; a name
+ * ending in "/Default" is a skin-tone emoji. UI chrome stays on Lucide. */
+const F3D = 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/';
+const I3D = {
+  house:'House', sparkles:'Sparkles', coins:'Money bag', 'hand-coins':'Money with wings',
+  'shopping-cart':'Shopping cart', 'key-round':'Key', zap:'High voltage', bus:'Bus', fuel:'Fuel pump',
+  'heart-pulse':'Pill', utensils:'Fork and knife with plate', coffee:'Hot beverage', 'shopping-bag':'Shopping bags',
+  ticket:'Admission tickets', tv:'Television', gift:'Wrapped gift', wrench:'Hammer and wrench',
+  'graduation-cap':'Graduation cap', landmark:'Bank', shirt:'T-shirt', plane:'Airplane', scissors:'Lipstick',
+  'circle-ellipsis':'Package', droplet:'Droplet', wifi:'Globe with meridians', smartphone:'Mobile phone',
+  shield:'Shield', 'shield-check':'Shield', dumbbell:'Person lifting weights/Default', car:'Automobile',
+  heart:'Red heart', receipt:'Receipt'
+};
+const src3d = icon => { const n = I3D[icon]; if (!n) return null;
+  const [name, tone] = n.split('/'), file = name.toLowerCase().replace(/ /g, '_') + '_3d' + (tone ? '_' + tone.toLowerCase() : '');
+  return F3D + encodeURIComponent(name) + (tone ? '/' + tone : '') + '/3D/' + file + '.png'; };
+const ico = (icon, cls='') => { const s = src3d(icon);
+  return s ? `<img class="i3d ${cls}" src="${s}" alt="">` : `<i data-lucide="${icon}"></i>`; };
+/* Brand logo when we recognise the merchant, 3D category icon otherwise. */
 const avatar = (label, icon, color, soft) => { const L = logoFor(label);
   return L ? `<div class="ic logo ${L.cls}"><img src="${L.src}" alt=""></div>`
-           : `<div class="ic" style="background:${soft};color:${color}"><i data-lucide="${icon}"></i></div>`; };
+           : src3d(icon) ? `<div class="ic d3">${ico(icon)}</div>`
+           : `<div class="ic" style="background:${soft};color:${color}">${ico(icon)}</div>`; };
 const row = (e, withDate=true) => { const c=CATS[e.c], p=POTS[c.p];
   return `<div class="row">${avatar(e.l, c.i, p.color, p.soft)}
   <div><div class="t">${e.l}</div><div class="s">${c.l}${withDate?" · "+dayName(e.d):""}</div></div><div class="a num">−${fmt(e.a)}</div></div>`; };
@@ -1160,7 +1203,7 @@ function renderBudget(){
     const used = spent(k)/budget(k), warn = k!=='save' && used>=.8;
     const amt = k==='save' ? `<b class="num">${fmt(budget(k))}</b><span>mis de côté</span>` : `<b class="num">${fmt(left(k))}</b><span>sur ${fmt(budget(k))}</span>`;
     return `<button class="pot" data-pot="${k}" style="background:${p.color}">
-      <div class="tile"><i data-lucide="${p.icon}"></i></div>
+      <div class="tile">${ico(p.icon)}</div>
       <div><div class="name">${p.name}${warn?'<span class="tag">ATTENTION</span>':''}${k==='save'?'<i data-lucide="circle-check" style="width:16px;height:16px"></i>':''}</div><div class="desc">${p.pct}% · ${p.desc}</div></div>
       <div class="amt">${amt}</div><i class="chev" data-lucide="chevron-right"></i>
       <div class="minibar"><i style="width:${Math.min(used,1)*100}%"></i></div></button>`;
@@ -1219,26 +1262,48 @@ function renderPot(k){
   $('pot-filters').hidden = cats.length < 2;   /* one pill filters nothing */
 
   /* summary card */
+  /* A gradient hero in the pot's colour leads with what's left and whether the
+   * pace is fine (dot colour), then the breakdown sits on the pot's soft tint.
+   * A breakdown row filters the list like the pills do; tap again to clear. */
   const total = all.reduce((s,e)=>s+e.a,0);
-  const color = p.color;
-  let head, foot, rest = 0;
+  const color = p.color, B = budget(k), current = potMonth===CUR;
+  const GOOD = '#3DDC97', WARN = '#FFC53D', BAD = '#FF6B6B';
+  const chip = (t, dot) => `<span class="ps-chip" style="--d:${dot}"><i></i>${t}</span>`;
+  const catIcon = c => c==='auto' ? 'coins' : c==='manuel' ? 'hand-coins' : CATS[c].i;
+  let status, big, bar, cap, tick = '';
   if (k==='save'){
-    head = `<span><i style="background:${color}"></i>Épargne · ${MONTHS_L[potMonth%12]}</span><b class="num">+${fmt(total)} <small>TND</small></b>`;
-    foot = `<span>Total vers ${GOAL.name}</span><b class="num">${fmt(GOAL.saved)} / ${fmt(GOAL.target)}</b>`;
+    const pct = GOAL.target ? Math.min(GOAL.saved/GOAL.target, 1) : 0;
+    status = GOAL.target ? chip(`${Math.round(pct*100)} % de l'objectif`, GOOD) : '';
+    big = `<b class="num">+${fmt(total)}</b><span>TND ce mois</span>`;
+    bar = `<i style="flex:${pct};background:#fff"></i><i style="flex:${1-pct};background:transparent"></i>`;
+    cap = `<span>${GOAL.name}</span><span class="num">${fmt(GOAL.saved)} / ${fmt(GOAL.target)}</span>`;
   } else {
-    rest = budget(k) - total;
-    const current = potMonth===CUR;
-    head = `<span><i style="background:${color}"></i>${p.name} · ${p.pct}%</span><b class="num">${fmt(total)} <small>/ ${fmt(budget(k))} TND</small></b>`;
-    foot = rest >= 0
-      ? `<span>${current?'Il te reste':'Non dépensé'}</span><b class="num">${fmt(rest)} TND${current?` · ${fmt(rest/daysLeft())}/jour`:''}</b>`
-      : `<span>Dépassé de</span><b class="num">${fmt(-rest)} TND</b>`;
+    const rest = B - total, used = total / B;
+    if (rest < 0) status = chip('Dépassé', BAD);
+    else if (!current) status = chip('Budget tenu', GOOD);
+    else {
+      const {dt:end, ym} = nextPayday(), start = payDate(ym-1, PAYDAY), pace = (TODAY-start) / (end-start);
+      tick = `<div class="ps-tick" style="left:${Math.min(pace,1)*100}%" title="Aujourd'hui"></div>`;
+      status = used >= .8 ? chip('Attention', WARN) : used > pace + .1 ? chip('Rythme rapide', WARN) : chip('Dans le rythme', GOOD);
+    }
+    big = rest < 0 ? `<b class="num">−${fmt(-rest)}</b><span>TND</span>`
+        : `<b class="num">${fmt(rest)}</b><span>TND ${current ? 'restants' : 'non dépensés'}</span>`
+          + (current ? `<em class="num">${fmt(rest/daysLeft())}/jour</em>` : '');
+    const WHITES = [1, .72, .5, .34, .22];
+    bar = cats.map(([c,v],i)=>`<i class="${potFilter!=='all'&&potFilter!==c?'dim':''}" style="flex:${v};background:rgba(255,255,255,${WHITES[Math.min(i,4)]})"></i>`).join('')
+      + (rest > 0 ? `<i style="flex:${rest};background:transparent"></i>` : '');
+    cap = `<span class="num">${fmt(total)} / ${fmt(B)} dépensés</span><span>${current ? daysLeft() + ' j restants' : ymLabel(potMonth)}</span>`;
   }
-  const chunks = cats.map(([c,v],i)=>`<i class="${potFilter!=='all'&&potFilter!==c?'dim':''}" style="flex:${v};background:${tint(color,i)}"></i>`).join('')
-    + (rest>0 ? `<i style="flex:${rest};background:var(--line)"></i>` : '');
-  const legend = cats.map(([c,v],i)=>`<div><i style="background:${tint(color,i)}"></i>${catLabel(c)}<b class="num">${fmt(v)}</b></div>`).join('')
-    + (rest>0 ? `<div><i style="background:#D5D7DD"></i>Disponible<b class="num">${fmt(rest)}</b></div>` : '');
-  $('pot-sum').innerHTML = `<div class="head">${head}</div><div class="chunks">${chunks}</div><div class="legend2">${legend}</div>
-    <div class="sumfoot" style="background:${p.soft};color:${color}">${foot}</div>`;
+  const rows = cats.map(([c,v],i)=>{ const on = potFilter===c, share = total ? v/total : 0;
+    return `<button class="bk ${on?'on':potFilter!=='all'?'dim':''}" data-pfilter="${on?'all':c}" aria-pressed="${on}" aria-label="${catLabel(c)}, ${Math.round(share*100)} %">
+      <span class="bk-ic">${ico(catIcon(c))}</span>
+      <span><span class="bk-top"><b>${catLabel(c)}</b><b class="bk-amt num">${fmt(v)}</b></span>
+        <span class="bk-bar"><i style="width:${share*100}%;background:${tint(color,i)}"></i></span></span></button>`; }).join('');
+  const sum = $('pot-sum'); sum.style.setProperty('--c', color); sum.style.setProperty('--s', p.soft);
+  sum.innerHTML = `<div class="ps-hero"><div class="ps-top"><span class="ps-pot">${p.name}</span>${status}</div>
+    <div class="ps-big">${big}</div>
+    <div class="ps-track"><div class="ps-bar">${bar}</div>${tick}</div><div class="ps-cap">${cap}</div></div>
+    ${cats.length > 1 ? `<div class="ps-list">${rows}</div>` : ''}`;
 
   /* list */
   const q = potQ.trim().toLowerCase();
@@ -2145,7 +2210,7 @@ function renderReveal(){
     <p>Chaque mois, je partage ton salaire comme ça. Tu n'as rien à faire.</p>
     ${pots.map(([k, d], i) => { const p = POTS[k];
       return `<div class="pot" style="background:${p.color};animation-delay:${.55 + i*.16}s">
-        <div class="tile"><i data-lucide="${p.icon}"></i></div>
+        <div class="tile">${ico(p.icon)}</div>
         <div><div class="name">${p.name}</div><div class="desc">${p.pct} % · ${d}</div></div>
         <div class="amt"><b class="num" id="rv-${k}">0</b><span>TND / mois</span></div></div>`; }).join('')}
     <button class="cta" id="rv-go">Ouvrir mon budget<i data-lucide="arrow-right"></i></button>`;

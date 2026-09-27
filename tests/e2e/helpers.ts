@@ -50,6 +50,24 @@ export async function signIn(page: Page, client: SupabaseClient): Promise<void> 
 
 /** Neither test account in a household: a waiting invite is cancelled, a couple
  * is left. Run first and last, so a failed run never leaves them paired. */
+/** couple_request's cap is 10 requests per sender per day (Africa/Tunis, UTC+1
+ * all year): how many the test user (A) has sent the partner (B) today, read
+ * from B's notifications. A test past the cap skips instead of failing. */
+export const REQUESTS_PER_DAY = 10;
+export async function requestsToday(): Promise<number> {
+  const tunis = new Date(Date.now() + 3_600_000);
+  tunis.setUTCHours(0, 0, 0, 0);
+  const since = new Date(tunis.getTime() - 3_600_000).toISOString();
+  const b = await partnerClient();
+  const { count, error } = await b
+    .from('notifications')
+    .select('id', { count: 'exact', head: true })
+    .eq('trigger', 'partner_request')
+    .gte('created_at', since);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function unpair(): Promise<void> {
   if (!HAS_PARTNER) return;
   for (const client of [await testClient(), await partnerClient()]) {
@@ -158,6 +176,7 @@ export async function logExpense(page: Page, keys: string, label: string) {
   const sheet = page.getByRole('dialog', { name: 'Nouvelle dépense' });
   for (const k of keys)
     await sheet.getByRole('button', { name: k === ',' ? 'Virgule' : k, exact: true }).click();
+  await sheet.getByRole('button', { name: 'Ajouter une note' }).click();
   await sheet.getByLabel('Note').fill(label);
   await sheet.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(sheet).toBeHidden();

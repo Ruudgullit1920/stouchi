@@ -1,4 +1,4 @@
-/* The HTTP edge of /api/aam, shared by the Vercel function (api/aam.ts) and
+/* The HTTP edge of /api/aam, shared by the Pages Function (functions/api/aam.ts) and
  * the dev server (vite.config.mts): method, size cap, JSON, bearer token. */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { flushTelemetry, logEvent, recordMetric } from '../../../lib/ai-observability.js';

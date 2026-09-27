@@ -2,10 +2,10 @@
  * what changed since the last cursor. Last write wins per row; the server's
  * updated_at is the truth, except for rows with a write still waiting here. */
 import { loadCouple, syncCouple } from './couple';
-import { TABLES, rowKey, type LocalDb, type Row } from './localdb';
+import { TABLES, rowKey, type LocalDb, type Row, type Table } from './localdb';
 import { clearMirror } from './mirror';
 import { flush, pendingFor } from './outbox';
-import { RemoteError, type Remote } from './remote';
+import { cursorColumn, RemoteError, type Remote } from './remote';
 import type { Notification } from '../shared/schemas';
 import { applyRows, clearRows, setNotifications, type Store } from './store';
 
@@ -96,26 +96,56 @@ export async function pull(db: LocalDb, remote: Remote, store: Store): Promise<v
     const cursor = ((await db.get('meta', `cursor:${t}`)) as string | undefined) ?? null;
     const since = cursor ? new Date(Date.parse(cursor) - OVERLAP_MS).toISOString() : null;
     const res = await remote.pullSince(t, since);
+    /* the server answered: "Hors ligne" goes now, not once every table is in —
+       unless the browser has gone offline since (an answer still in flight
+       then must not hide the badge while the next tables retry) */
+    if (!store.sync.value.online && globalThis.navigator?.onLine !== false)
+      store.sync.value = { ...store.sync.value, online: true };
     const next = cursor && (!res.cursor || res.cursor < cursor) ? cursor : res.cursor;
     /* A row with a write still waiting here keeps the local version. The check
        runs in the same transaction as the put, so a write that lands while the
-       pull was on the network is seen. The waiting keys are read once and the
-       puts are queued together: one await per row kept this transaction (which
-       also locks outbox and meta) open for seconds on a large first pull, and
-       every write on the device waited behind it. */
-    const tx = db.transaction([t, 'meta', 'outbox'], 'readwrite');
+       pull was on the network is seen. The waiting keys are read once per
+       transaction and the puts are queued together: one await per row kept
+       the transaction (which also locks outbox and meta) open for seconds.
+       Rows go in batches of PULL_BATCH, each in its own transaction, so a
+       backfilled account's first pull (years of rows) never makes a tap wait
+       for more than one batch. Rows come oldest first, so each batch saves the
+       cursor of its last row: a pull cut short (app closed, page reloaded)
+       resumes there instead of starting over; the last batch saves `next`. */
     const prefix = `${userId}:${t}:`;
-    const waiting = new Set(
-      (await tx.objectStore('outbox').getAllKeys(IDBKeyRange.bound(prefix, `${prefix}￿`))).map(String),
-    );
-    const fresh = res.rows.filter((r) => !waiting.has(prefix + rowKey(t, r)));
-    await Promise.all([
-      ...fresh.map((r) => tx.objectStore(t).put(r, rowKey(t, r))),
-      tx.objectStore('meta').put(next, `cursor:${t}`),
-      tx.done,
-    ]);
-    applyRows(store, t, fresh);
+    const batches = chunks(res.rows, PULL_BATCH);
+    for (const [i, batch] of batches.entries()) {
+      const tx = db.transaction([t, 'meta', 'outbox'], 'readwrite');
+      const waiting = new Set(
+        (await tx.objectStore('outbox').getAllKeys(IDBKeyRange.bound(prefix, `${prefix}￿`))).map(String),
+      );
+      const fresh = batch.filter((r) => !waiting.has(prefix + rowKey(t, r)));
+      await Promise.all([
+        ...fresh.map((r) => tx.objectStore(t).put(r, rowKey(t, r))),
+        tx
+          .objectStore('meta')
+          .put(i === batches.length - 1 ? next : batchCursor(batch, t, cursor), `cursor:${t}`),
+        tx.done,
+      ]);
+      applyRows(store, t, fresh);
+    }
   }
+}
+
+/** A batch's last row's cursor, never behind the one the pull started from. */
+function batchCursor(batch: Row[], t: Table, cursor: string | null): string | null {
+  const last = String(batch[batch.length - 1][cursorColumn(t)]);
+  return cursor && last < cursor ? cursor : last;
+}
+
+/** Rows per pull transaction (see pull). */
+export const PULL_BATCH = 50;
+
+/** At least one chunk, so an empty pull still saves its cursor. */
+function chunks<T>(rows: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size));
+  return out.length ? out : [[]];
 }
 
 /** Push only, no pull: what an Aam Salah turn waits for, so the server's
@@ -182,19 +212,36 @@ interface SyncWindow extends EventTarget {
 
 /** Runs the sync loop in the page: on start, after every local write, when
  * the connection comes back, on focus, every `everyMs`, and when a backed-off
- * write is due again. Notifications are pulled on start, on focus and when a
+ * write is due again. A round that fails on the network while the browser says
+ * it is online (right after a reconnect, the network often isn't usable yet)
+ * is tried once more after `quickRetryMs`, then waits for the usual triggers.
+ * Notifications are pulled on start, on focus and when a
  * push arrives (NOTIFY_EVENT), not on every round. Returns a stop function. */
 export function startSync(
   db: LocalDb,
   remote: Remote,
   store: Store,
   win: SyncWindow = window,
-  { everyMs = 60_000 } = {},
+  { everyMs = 60_000, quickRetryMs = 2_000 } = {},
 ): () => void {
   let running: Promise<void> | null = null;
   let again = false;
   let notifications = true;
   let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let quickTimer: ReturnType<typeof setTimeout> | undefined;
+  /* one quick retry per failure streak, never a storm */
+  let quickUsed = false;
+
+  const quickRetry = () => {
+    if (store.sync.value.online) {
+      quickUsed = false;
+      return;
+    }
+    if (quickUsed || !win.navigator.onLine) return;
+    quickUsed = true;
+    clearTimeout(quickTimer);
+    quickTimer = setTimeout(run, quickRetryMs);
+  };
 
   const scheduleRetry = async () => {
     clearTimeout(retryTimer);
@@ -221,6 +268,7 @@ export function startSync(
       .then((got) => {
         /* not pulled (offline, error): the next round tries again */
         if (withNotifications && !got) notifications = true;
+        quickRetry();
         return scheduleRetry();
       })
       .catch(() => {
@@ -247,7 +295,11 @@ export function startSync(
     lastPending = s.pending;
     lastWrites = s.writes;
   });
-  win.addEventListener('online', run);
+  const back = () => {
+    quickUsed = false;
+    run();
+  };
+  win.addEventListener('online', back);
   win.addEventListener('offline', offline);
   win.addEventListener('focus', fresh);
   win.addEventListener(NOTIFY_EVENT, fresh);
@@ -258,7 +310,8 @@ export function startSync(
     unsubscribe();
     clearInterval(timer);
     clearTimeout(retryTimer);
-    win.removeEventListener('online', run);
+    clearTimeout(quickTimer);
+    win.removeEventListener('online', back);
     win.removeEventListener('offline', offline);
     win.removeEventListener('focus', fresh);
     win.removeEventListener(NOTIFY_EVENT, fresh);

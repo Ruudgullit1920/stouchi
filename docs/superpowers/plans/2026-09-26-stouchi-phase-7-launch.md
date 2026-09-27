@@ -1,527 +1,562 @@
 # Stouchi Rebuild — Phase 7: Hardening and launch — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (or superpowers:subagent-driven-development) to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This plan is **lean by design**: files, behaviour, interfaces and test cases, not code. **Every production step (Session C) needs the user's explicit approval at the moment it runs**, even when this plan lists it.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (or superpowers:subagent-driven-development) to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. This plan is **lean by design**: files, behaviour, interfaces and test cases, not code. **Every production step needs the user's explicit approval at the moment it runs**, even when this plan lists it.
 
-**Goal:** Stouchi's rebuild replaces the legacy app in production. The legacy data is backfilled into the new tables. The legacy app stays reachable in read-only mode for 14 days, and the new app meets the §8 budgets (first-load JS, offline start, accessibility, observability).
+**Goal:** the new Stouchi replaces the legacy app in production on **Sunday 1 November 2026, in the morning**. The legacy data is backfilled into the new tables. The legacy app stays reachable, read-only, for 14 days. The new app meets the §8 budgets: first-load JS, offline start, accessibility and observability.
 
-**Architecture:** Sessions A and B are code on `rebuild` plus one small `legacy` branch cut from `master`; nothing touches production. Session C is a runbook: freeze legacy writes, apply the migrations and the backfill, deploy `notify-run`, then fast-forward `master` to `rebuild`, so Vercel's production deploy becomes the new app. Rollback is a Vercel Instant Rollback plus an "unfreeze" SQL. Session D, 14 days later, archives the legacy tables and deletes the legacy code.
+**Architecture (rewritten 2026-09-27 for Cloudflare Pages):**
 
-**Tech Stack:** Phase 0–6 stack. New dependencies: `@sentry/browser` and `@sentry/node` (D4 only). `@supabase/auth-js` and `@supabase/postgrest-js` become direct dependencies, pinned to the versions already in the lockfile (D8).
+- **Two repos and two hosts.**
+  - The new app lives in `stouchi` (`main`) and is served by **Cloudflare Pages**, project `stouchi-app`. `/api/aam` runs as a Pages Function (`functions/api/aam.ts`).
+  - The legacy app lives in `budget-maison` (`master`) and stays on **Vercel**, at `https://budget-maison-xi.vercel.app/`.
+- **The address changes at launch.** The fast-forward of `master` that the Vercel plan relied on no longer applies. The new app goes live on its own address (D9). The old address keeps serving the legacy app, frozen read-only, with a banner that links to the new address. **So the `stouchi-ancien` project is no longer needed:** the legacy Vercel project becomes the read-only app (D3, revised).
+- **Rollback:** unfreeze the legacy tables (`legacy_read_write.sql`) and tell people to go back to the old address. The new app's Pages deployment can stay or be rolled back in the Pages dashboard.
+- **Session D** (day +14): archive the legacy tables, and point the old address at the new one.
 
-**Spec:** redesign spec §8.3 (new version, offline), §8.4 (performance budgets), §8.5 (remove `/api/chat`, provider retention), §8.6 (quality gates), §8.7 (observability), §9 (migration and rollout), §10 item 7, §2 (success criteria at +30 days). Phase 6 plan, "Phase 6 outcome" (deferred minors M1–M11, legacy join limit).
+**Tech Stack:** Phase 0–6 stack, plus:
+
+- `@supabase/auth-js` and `@supabase/postgrest-js` as direct dependencies (D8, done);
+- PostHog (`posthog-js`, `posthog-node`), already in the repo;
+- Sentry (`@sentry/browser`, `@sentry/node`) only if D10 keeps it.
+
+**Spec:**
+
+- redesign spec §2 (success criteria at +30 days);
+- §8.3 (new version, offline), §8.4 (performance budgets), §8.5 (security and privacy), §8.6 (quality gates), §8.7 (observability);
+- §9 (migration and rollout), §10 item 7;
+- the Phase 6 plan's "Phase 6 outcome" (deferred minors).
 
 ---
 
-## Facts found while planning (2026-09-26)
+## Where Phase 7 stands (2026-09-27)
 
-- `master` has no commits beyond its merge base with `rebuild` (`a9a1826`), so the launch merge is a **fast-forward**. **Since Session B:** Task 10 step 3 puts `legacy`'s commits on `master`, so step 9 fast-forwards only after step 8b records them on `rebuild` (rehearsed in a scratch clone on 2026-09-26).
-- First-load JS is **~152 kB gzipped**: `index` 73.7 kB plus `supabase` 78.4 kB. The budget is 150 kB, so D8 is needed.
-- The legacy app has **no service worker** and no manifest, so once the domain serves the new app, no old cached shell survives.
-- The legacy `budget-facts.js` is read by the backfill (`appDiffs`), so the legacy files stay until Session D.
-- `src/public/sw.js` is push-only and calls `skipWaiting()` on install. Offline caching and the update prompt are still to build (§8.3).
-- Sentry is absent. The security headers, axe checks, CI, `npm audit` and Dependabot are already in place.
-- The constraints to validate after the backfill are `expenses_shared_needs_only` and `incomes_shared_needs_only` (`20260929_phase6_couple.sql`, added `not valid`).
-- `lib/chat-context.js` (used by `api/chat.js`) hard-codes the production project.
+| Part | State |
+|---|---|
+| Session A: hardening (Tasks 1–5) | **Done.** First-load JS is 124.9 kB, the app works offline and shows "Nouvelle version", the a11y sweep passes, and Lighthouse LCP is 2.2 s. |
+| Session B: cut-over prep (Tasks 6–9) | **Done, except two user steps:** the Auth diff and the backfill dry run on production. |
+| **Session B′: Cloudflare readiness (Tasks 12–17)** | **New, not started.** Everything Sessions A and B built assumed Vercel. This is the work between now and launch. |
+| Session C: launch day (Task 10) | Runbook rewritten below for Cloudflare. |
+| Session D: day +14 (Task 11) | Updated below. |
 
-## Decisions (approved by the user on 2026-09-26, as proposed)
+### What was missing before the app fully works in production (see "Session B′ outcome" for what is done)
 
-**Execution:** inline in each session, with one Opus review of Task 1.
+Ordered by risk. Each line points to its task.
 
-1. **M10, legacy shared Envies (D1).** Keep Task 10's rule: a legacy household's shared Envies go private to the anchor, with the `shared_wants_private` issue. To make it harmless, **launch on the 1st** (D2). The legacy payday is 1, so the anchor's current-period Envies start empty and absorb nothing. The older rows only change the anchor's history.
-2. **Launch day (D2).** The 1st of a month, in the morning, after Sessions A and B are done and the rehearsal (Task 9) passed. The target is **Sunday 1 November 2026**. Thursday 1 October is possible only if A and B are done by 29 September.
-3. **The legacy app for 14 days (D3).**
-   - The database refuses its writes: `supabase/cutover/legacy_read_only.sql` revokes writes on the legacy tables and functions.
-   - The app says so: it shows a banner and stops retrying (Task 8).
-   - It is served by a **second Vercel project**, `stouchi-ancien`, from a frozen `legacy` branch. A former production deployment URL isn't enough, because Vercel's deployment protection would ask visitors to log in.
-   - After 14 days, the project is deleted and the tables move to an `archive` schema. They are dropped after 90 days (§9.5).
-4. **Observability (D4).**
-   - **Sentry** on the free plan, in the browser, loaded after first paint so it isn't counted in first-load JS. Also in `api/aam.ts`. Release tag = the commit SHA.
-   - `beforeSend` strips everything the user typed: amounts, labels, e-mails, chat text.
-   - `notify-run` stays on Supabase's function logs.
-   - The `ai_events` dashboard is a saved SQL query, not code.
-   - The alternative is no Sentry, but then the "crash-free sessions" criterion can't be measured.
-5. **Offline shell (D5).** A hand-written service worker precaches the build's shell; there is no new dependency. Navigation is network-first with a cached `index.html` fallback, and `/assets/*` is cache-first. Supabase and `/api/*` are never cached. A new version **waits**, and the app shows "Nouvelle version — Recharger" (§8.3).
-6. **Deferred minors fixed in Phase 7 (D6):**
-   - M1 Historique mismatch;
-   - M2 `verse_ce_mois`;
-   - M3 stale requests;
-   - M4 pot from category;
-   - M8 Moi stat;
-   - M11 `notify-run` bundle.
+1. **The offline start may break on Cloudflare Pages** (Task 13). The service worker precaches `/index.html` and serves it for offline navigations. Pages normally answers `/index.html` with a redirect to `/`, and a navigation can't be answered with a redirected response. The Session A review hit the same risk on Vercel, where it was fine. On Pages it has to be checked and very likely fixed.
+2. **Production builds would point at `stouchi-test`** (Task 13). `VITE_*` values are baked in at build time. A local `npm run build` reads `.env`, which points at the test project. The production build must run with production values (the Pages build env, or a production env file for a direct upload).
+3. **`/api/aam` has never run on Cloudflare** (Task 13).
+   - On the Workers Free plan, each request gets **10 ms of CPU time**. Zod validation, the carnet and JSON parsing may go over it (waiting on Gemini doesn't count).
+   - `lib/ai-observability.js` uses `require('posthog-node')`, and `lib/aam-salah` is CommonJS. Both need a check under `nodejs_compat`.
+   - The rate limit and the 32 kB cap need a live check too.
+4. **Error tracking isn't wired for Cloudflare** (Task 12, decision D10).
+   - `_headers` doesn't allow Sentry, the Pages Function doesn't report errors, and the release reads `VERCEL_GIT_COMMIT_SHA`. On Pages the SHA is `CF_PAGES_COMMIT_SHA`.
+   - PostHog is loaded with its defaults, so autocapture and possibly session replay can record amounts and labels. That breaks the "nothing the user typed leaves the device" rule in D4.
+5. **Everyone gets signed out at launch, because the address changes** (Tasks 16, 10). Task 2 kept the auth storage key so that nobody would be signed out, but that only holds on the same origin. With a new address, people log in again. Legacy local data doesn't carry over; the server data does, through the backfill.
+   - Supabase Auth on production needs the new address as its Site URL and in the redirect allow-list.
+   - The announcement must say "nouvelle adresse, reconnecte-toi".
+6. **The legacy banner links to the old address** (Task 16). On `legacy`, `read-only.js` links to `https://budget-maison-xi.vercel.app/`, which will be the frozen app itself. The link must point at the new address.
+7. **Who deploys to Pages, and when, isn't set** (Task 13, decision D11). If `stouchi-app` is connected to Git with `main` as its production branch, every merge already deploys "production". Before launch, that deployment would either point at `stouchi-test` or reach the production database early.
+8. **CI and the repo aren't launch-ready** (Task 14).
+   - The `stouchi` repo has **no GitHub Actions secrets**, so the E2E job, the eval and `db-backup.yml` can't run. The backup is scheduled every Sunday and will fail.
+   - `eval.yml` lost its nightly schedule, which §8.6 requires.
+   - Eight Dependabot PRs are open. Two of them (TypeScript 7, ESLint 10) break the pinned tool versions.
+9. **Known reliability findings aren't fixed** (Task 15).
+   - The sync loop waits 60 s after a failed first round on reconnect.
+   - The WebKit input flake on iPhone 13 grew during Session A.
+   - E2E `couple:168` hits the day's request cap.
+10. **Leftovers from Session B, for the user:** the Auth diff, the backfill dry run on production, and rotating the `stouchi-test` keys that were pasted in chat (Task 17).
+11. **No end-to-end rehearsal on Cloudflare** (Task 17). The Session B rehearsal checked the SQL and the backfill, not the hosting. A Pages preview on `stouchi-test` must pass: login, keypad and chat, push, offline start, the update prompt, and the legacy banner's link.
+12. **Stale docs** (Task 14). The spec (§8.5, §8.6) and several comments still say Vercel and `master`, and `api/aam.ts` and `vercel.json` are still in the repo.
 
-   Left for after launch: M5, M6, M7, M9 and the Phase 6 ledger items.
-7. **Out of scope (D7):**
-   - Playwright visual screenshot diffs (§8.6 "Visual").
-   - Realtime.
-   - New analytics events. The +30-day metrics use what the tables already hold, and "median time to log" is reported as not measured.
-8. **First-load budget (D8).** Replace `createClient` from `@supabase/supabase-js` with a thin client built from `@supabase/auth-js` + `@supabase/postgrest-js`. Realtime, storage and functions are unused. Add a CI gate: JS loaded by `index.html` ≤ 150 kB gzipped.
+Left for after launch (listed at the end): M5, M6, M7, M9, the `couple_request` dedupe, M3 against the device clock, Session A minors m4–m7, Realtime, visual diffs.
 
-## Decisions of 2026-09-27 (after Session B)
+---
 
-- **The code moved to the `stouchi` repo** (PR #9). `budget-maison` keeps the legacy app, whose `master` is production on Vercel, and the local `legacy` branch.
-- **Production host: Cloudflare Pages**, project `stouchi-app`, not Vercel. This replaces D3's and Task 10's Vercel steps for the new app: env vars, the domain switch in step 9, and the rollback. The legacy app stays on Vercel (`budget-maison` and `stouchi-ancien`). **Task 10 must be rewritten for this before Session C.**
-- **Launch date (D2): Sunday 1 November 2026**, in the morning.
-- **Still open:** Sentry (wired for Vercel only) or PostHog for errors (D4).
+## Decisions
 
-## Session split
+### Approved on 2026-09-26 (still valid unless marked)
 
-- **Session A** covers Tasks 1–5, the code hardening on `rebuild`. Task 1 is money and data work: an Opus reviewer checks it before Task 2.
-- **Session B** covers Tasks 6–9: retiring `/api/chat`, the cut-over SQL, the `legacy` branch and the rehearsal on `stouchi-test`. It ends with the backfill dry run on production data (read-only, approval needed).
-- **Session C** is launch day: Task 10, step by step, each production step approved.
-- **Session D** is day +14: Task 11.
+- **D1, legacy shared Envies (M10).** They go private to the anchor, with the `shared_wants_private` issue. Launching on the 1st keeps this harmless.
+- **D2, launch day.** The 1st of a month, in the morning. **Sunday 1 November 2026** (confirmed 2026-09-27).
+- **D3, the legacy app for 14 days. Revised 2026-09-27:**
+  - The database refuses its writes (`legacy_read_only.sql`).
+  - The app shows a banner and stops retrying (Task 8).
+  - It is served by **its existing Vercel project** at its existing address, because the new app moves to Cloudflare. `stouchi-ancien` is dropped.
+  - At +14 days, the tables move to `archive` and the old address redirects to the new one. The tables are dropped at +90 days.
+- **D4, observability.**
+  - Nothing the user typed leaves the device: no amounts, labels, e-mails or chat text.
+  - Errors are reported from the browser and from `/api/aam`, tagged with the release SHA.
+  - `ai_dashboard.sql` and `launch_metrics.sql` are saved queries.
+  - **Which tool is open: see D10.**
+- **D5, offline shell.** A hand-written service worker, with navigations network-first and `/assets/*` cache-first. A new version waits for "Recharger". **Done.**
+- **D6, deferred minors** M1, M2, M3, M4, M8 and M11. **Done.**
+- **D7, out of scope:** visual screenshot diffs, Realtime, new analytics events.
+- **D8, the thin Supabase client and the 150 kB CI gate.** **Done.**
 
-Run `npm run check` before every commit and `npm run e2e` at the end of Sessions A and B. Commit messages are in French: `Refonte : …`.
+### Decided on 2026-09-27
+
+- The code moved to the `stouchi` repo (PR #9).
+- Production host: **Cloudflare Pages**, project `stouchi-app`.
+- Launch on Sunday 1 November 2026.
+
+### Decided on 2026-09-27 (D9–D11, as recommended)
+
+- **D9, the production address.** Either `https://stouchi-app.pages.dev` or a custom domain on the same Pages project.
+  - **Recommended: a custom domain if you have one**, because it survives a later host change. Otherwise `stouchi-app.pages.dev`.
+  - Every task below writes it as `<PROD_URL>`.
+- **D10, errors: PostHog or Sentry.**
+  - **Recommended: PostHog.** It is already loaded on demand, already in the CSP (EU host), and has exception capture. That means one vendor, and no new origin or dependency.
+  - Cost: Task 12 must lock down its privacy (see below), and the existing `scrub()` becomes its `before_send`.
+  - Sentry means adding `*.sentry.io` to `_headers`, reporting from the Pages Function (`@sentry/cloudflare` or a fetch-based reporter, not `@sentry/node`), and reading the release from `CF_PAGES_COMMIT_SHA`.
+- **D11, how production gets deployed.**
+  - **Recommended:** connect `stouchi-app` to Git, with the production branch set to **`production`** (not `main`). Merges to `main` then make preview deployments, on `stouchi-test`.
+  - Launch is `git push origin main:production`. A rollback is the Pages dashboard's "Rollback" to a previous production deployment.
+  - The alternative is a direct upload with `wrangler pages deploy dist` from a build that used production values. It's more manual and easier to get wrong (fact 2).
+
+---
+
+## Facts for Cloudflare (2026-09-27)
+
+- `wrangler.jsonc`: project `stouchi-app`, output `./dist`, `nodejs_compat`. Wrangler isn't installed in the repo. Whether the Pages project exists and is connected to Git isn't known from the code: **the user checks it (Task 13).**
+- `src/public/_headers` holds the CSP, HSTS, `nosniff`, `Referrer-Policy` and `Permissions-Policy`. The CSP allows Supabase and the PostHog EU hosts. `vercel.json` still carries the older copy.
+- The service worker serves the cached `'/index.html'` for navigations (`src/public/sw.js`, the `page()` function). Its precache list comes from `scripts/sw-inject.ts`.
+- `functions/api/aam.ts` passes `env` to `serveAam`, so no `process.env` is needed. It lists its variables in its header comment.
+- `lib/chat-context.js` falls back to the production project URL when `SUPABASE_URL` is unset. That is a trap for previews: the Preview env must set `SUPABASE_URL`.
+- `vite.config.mts` sets `VITE_SENTRY_RELEASE` from `VERCEL_GIT_COMMIT_SHA`.
+- `notify-run` hard-codes no domain. Its notification clicks open relative hash routes.
+- **GitHub (`stouchi` repo):** no Actions secrets. The CI `e2e` job runs only on `workflow_dispatch`. `eval.yml` only has `workflow_dispatch`. `db-backup.yml` is scheduled weekly and needs `SUPABASE_DB_URL`, `BACKUP_AGE_RECIPIENT` and the `R2_*` secrets.
+- **Open Dependabot PRs:**
+  - #1–#3: GitHub Actions to v7;
+  - #4: TypeScript 7, which breaks the 6.0.x pin;
+  - #5: `@types/node` 26;
+  - #6: Babel 8, CI fails;
+  - #7 and #8: ESLint 10, which breaks the ESLint 9 pin.
+- The repo still holds `budget-facts.js` (for the backfill's `appDiffs`), `api/aam.ts` and `vercel.json`. There is no legacy `app.js` in this repo.
+
+### Production env for Pages (replaces Session B's Vercel list)
+
+- **Build variables, Production** (read by `vite build`; they are public by nature):
+  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, on production `gfbakmwllhuhfdydbcfa`;
+  - `VITE_VAPID_PUBLIC_KEY`, from the production pair;
+  - `VITE_POSTHOG_KEY`, `VITE_POSTHOG_HOST`;
+  - `VITE_SENTRY_DSN` only if D10 keeps Sentry.
+- **Function variables, Production** (encrypted):
+  - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (without them, `/api/aam` answers 503);
+  - `GEMINI_API_KEY`, `MISTRAL_API_KEY`;
+  - optional: `TOKENROUTER_API_KEY` (only if `AAM_MODELS` names it), `AAM_MODELS`, `AAM_DEADLINE_MS`;
+  - `POSTHOG_API_KEY`, `POSTHOG_HOST`.
+  - **Never** `SUPABASE_SERVICE_ROLE_KEY`, and never `POSTHOG_CAPTURE_CONTENT` (it would send chat text, against §8.5).
+- **Preview:** the same names, on `stouchi-test`, `SUPABASE_URL` included (see the `chat-context` trap above).
+- **`notify-run` secrets on production** (unchanged): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `GEMINI_API_KEY`, optional `NOTIFY_MODEL`, `POSTHOG_API_KEY` and `POSTHOG_HOST`. Then the Vault secrets `notify_url` and `notify_secret`, and `supabase/sql/notify-schedule.sql`.
+
+### Production database (from Session B, unchanged)
+
+Missing migrations, to apply **one by one, in this order**. Don't use `supabase db push`: the versions on production don't match the file names.
+
+1. `20260902_budget_data_rls`
+2. `20260925_phase3_incomes_soft_delete`
+3. `20260926_phase4_notify`
+4. `20260927_notify_cron_secret`
+5. `20260928_phase5_plan_and_delete`
+6. `20260929_phase6_couple`
+7. `20260930_legacy_join_limit`
+
+### Supabase Auth on production (updated for D9)
+
+- Site URL = `<PROD_URL>`. Sign-up has no `emailRedirectTo`, so confirmation links use the Site URL.
+- The redirect allow-list holds `<PROD_URL>` and `<PROD_URL>/**`. Google OAuth's `redirectTo` is the origin plus the path.
+- The Google provider is on. The Google Cloud client is unchanged, because its callback is Supabase's.
+- Keep the old address in the allow-list until Session D, so that a legacy session still works read-only.
+- Compare e-mail confirmation with `stouchi-test`.
+
+---
 
 ## Things only the user can do
 
-1. Approve D1–D8.
-2. **Before Session C:**
-   - Create the Sentry project (D4) and put the DSN in Vercel.
-   - Create the `stouchi-ancien` Vercel project (D3).
-   - Generate a production VAPID key pair.
-   - Review the AI providers' data-retention settings (§8.5). A free Gemini tier may use prompts for training, and the launch needs a tier that doesn't.
-3. **Supabase Auth on production:** check that the site URL, redirect allow-list, Google provider and e-mail settings match what the new app needs (Task 9 lists the differences).
-4. Put the production `SUPABASE_SERVICE_ROLE_KEY` in `.env` for the dry run and the apply, and remove it afterwards.
-5. Approve each Session C step, and do the phone smoke test.
-6. At +30 days, read the metrics query. At +90 days, approve dropping the archived tables. `/schedule` can remind you.
+1. **Now:** decide D9, D10 and D11.
+2. **Cloudflare:** confirm that `stouchi-app` exists, connect it to Git as D11 says, set the Production and Preview variables above, and add the custom domain if D9 picks one.
+3. **GitHub secrets on `stouchi`:**
+   - `GEMINI_API_KEY`;
+   - the E2E ones (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `TEST_USER_*`, `TEST_PARTNER_*`, all on `stouchi-test`);
+   - the `db-backup.yml` ones: `SUPABASE_DB_URL`, `BACKUP_AGE_RECIPIENT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_ENDPOINT`. If they aren't ready, disable the schedule until they are.
+4. **Before Session C:**
+   - generate a production VAPID key pair;
+   - check the AI providers' data retention: the launch needs a Gemini tier that doesn't train on prompts;
+   - lock PostHog's project settings as Task 12 lists them.
+5. **Supabase Auth on production:** as listed above.
+6. **Rotate the `stouchi-test` keys** that were pasted in chat, then update `.env` and the GitHub secrets.
+7. **The backfill dry run on production:** put the production service key in `.env` for that step only.
+8. Approve each Session C step, and do the phone smoke test.
+9. At +30 days, read `launch_metrics.sql`. At +90 days, approve dropping `archive.*`.
 
 ## Global Constraints
 
 - **Money:** integer millimes only (`src/shared/money.ts`). **Dates:** Africa/Tunis; figures use the viewer's pay period.
-- **UI text:** French, in `src/shared/i18n/fr.json`. The legacy banner in `app.js` is the one exception, since the legacy app has no `fr.json`.
-- **Production** (`gfbakmwllhuhfdydbcfa`): nothing runs there before Session C, and nothing in Session C runs without approval at that moment. `npm run backfill -- --apply` only with approval.
-- **Secrets:** Claude never prints or commits a secret. `SUPABASE_SERVICE_ROLE_KEY` never goes to Vercel. Sentry's DSN is public by nature, but it lives in Vercel env (`VITE_SENTRY_DSN`, `SENTRY_DSN`), not in the code.
-- **CSP:** any new origin (Sentry ingest) is added to `connect-src` in `vercel.json`, and nowhere else is loosened.
-- **Performance (§8.4):** first-load JS ≤ 150 kB gzipped, and it is gated in CI.
+- **UI text:** French, in `src/shared/i18n/fr.json`. The legacy banner (`read-only.js` on `legacy`) is the one exception.
+- **Production** (`gfbakmwllhuhfdydbcfa`, the Pages production deployment, Vercel `budget-maison`): nothing runs there without approval at that moment. `npm run backfill -- --apply` only with approval.
+- **Secrets:** Claude never prints or commits one. `SUPABASE_SERVICE_ROLE_KEY` never goes to Cloudflare, Vercel or GitHub.
+- **CSP:** a new origin goes into `connect-src` in `src/public/_headers`, and nothing else is loosened.
+- **Performance (§8.4):** first-load JS ≤ 150 kB gzipped, gated in CI (`npm run check:size`).
 - **Legacy tables:** never dropped in Phase 7. They are archived at +14 days and dropped at +90 with approval.
 - **Tool versions:** TypeScript 6.0.x, ESLint 9.
+- **Git:** work on a branch and merge through a PR. Commit messages are in French: `Refonte : …`.
 
-## Review Focus
+## Review Focus (for the new work)
 
-1. **Legacy writes lost in the gap.** An expense typed in the legacy app after the final backfill must not silently vanish. So the freeze comes **before** the final `--apply` (Task 10 order), and a frozen legacy app says it is read-only instead of queueing writes forever. The test is in Task 7 (writes refused with `42501` after the freeze, reads still allowed) and Task 8 (the banner on `42501`).
-2. **A backfilled user's first open.** The first open writes at most the **current** period's payday deposit, once, and never deposits for periods before the launch. The test is in Task 7: the fixture's converted rows are fed to `dueDeposits` on launch day and mid-period.
-3. **Service worker update and offline start.** A deploy must never reload under the user or pair a stale `index.html` with missing hashed assets. An offline cold start must keep the outbox. The tests are in Task 3: a unit test of the update flow, and an E2E offline reload with a pending write that syncs later.
-4. **Sentry leaks.** No amount, label, e-mail, chat text or JWT leaves the device. The test is in Task 5: a unit test of `scrub()` on a crafted event.
-5. **The thin Supabase client.** Session refresh, sign-out, "session lost" and RPC errors must behave exactly as before. The test is in Task 2: a unit test of the client factory, plus the whole E2E suite.
+1. **Offline start on Pages.** An offline cold start and a slow-network start must get the shell, never a redirect error, a white screen or a stale `index.html` paired with missing assets. The tests are in Task 13.
+2. **Error-report privacy.** No amount, label, e-mail, chat text or JWT reaches PostHog or Sentry, whether through exceptions, autocapture or replay. The tests are in Task 12.
+3. **`/api/aam` on Workers.** It stays under the CPU limit on real turns, and the rate limit, the 32 kB cap, the 503 and the fallbacks behave as on Vercel. The tests are in Task 13.
+4. **Wrong-backend builds.** No production deployment may carry `stouchi-test` values, and no preview may reach production. The checks are in Task 13 and in Session C step 8.
+5. **From Sessions A and B (still apply):**
+   - no legacy write is lost in the gap (freeze before the final `--apply`);
+   - a backfilled user's first open writes no deposit for the launch period;
+   - the update flow never reloads under the user.
 
 ---
 
-## Session A — hardening
+## Sessions A and B — done (summary)
 
-### Task 1: Phase 6 deferred fixes (M1, M2, M3, M4, M8, M11)
+The full task texts are in git history (`git log -- docs/superpowers/plans/2026-09-26-stouchi-phase-7-launch.md`).
+
+### Session A (2026-09-26): hardening
+
+- **Task 1**, the Phase 6 minors M1, M2, M3, M4, M8 and M11: `60b9ad5`, plus the review fix `00fb65b`. `build:notify` is capped at 200 kB.
+- **Task 2**, the thin Supabase client and the size gate: `2dbc5dc`. First-load JS went from ~152 to 124 kB, and `npm run check:size` runs in CI.
+- **Task 3**, offline shell and "Nouvelle version": `a3f009c`, plus review fixes (second window, check on resume, 3 s fallback to the cached shell).
+- **Task 4**, accessibility: `a11y.spec.ts` passes 29/29 on both devices.
+  - Lighthouse mobile: score 98, FCP 1.8 s, LCP 2.2 s, TBT 30 ms, CLS 0.
+- **Task 5**, monitoring: `5db1f2a`. Sentry is inert without a DSN, plus `scrub()`, `sync_failed`, `supabase/queries/ai_dashboard.sql` and `launch_metrics.sql`. **Wired for Vercel only; Task 12 revisits it.**
+- **Deferred minors:**
+  - m3: monitoring loads at `setTimeout(0)` (folded into Task 12);
+  - m4: breadcrumbs lose their timestamps;
+  - m5: `sync_failed` can have an empty `code`;
+  - m6: the worker's version ignores a change to `index.html` alone (folded into Task 13);
+  - m7: the a11y spec skips the receipt card and the edit sheet.
+
+### Session B (2026-09-26): cut-over prep
+
+- **Task 6**, the end of `/api/chat`: `a8b7009`. Only `api/chat.js` was deleted; `lib/chat-context.js` stays.
+- **Task 7**, the cut-over SQL: `ce9fe42`, plus review fixes.
+  - `supabase/cutover/`: `legacy_read_only.sql` (self-checking; it records the grants in `cutover.legacy_grants`), `legacy_read_write.sql`, `validate_constraints.sql` and `archive_legacy.sql`.
+  - Tested in `tests/db/cutover.test.ts`.
+- **Task 8**, the frozen legacy app on the `legacy` branch of `budget-maison` (local, not pushed): `098b8e3`, `15654e0`, `831a4e4` and `c0fdff0`.
+  - `read-only.js` provides `isReadOnlyError` and a probe on open.
+  - The banner shows on 42501, and sync stops.
+  - **Its link still points at the old address: Task 16.**
+- **Task 9**, readiness and the rehearsal: the env, migration and auth facts are above. The rehearsal on `stouchi-test` passed end to end: legacy write → freeze → banner → backfill → validation → first open with no deposit → unfreeze.
+  - **Not done** (user steps, now in Task 17): the Auth diff and the backfill dry run on production.
+- **The Session B review's minors, for the record:**
+  - m5: a lost session between steps 4 and 5 can show the banner early (42501 also comes from RLS);
+  - m7: during the switch, the banner's link could open the frozen app. **Task 16 removes this**, because the link now goes to the new address.
+
+---
+
+## Session B′ — Cloudflare readiness (new, before launch)
+
+A sensible order: Task 14 (CI first, so everything after it is gated), then Task 13, Task 12, Task 15, Task 16 and Task 17. One session per task, or 12 and 13 together. Run `npm run check` before every commit. Run `npm run e2e` at the end of Tasks 13, 15 and 17.
+
+### Task 12: Error tracking for Cloudflare (D10)
+
+**Files (PostHog path, recommended):**
+
+- Modify:
+  - `src/main.tsx`: init PostHog after `load` and idle (Session A m3), with:
+    - autocapture off, or masked so it records no element text;
+    - session recording off, or masked so it records all text and inputs;
+    - exception capture on;
+    - `before_send` = the existing `scrub()`.
+  - `src/app/monitoring.ts`: report through PostHog. Remove the Sentry import.
+  - the outbox's permanent-failure path: `sync_failed` becomes a PostHog event with `{ kind, code }` only (Session A m5: never an empty `code`).
+  - `functions/api/aam.ts` and `src/server/aam/http`: report unexpected errors through `posthog-node` or a fetch capture, scrubbed and flushed with `waitUntil`, with no change to the 503 and fallback paths.
+  - `vite.config.mts`: the release comes from `CF_PAGES_COMMIT_SHA`, falling back to `dev`.
+  - `package.json`: drop `@sentry/*`.
+  - `.env.example`.
+- Delete: `src/server/monitoring.ts` once nothing imports it (it served `api/aam.ts`, which Task 13 deletes).
+- Test: `tests/unit/app/monitoring.test.ts`, plus a unit test of the server capture.
+
+**If D10 keeps Sentry:**
+
+- Add `https://*.ingest.sentry.io` (or the exact ingest host) to `connect-src` in `_headers`.
+- Report from the Pages Function with a Workers-compatible SDK.
+- Read the release from `CF_PAGES_COMMIT_SHA`.
+- Keep `scrub()`.
+
+**Behaviour:**
+
+- With no key or DSN (dev, E2E, CI), nothing loads and nothing is sent.
+- No event carries an amount, a label, an e-mail, chat text or a JWT: not in exceptions, custom events, autocapture or replay.
+- `identify` uses the user's UUID, never the e-mail.
+- **The user, in PostHog's project settings:**
+  - turn session replay off, or "mask all text and inputs";
+  - turn off the capture of network bodies;
+  - set up the alerts from §8.7: an `/api/aam` error rate above 5 % over 15 min, and a spike of `sync_failed`.
+
+**Tests:**
+
+- `scrub` on a crafted exception holding an amount, a label, an e-mail, a JWT and chat text leaves none of them.
+- The PostHog init options have autocapture and replay locked down (assert on the options passed).
+- Without a key, nothing is imported.
+- The server capture never changes the response.
+- `npm run check:size` still passes.
+
+- [ ] TDD → `npm run check`, `npm run build && npm run check:size` → commit `Refonte : lancement — suivi des erreurs sur Cloudflare`
+
+### Task 13: Cloudflare hosting fixes and the Pages setup (D9, D11)
 
 **Files:**
 
 - Modify:
-  - the Historique figures, in the `src/features/history/` module that computes the "Tout" cards (M1);
-  - `lib/aam-salah` carnet `verse_ce_mois` (M2);
-  - the partner-request accept path in `src/features/notifications/` (M3, M4);
-  - the Moi stat (M8);
-  - `src/server/notify/load.ts` and `src/server/aam/load.ts` (M11).
-- Create: `src/shared/floor.ts` (M11, `floorFor` moved here as is, re-exported nowhere else)
-- Test: unit tests next to each module; add `tests/unit/notify/bundle-size.test.ts` only if the build script can be driven from Vitest, otherwise add a check in `scripts/build-notify.mjs`
-
-**Behaviour:**
-
-- **M1:** In couple mode, Historique "Tout" compares shared Besoins spending with the **household** Besoins budget (the Budget screen's figure). Its Épargne card counts **my** deposits only. "Moi" compares my rows with my own budgets.
-- **M2:** `verse_ce_mois` counts my own deposits only (D2).
-- **M3:** Accepter first re-reads the expense. If it is gone, no longer in my household, or updated after the request, the card says `couple.request.stale` ("Cette demande n'est plus à jour"), marks the notification read and changes nothing.
-- **M4:** When a request changes the category and names no pot, Accepter derives the pot from `src/shared/categories.ts`.
-- **M8:** Moi's "N dépenses" counts rows where `user_id` is me.
-- **M11:** The `notify-run` bundle no longer pulls in zod. `build:notify` fails above 200 kB.
-
-**Tests:**
-
-- M1: Tout and Moi figures for a couple fixture.
-- M2: a partner's deposit is excluded.
-- M3: three stale cases (deleted, left, edited after the request) change nothing and show the stale copy.
-- M4: a category-only change moves the pot.
-- M8: the partner's shared rows are not counted.
-- M11: the bundle-size check.
-
-- [ ] TDD per minor → `npm run check` → commit `Refonte : phase 6 — mineurs M1 à M11`
-- [ ] **Opus review** of Task 1 (money and data); fix findings with a failing test first
-
-### Task 2: First-load budget — thin Supabase client and the size gate
-
-**Files:**
-
-- Modify: the Supabase client module in `src/data/` (where `createClient` is called), `package.json` (direct deps `@supabase/auth-js`, `@supabase/postgrest-js` at the lockfile's versions; drop `@supabase/supabase-js` from the app bundle only if nothing else in `src/` imports it), `.github/workflows/ci.yml` (run the gate after `npm run build`)
-- Create: `scripts/check-size.mjs`. It reads `dist/.vite/manifest.json` (turn on `build.manifest`), walks the entry's static imports, gzips each JS file and fails above 150 kB. It prints the total either way.
-- Test: `tests/unit/data/client.test.ts`; `tests/unit/scripts/check-size.test.ts` (manifest-walk on a fixture manifest)
-
-**Interfaces:**
-
-- Produces: the same exported client object and type the repositories use today (`auth.*`, `from()`, `rpc()`), so no caller changes.
-
-**Behaviour:** Auth persists and refreshes as before, with the same storage key, so signed-in users stay signed in across the deploy. `from`/`rpc` send the user's JWT. Measure first with `npx vite-bundle-visualizer`. If the thin client alone doesn't reach 150 kB, lazy-load the next-largest first-load module that isn't needed for the first Budget paint.
-
-**Tests:**
-
-- The client factory reuses the **same storage key** as supabase-js (so there is no sign-out at launch).
-- A refreshed token is used by the next `from()` call.
-- `rpc()` errors keep the `{ code, message }` shape the callers read.
-- `check-size` sums only the entry's static graph and fails at 150.001 kB.
-
-- [ ] Measure → TDD → `npm run build && node scripts/check-size.mjs` ≤ 150 kB → `npm run e2e` → commit `Refonte : lancement — budget du premier chargement`
-
-### Task 3: Offline shell and "Nouvelle version"
-
-**Files:**
-
-- Modify: `src/public/sw.js`, which becomes a template with `__PRECACHE__` and `__VERSION__`, keeping the push and notificationclick handlers unchanged; `vite.config.mts` (a small plugin that, in `generateBundle`, writes `sw.js` with the entry's JS/CSS, fonts, icons and `index.html`, and the version = build hash); `src/main.tsx` (registration)
-- Create: `src/app/update.ts` (watches `registration.waiting` / `updatefound`; exposes `updateReady` signal and `applyUpdate()`), `src/app/UpdateToast.tsx` (mounted in `Shell.tsx`), `fr.json` keys `update.ready` ("Nouvelle version"), `update.reload` ("Recharger")
-- Test: `tests/unit/app/update.test.ts` (fake registration), `tests/e2e/pwa.spec.ts` + a Playwright project `pwa` in `playwright.config.ts` that runs against `npm run build && npm run preview`
-
-**Behaviour:**
-
-- **Install:** precache the shell. There is **no** `skipWaiting` on install.
-- **Activate:** delete caches from other versions, then `clients.claim()`.
-- **Fetch:**
-  - A same-origin navigation is network-first, falling back to the cached `index.html`.
-  - A same-origin `/assets/*` request is cache-first, and a miss is cached.
-  - Everything else passes through untouched: Supabase, `/api/*`, cross-origin requests.
-- **Update:** `applyUpdate()` posts `SKIP_WAITING`. The page reloads once, on `controllerchange`, and only after the user tapped "Recharger". It never reloads while a sheet is open with unsaved input: the toast stays, and the reload waits for the sheet to close.
-- **First install:** there is no prompt.
-
-**Tests:**
-
-- Unit:
-  - a waiting worker sets `updateReady`;
-  - `applyUpdate()` posts `SKIP_WAITING` and reloads once on `controllerchange`;
-  - no reload without the tap;
-  - no prompt on first install.
-- E2E `pwa`:
-  - load → offline → reload: Budget renders from the mirror;
-  - log an expense offline → reload offline: it is still there → back online: it syncs once.
-
-- [ ] TDD → `npm run e2e` → commit `Refonte : lancement — hors ligne et nouvelle version`
-
-### Task 4: Accessibility sweep and Lighthouse
-
-**Files:**
-
-- Create: `tests/e2e/a11y.spec.ts`. It uses the existing axe helper in `tests/e2e/helpers.ts` on:
-  - screens: Budget, each pot ledger, Historique (with search results), Objectif, Moi and every settings screen, Partager à deux (solo), Notifications, login, each onboarding step;
-  - sheets: the add sheet, the chat sheet with a receipt card, the edit sheet.
-- Modify: whatever it flags. Any fix must keep the prototype's look.
-
-**Behaviour:** No serious or critical axe violation anywhere (§8.6). Then, **manually** and once: Lighthouse mobile on `npm run preview` (throttled 4G). Record LCP, TBT and CLS in this plan, and fix anything over the §8.4 budget.
-
-**Tests:** the new spec on iPhone 13 and Pixel 7.
-
-- [ ] Write the spec → fix → `npm run e2e` → Lighthouse figures noted here → commit `Refonte : lancement — accessibilité, tous les écrans`
-
-### Task 5: Observability (D4)
-
-**Files:**
-
-- Create: `src/app/monitoring.ts` (`initMonitoring()` dynamic-imports `@sentry/browser` after first paint, only if `VITE_SENTRY_DSN` is set; `scrub(event)`), `src/server/monitoring.ts` (`@sentry/node` for `api/aam.ts`, same `scrub`, flush before the response ends), `supabase/queries/ai_dashboard.sql` (last 7 days: turns, p50/p95 latency, fallback rate, validation drops, error rate per 15 min), `supabase/queries/launch_metrics.sql` (+30 days: onboarded vs signed-up accounts, users logging ≥ 3 expenses/week, chat p95; states which §2 metrics are not measured)
-- Modify: `src/main.tsx`, `api/aam.ts`, the outbox's permanent-failure path (`captureMessage('sync_failed', { kind, code })`, no row content), `vercel.json` (Sentry ingest origin in `connect-src`), `.env.example` (`VITE_SENTRY_DSN`, `SENTRY_DSN`, `SENTRY_RELEASE` from `VERCEL_GIT_COMMIT_SHA`)
-- Test: `tests/unit/app/monitoring.test.ts`, `tests/unit/server/monitoring.test.ts`
-
-**Behaviour:**
-
-- With no DSN (dev, E2E, CI), nothing loads and nothing is sent.
-- `scrub` drops request bodies, breadcrumbs' data, user e-mail and `Authorization` headers, and replaces any digit run of 2 or more in messages with `#`.
-- The release is the commit SHA.
-- **Alerts** are set by the user in Sentry: `api/aam` error rate > 5 % over 15 min, and a spike of `sync_failed`.
-
-**Tests:**
-
-- `scrub` on a crafted event holding an amount, a label, an e-mail, a JWT and chat text leaves none of them.
-- With no DSN, `initMonitoring` imports nothing.
-- The server wrapper flushes and rethrows nothing to the user (the 503/fallback paths are unchanged).
-- The size gate from Task 2 still passes.
-
-- [ ] TDD → `npm run check`, `npm run build && node scripts/check-size.mjs` → commit `Refonte : lancement — suivi des erreurs`
-
-**Session A ends:** `npm run e2e` green. Update this plan with the outcome and the Lighthouse figures.
-
-### Session A progress (2026-09-26, Tasks 1–3)
-
-- **Commits:**
-  - `60b9ad5` M1–M11;
-  - `00fb65b` the fix from the Task 1 review;
-  - `2dbc5dc` the thin Supabase client and the size gate;
-  - `a3f009c` offline shell and "Nouvelle version".
-- **Gate:** `npm run check` 1207/1207.
-- **First-load JS:** 124.1 kB gzipped (it was ~152). `npm run check:size` runs in CI, with `build:notify` and its 200 kB cap.
-- **Task 1 review (Opus):** 0 Critical. Two findings were fixed, each with a test that failed first:
-  - I1: Historique "Tout" used the household budget for periods from before the pairing;
-  - m2: Historique now uses `planFor`, like Budget.
-
-  Deferred:
-  - `couple_request`'s per-day dedupe key swallows a second request made the same day after an edit (the fix needs a migration);
-  - M3 compares a pending local edit against the device clock.
-- **Rulings:** listed in the ledger (`.superpowers/sdd/2026-09-26-stouchi-phase-7-launch/progress.md`). Among them:
-  - the worker precaches every built asset;
-  - the update bar hides while a sheet is open;
-  - `pwa.spec.ts` runs on Chromium only, and the iPhone offline check is manual (Task 10);
-  - `ignoreVary` on cache lookups.
-- **E2E status on 2026-09-26** (`stouchi-test`):
-  - `couple.spec:168` fails because the day's `couple_request` cap (10) was used up by the day's runs. It passes the next day.
-  - On iPhone 13, `me.spec:60` and `onboarding.spec:47` fail because WebKit's `fill()` doesn't register. They fail on the old client too.
-- **Finding for the user (sync loop, not fixed):** after a reconnect, if the first round fails (the network isn't usable yet), nothing retries until the 60 s interval. `postgrest-js`'s own 1/2/4 s GET retry partly hides this. `core.spec:93` on iPhone 13 is flaky because of it (old client 1/5, new client 6/9). The proposed fix: after a round that failed on the network while `navigator.onLine`, retry in ~2 s (`src/data/sync.ts`).
-- **Next:** Tasks 4 and 5, in a fresh session.
-
-### Session A progress (Task 4)
-
-- **`tests/e2e/a11y.spec.ts`:** 29/29 on iPhone 13 and Pixel 7. It covers every screen and sub-screen, Historique search, and the add and chat sheets. The onboarding steps and login are already in `onboarding.spec.ts`.
-- **Fixed:** the split editor's segments had white 15px text on the pot colours (2.7–4.2:1). They now use the colours' `-ink` shades (5–6:1).
-- **Lighthouse** (2026-09-26, mobile with 4G throttling, `vite preview`, signed out):
-  - performance score 98;
-  - FCP 1.8 s;
-  - LCP 2.2 s (budget 2.5 s);
-  - TBT 30 ms;
-  - CLS 0;
-  - Speed Index 1.8 s.
-
-### Session A outcome (2026-09-26)
-
-- **Commits:**
-  - `5db1f2a` Task 5: Sentry, with nothing sent without a DSN; `scrub()`; `sync_failed`; `supabase/queries/ai_dashboard.sql` and `launch_metrics.sql`;
-  - then the fixes from the review.
-- **Gate:** `npm run check` 1227/1227. First-load JS 124.9 kB, with Sentry in its own lazy chunk.
-- **Final review** (Opus, Tasks 2–5): 0 Critical. Fixed, each with a test that failed first:
-  - **I1:** a second window whose update was accepted in another window got stuck. It now keeps "Recharger", which reloads it. The worker keeps the previous version's cache, so that window can still load its chunks, and it serves the running version's shell.
-  - **m1** (re-graded): a resumed app now checks for a new version when it comes back on screen, at most once an hour.
-  - **m2** (re-graded): a page load on a connection that never answers gets the cached shell after 3 s, instead of a white screen.
-- **Deferred minors** (the user decides):
-  - **m3:** Sentry loads at `setTimeout(0)`, so it competes with the first load. Load it after `load` and idle, and re-measure signed in with the DSN set.
-  - **m4:** breadcrumbs lose their timestamps.
-  - **m5:** `sync_failed` can have an empty `code` tag.
-  - **m6:** the worker's version ignores a change to `index.html` alone.
-  - **m7:** `a11y.spec.ts` doesn't cover the receipt card and the edit sheet. `chat.spec.ts` checks them.
-- **`npm run e2e`:** 97 passed, 7 failed, 1 skipped. None of the failures comes from Session A:
-  - `couple:168` hit the day's cap on partner requests.
-  - `core:93` on Pixel 7 is flaky and passes on a rerun.
-  - On iPhone 13, `core:44`, `me:35`, `onboarding:47` and `chat:194` fail because typed input doesn't register. `core:44` also fails 2 times in 3 on the code from before Session A, checked in a baseline worktree at `0a5a494`.
-  - `couple:129` is Phase 6 M6.
-
-  **The WebKit input flake grew during the day. Look into it before launch.**
-- **Still open for the user:** the sync-loop finding (above) and commit `e07fb40`. That commit holds another session's files under a Phase 7 message.
-
----
-
-## Session B — getting ready to cut over
-
-### Task 6: Retire `/api/chat` (§8.5)
-
-**Files:**
-
-- Delete: `api/chat.js`, and the `lib/` modules that only it imports. Find them with a grep of every `require`/`import` from `api/aam.ts`, `lib/aam-salah/`, `scripts/` and `src/`. `lib/aam-salah/` stays.
-- Delete: the legacy tests of the deleted modules (`test/chat-backend.test.js`, plus any other test of a deleted module). Before deleting them, discard the uncommitted Prettier reformat of these files.
-- Modify: `.env.example` (drop `CHAT_PROVIDER`, `TOKENROUTER_*`, `CHAT_MODEL`, `CHAT_API_URL` and `PORT` only if nothing left reads them), `CLAUDE.md` (the "Chat and Aam Salah" line)
-
-**Behaviour:** `npm run eval` and the Aam Salah tests are unchanged. The legacy app on `stouchi-ancien` keeps its own copy of `api/chat.js` (Task 8's branch), so nothing live breaks.
-
-**Tests:** `npm run check` (legacy tests minus the deleted ones), `npm run eval -- --min-rate 0.9167` once if the quota allows. Otherwise, note it.
-
-- [x] Delete → `npm run check` → commit `Refonte : lancement — fin de /api/chat`
-
-### Task 7: Cut-over SQL (freeze, unfreeze, validate, archive)
-
-**Files:**
-
-- Create:
-  - `supabase/cutover/legacy_read_only.sql`: revokes `insert, update, delete` on `budget_data`, `household_shared_data` and the legacy household tables (`households`, `household_members`, the shopping-list, activity and recurring-bill tables from 20260809–20260811) from `authenticated` and `anon`, and revokes `execute` on the legacy functions (`create_household`, `join_household`, `merge_household_data`, and the others those migrations define). Reads stay.
-  - `supabase/cutover/legacy_read_write.sql`: the exact inverse, for rollback.
-  - `supabase/cutover/validate_constraints.sql`: validates `expenses_shared_needs_only` and `incomes_shared_needs_only` in one transaction.
-  - `supabase/cutover/archive_legacy.sql`, for Session D: `create schema archive`, moves the legacy tables there with no grants, and drops the legacy functions.
-- These files sit **outside** `supabase/migrations/`, so the `tests/db` harness, `stouchi-test`'s history and the legacy tests aren't affected.
-- Test: `tests/db/cutover.test.ts` (applies them on top of the migrations in PGlite); `tests/unit/backfill/first-open.test.ts`
-
-**Interfaces:**
-
-- Consumes: the harness's users (Alice, Bob, outsider) and a legacy `budget_data` row.
-
-**Behaviour:**
-
-- After the freeze, the legacy tables are read-only, and a write from `authenticated` fails with `42501`. The new tables and the `couple_*` RPCs are unaffected.
-- The rollback SQL restores the exact previous grants.
-- Validation passes on backfilled rows. It fails loudly, with nothing applied, if one shared Envies row exists.
-- The archive keeps every row.
-- The first open after the backfill writes at most the current period's payday deposit, and nothing for earlier periods (Review Focus 2).
-
-**Tests:**
-
-- The freeze:
-  - Alice can read, but can't upsert her `budget_data` (`42501`);
-  - `join_household` is refused;
-  - Alice can still insert an expense and call `couple_state`.
-- The rollback: after it, the upsert works again.
-- Validation:
-  - it passes on the backfill fixture's rows;
-  - with one shared `wants` row, it fails and both constraints stay `not valid`.
-- The archive: row counts are equal before and after, and `authenticated` can't read `archive.*`.
-- First open: the fixture household converted by `scripts/backfill` is fed to `dueDeposits` at "1st, 09:00" and at "15th": the expected deposit count, and none before the launch period.
-
-- [x] TDD → `npm run check` → commit `Refonte : lancement — scripts de bascule`
-
-### Task 8: The frozen legacy app (branch `legacy`)
-
-**Files (branch `legacy`, cut from `master`; never merged back into `rebuild`):**
-
-- Modify:
-  - `app.js`: the join-limit hunk from `f618dcf`, cherry-picked (it handles both the old thrown error and the new `{error}` reply). It also gets read-only mode: the first write refused with `42501` (or `permission denied`) shows a fixed banner, and sync stops retrying. The banner reads "Cette version de Stouchi est en lecture seule. Tes données sont dans la nouvelle version :" with a link to the production domain. Local edits are not sent.
-  - `styles.css`: the banner.
-  - `lib/chat-context.js`, `vercel.json`: unchanged, since `stouchi-ancien` uses the same legacy build.
-- Test: `test/legacy-read-only.test.js` (the pure `isReadOnlyError(err)` helper that `app.js` exposes, as the legacy tests already do for its pure helpers)
-
-**Behaviour:** Before the freeze, the legacy app works as today. After it, the app still opens and shows everything, but new edits are refused with the banner, never lost silently.
-
-**Tests:**
-
-- `isReadOnlyError` is true for `{code: '42501'}` and for a `permission denied` message, and false for a network error.
-- Manually, in the rehearsal (Task 9), with `npm start` against `stouchi-test`.
-
-- [x] TDD on `legacy` → `npm run test:legacy` → commit `Ancienne version : lecture seule après la bascule` (on `legacy`; pushing it is part of Task 10)
-
-### Task 9: Production readiness and the rehearsal
-
-**Files:**
-
-- Modify: this plan, where the Task 10 checklist gets its facts.
+  - `src/public/sw.js`: key the shell on what Pages actually serves for `/`. If `/index.html` is redirected, precache `/` and look it up with `'/'`. Either way, never store or serve a redirected response.
+  - `scripts/sw-inject.ts`: the same key. Session A m6: the version also hashes `index.html`.
+  - `src/public/_headers`: align with `vercel.json`, check `Cache-Control` for `sw.js` (never long-cached) and for `/assets/*` (immutable), and keep the CSP as it is.
+  - `package.json`: `wrangler` as a dev dependency, pinned; a `preview:pages` script (`wrangler pages dev dist`) for local checks of the Function and the headers.
+  - `CLAUDE.md`: hosting notes.
+- Delete: `api/aam.ts` and `vercel.json`, once the Pages Function passes its checks, so that one host is left in this repo. Also remove any Vercel-only test that goes with them.
+- Test:
+  - `tests/unit/sw/*`: the shell key and redirect refusal, against a fake cache and fetch;
+  - `tests/e2e/pwa.spec.ts`: run once against a Pages preview URL, besides `vite preview`.
 
 **Steps:**
 
-- [x] **Env list.** From the code (`import.meta.env.*`, `process.env.*` in `api/`, `lib/aam-salah/`, `src/server/`), write the exact Vercel variables for **Production**. They must point at production: the `VITE_SUPABASE_*`, `SUPABASE_URL`/`SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, the provider keys `lib/aam-salah` reads, `VITE_VAPID_PUBLIC_KEY`, the Sentry vars, and `AAM_MODELS` if it is set. **Preview** stays on `stouchi-test`. Also list the `notify-run` secrets for production (VAPID ×3, `GEMINI_API_KEY`), and the Vault secrets and schedule from Phase 4 (`notify-schedule.sql`). Check that the GitHub repo has the secret `eval.yml` needs, because the nightly eval starts running from `master` at the merge (§8.6).
-- [x] **Offline shell on Vercel:** on a preview, `/index.html` answers 200 with no redirect. A redirected response can't answer a navigation, which would break the offline start (from the Session A review).
-- [x] **Production migration state** (read-only): `npx supabase migration list --project-ref gfbakmwllhuhfdydbcfa`. List which of `20260923`–`20260930` are missing, in order.
-- [ ] **Auth diff** (read-only, dashboard or CLI): the site URL, redirect URLs, Google provider and e-mail confirmation on production against `stouchi-test`. The user fixes the differences.
-- [x] **Rehearsal on `stouchi-test`** (approval for the `--apply` on test):
-  1. Run the legacy app locally against test and write a legacy row.
-  2. Apply `legacy_read_only.sql`, then check the banner (Task 8).
-  3. Run `npm run backfill` against test, then `-- --apply`.
-  4. Apply `validate_constraints.sql`.
-  5. Open the new app: the figures match the report, and at most one deposit is written.
-  6. Apply `legacy_read_write.sql`, so the test project keeps its legacy writes for the E2E and legacy tests.
-- [ ] **Backfill dry run on production** (approval; the service key goes in `.env` for this step only). Run `npm run backfill`, never `--apply`.
-  - The report must pass verification.
-  - Every issue is read with the user (`shared_wants_private` = M10, expected).
+- [ ] **The user:** confirm that the Pages project exists, connect Git as D11 says (production branch `production`), and set the Production and Preview variables listed above. Claude doesn't set any secret.
+- [ ] **Measure on a preview** (read-only):
+  - `curl -I <preview>/index.html` and `curl -I <preview>/`: record the status and any `Location`;
+  - `curl -I <preview>/sw.js`: record the cache headers;
+  - check that the response headers match `_headers`.
+- [ ] Fix the service worker if needed (TDD) → `npm run e2e` → a `pwa.spec` run against the preview.
+- [ ] **`/api/aam` on the preview, against `stouchi-test`:**
+  - one keypad-like turn and one receipt turn;
+  - 31 turns in 10 minutes gets the rate-limit reply;
+  - a 33 kB body is refused;
+  - without `SUPABASE_*`, it answers 503;
+  - in Pages → Functions metrics, record the CPU time per request. If it exceeds the free plan's 10 ms, the user chooses between Workers Paid and cutting server-side work.
+- [ ] Run `npm run eval -- --min-rate 0.9167` against the preview's `/api/aam` if the eval script can target a URL. Otherwise run it locally and note that.
+- [ ] Check that the preview's bundle holds the `stouchi-test` URL and not the production one (a grep of `dist/assets`, or DevTools).
+- [ ] Delete `api/aam.ts` and `vercel.json` → `npm run check` → commit `Refonte : lancement — hébergement Cloudflare Pages`
+
+**Behaviour:**
+
+- An offline cold start renders Budget.
+- A 3 s stall gets the cached shell.
+- An update still waits for "Recharger".
+- `/api/aam` behaves exactly as on Vercel.
+
+### Task 14: CI, secrets and repo hygiene
+
+**Files:**
+
+- Modify:
+  - `.github/workflows/eval.yml`: add the nightly `schedule` back (§8.6), and a `push` trigger on `lib/aam-salah/**` and `scripts/eval-aam-salah.js`.
+  - `.github/workflows/db-backup.yml`: keep the schedule only once the secrets exist. Otherwise comment the schedule out, with a note.
+  - `.github/dependabot.yml`: ignore `typescript` ≥ 6.1, `eslint` and `@eslint/js` ≥ 10, and `@babel/core` ≥ 8 until it's tested.
+  - the spec, §8.5 and §8.6: Vercel becomes Cloudflare Pages, `vercel.json` becomes `_headers`, and `master` becomes `main`.
+- Delete: `posthog-ai-observability-report.md` from the repo root, if it's a one-off report. Ask the user first.
+
+**Steps:**
+
+- [ ] **The user** adds the GitHub secrets (listed in "Things only the user can do").
+- [ ] Close Dependabot #4, #6, #7 and #8 with a comment (pinned versions). Test #1–#3 (Actions v7) and #5 (`@types/node` 26) on a branch, and merge them if CI is green.
+- [ ] Run the E2E and eval workflows once by hand from the Actions tab: both green, or the known flakes noted.
+- [ ] Commit `Refonte : lancement — CI et dépendances`
+
+### Task 15: Reliability carry-overs
+
+**Files:**
+
+- Modify: `src/data/sync.ts` (the sync-loop fix); the E2E helpers or specs behind the WebKit input flake; the `couple:168` fixture.
+- Test: `tests/unit/data/sync.test.ts`; the E2E specs involved.
+
+**Behaviour:**
+
+- **Sync loop:** after a round that failed on the network while `navigator.onLine`, retry once in about 2 s, then fall back to the normal backoff. Never more than one pending retry.
+- **WebKit input flake** (`core:44`, `me:60`, `onboarding:47`, `chat:121`/`194` on iPhone 13):
+  - find out whether it's the test (`fill()` on a controlled Preact input) or the app (an input that drops keystrokes on iOS);
+  - if it's the app, fix it with a failing test first, because a real iPhone user would lose input;
+  - if it's the test, switch those steps to `pressSequentially`, or wait for hydration.
+- **`couple:168`:** clean up that user's `couple_request` rows before the test, or use a fresh pair, so that the day's cap of 10 isn't reached.
+- **M5** (a dead card after an offline request): only if it's cheap. Otherwise it stays after launch.
+
+**Tests:**
+
+- The sync unit test: a failed round while online → one retry at about 2 s → success; no retry storm.
+- `npm run e2e` three times in a row on both devices: only failures with a known, noted cause.
+
+- [ ] TDD → `npm run check` → `npm run e2e` ×3 → commit `Refonte : lancement — fiabilité (sync, saisie iPhone)`
+
+### Task 16: The legacy side (`budget-maison` repo, branch `legacy`)
+
+**Files (in `../budget-maison`, on `legacy`):**
+
+- Modify:
+  - `read-only.js`: the banner's link becomes `<PROD_URL>`;
+  - its test: the link.
+  - Wording: "Cette version de Stouchi est en lecture seule. Tes données sont dans la nouvelle version :" plus the link. Add "Reconnecte-toi avec le même e-mail." if it fits.
+
+**Behaviour:**
+
+- Before the freeze, the legacy app works as today.
+- After it, the banner shows, and its link opens the new app.
+- Nothing else changes.
+
+- [ ] TDD on `legacy` → `npm run test:legacy` → commit `Ancienne version : lien vers la nouvelle adresse` (on `legacy`, not pushed yet: that's Session C step 2)
+
+### Task 17: The Cloudflare rehearsal and the go/no-go
+
+**Steps:**
+
+- [ ] **The Auth diff** (the user, in the dashboard), as listed above. The user fixes the differences on production.
+- [ ] **The backfill dry run on production** (approval; the service key goes in `.env` for this step only). Run `npm run backfill`, never `--apply`.
+  - Verification passes.
+  - Every issue is read with the user (`shared_wants_private` is expected).
   - `.backfill/` stays gitignored.
-  - Fix any failure on `rebuild` with a test, then run it again.
-- [ ] `npm run check` and `npm run e2e` green → update this plan and `CLAUDE.md` status → commit `Refonte : phase 7 — prêt pour la bascule`
-
-### Session B findings for Task 10 (2026-09-26, read-only)
-
-- **Vercel env, project `budget-maison`, Production** (all on production `gfbakmwllhuhfdydbcfa`):
-  - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (the app);
-  - `SUPABASE_URL`, `SUPABASE_ANON_KEY` (`api/aam.ts`; it has no fallback, it answers 503 without them);
-  - `GEMINI_API_KEY`, and `MISTRAL_API_KEY` (the last link of the default `AAM_MODELS` chain). `TOKENROUTER_API_KEY` only if `AAM_MODELS` names it. `AAM_MODELS` and `AAM_DEADLINE_MS` are optional;
-  - `VITE_VAPID_PUBLIC_KEY` (the production pair);
-  - `VITE_SENTRY_DSN`, `SENTRY_DSN`. The release tag comes from `VERCEL_GIT_COMMIT_SHA` on its own;
-  - never `SUPABASE_SERVICE_ROLE_KEY`.
-  - `CHAT_PROVIDER`, `CHAT_MODEL`, `CHAT_API_URL` and `TOKENROUTER_API_KEY` only serve the legacy `api/chat.js`: they move to `stouchi-ancien`, together with that project's `SUPABASE_URL`/`SUPABASE_ANON_KEY` (production).
-  - **Preview:** the same names, on `stouchi-test`.
-- **`notify-run` secrets on production:** `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `GEMINI_API_KEY`, and `NOTIFY_MODEL` (optional). Supabase injects `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`. Then the Vault secrets `notify_url` and `notify_secret`, and `supabase/sql/notify-schedule.sql`.
-- **GitHub:** the repo has **no Actions secret**. Add `GEMINI_API_KEY` before the merge, because `eval.yml` runs nightly from `master`.
-- **Offline shell:** on a preview, `/index.html` answers 200 with no redirect (`vercel.json` has no `cleanUrls`).
-- **Production migrations:** the history holds `20260809…`–`20260811…` and `20260923…`, `20260924…`, under timestamped versions that differ from the file names. Missing, in order:
-  1. `20260902_budget_data_rls` (retroactive and idempotent, never recorded on production);
-  2. `20260925_phase3_incomes_soft_delete`;
-  3. `20260926_phase4_notify`;
-  4. `20260927_notify_cron_secret`;
-  5. `20260928_phase5_plan_and_delete`;
-  6. `20260929_phase6_couple`;
-  7. `20260930_legacy_join_limit`.
-
-  **Don't use `supabase db push`:** the versions don't match the file names, so it would re-run the applied files too. Apply these 7 one by one, as `stouchi-test` got them.
-- **Auth, what the new app needs:**
-  - e-mail + password sign-up, with no `emailRedirectTo`, so the confirmation link uses the **Site URL**;
-  - Google OAuth with `redirectTo` = origin + path.
-  - Production needs: Site URL = the production domain (today `https://budget-maison-xi.vercel.app/`), that URL in the redirect allow-list, and the Google provider on. The user compares the rest (e-mail confirmation) with `stouchi-test` in the dashboard.
-- **Legacy banner link:** `read-only.js` on `legacy` points at `https://budget-maison-xi.vercel.app/`. Change it if the launch adds a custom domain.
-
-### Session B outcome (2026-09-26)
-
-- **Commits:**
-  - On `rebuild`: `a8b7009` Task 6, `ce9fe42` Task 7, then the review's fixes.
-  - On `legacy` (not pushed): `098b8e3` Task 8, `15654e0` (`read-only.js` is served; the rehearsal found it missing), `831a4e4` (the review's fixes).
-- **Task 6:** only `api/chat.js` goes. `lib/chat-context.js` stays: `lib/aam-salah`, `server.js` and `scripts/ping-model.js` still require it. The eval was quota-bound: flash-lite 27/30 (2 API 503s, 1 real miss, #30).
-- **Task 7:**
-  - The freeze records the grants it removes (`cutover.legacy_grants`) and the rollback replays them. It checks itself: a grant that survives, for example one made by another grantor, fails the whole freeze.
-  - The archive moves only `budget_data` and `household_shared_data`, because couple mode runs on `households`, `household_members` and `household_join_attempts`. It redefines `delete_my_account`.
-  - Validation is one atomic statement.
-  - A launch-morning backfill writes no payday deposit for the launch period; the next payday writes one.
-- **Task 8:**
-  - The legacy app's helpers live in `read-only.js`, following the `budget-facts.js` pattern.
-  - A 42501 on any write shows the banner and stops sending.
-  - A probe on open (an update that matches no row) shows the banner before anything is typed.
-  - The banner links to `https://budget-maison-xi.vercel.app/`.
-- **Task 9:**
-  - The findings are above.
-  - The rehearsal on `stouchi-test` passed end to end, on a throwaway account that was deleted afterwards: legacy write → freeze → banner → backfill dry run and `--apply` → validation → first open (Budget and Objectif right, no deposit) → unfreeze. `stouchi-test` is back to 3 users and 0 legacy rows, and its two constraints stay validated.
-- **Final review** (Opus): 0 Critical. Fixed:
-  - **I1**, step 9 couldn't fast-forward: step 8b is added and was rehearsed in a scratch clone.
-  - **I2**, a beacon edit was lost with no banner: the probe on open, with legacy tests RED→GREEN.
-  - **m3**, re-graded Important, the freeze could pass half-way: a self-check, with a PGlite test RED→GREEN.
-  - **m4**, re-graded Important, a missing `read-only.js` wedged every save: a fallback, with a test RED→GREEN.
-- **Minors fixed afterwards**, at the user's request: m5, m6, m8, m9 and m10 (on `rebuild` in `d59b112`, on `legacy` in `c0fdff0`, each with a test that failed first; m6 was also checked on a screenshot). m7 is covered by the note in step 1's announcement. Only m5's anon case stays: after `20260902`, anon gets the same message as the freeze.
-- **The review's minors, for the record:**
-  - **m5:** 42501 also comes from RLS `with check` and from anon after `20260902`. A lost session between steps 4 and 5 would show the banner early.
-  - **m6:** the banner sits over the header, with no body offset.
-  - **m7:** during steps 5–9 the banner's link opens the frozen app. The announcement in step 1 now says so.
-  - **m8:** the archive leaves `household_shared_data` in `supabase_realtime`, and drops only exact function signatures.
-  - **m9:** stale comments in `lib/chat-context.js:1` and `server.js:168`.
-  - **m10:** the "fixture rows" validation test inserts no incomes.
-- **`npm run e2e`:** 95 passed, 7 failed, 1 skipped. On rerun, 6 still fail: the iPhone input class (`chat:121`, `core:44`, `me:60`, `onboarding:47`), `couple:129` (M6) and `couple:168` (daily cap). Session B changed no code under `src/`.
-- **Still for the user:**
-  - the backfill dry run on production (deferred; it needs the production service key);
-  - the Auth diff on the dashboard;
-  - the GitHub `GEMINI_API_KEY` secret;
-  - the "before Session C" list;
-  - rotating the `stouchi-test` secret key (both keys were pasted in the chat).
+  - Remove the key afterwards.
+- [ ] **Rehearsal on a Pages preview against `stouchi-test`**, on a throwaway account deleted afterwards:
+  1. The legacy app runs locally against test, and a legacy row is written.
+  2. Apply `legacy_read_only.sql`: the banner shows, and **its link opens the preview address** (point it there for the rehearsal).
+  3. Run the backfill dry run, then `--apply` (approval for test).
+  4. Apply `validate_constraints.sql`.
+  5. **On a real iPhone and a real Android phone**, on the preview:
+     - log in;
+     - the figures match the report;
+     - add an expense by keypad and by chat;
+     - search Historique;
+     - check Objectif;
+     - enable push, and a manual `notify-run` on test delivers one;
+     - install the PWA, go into airplane mode, reopen: Budget shows;
+     - deploy a no-op change: "Nouvelle version" appears and reloads only on tap.
+  6. An error sent on purpose reaches PostHog (or Sentry), with nothing typed in it.
+  7. Apply `legacy_read_write.sql`.
+- [ ] **Go/no-go** (the user, by 29 October):
+  - Tasks 12–17 done;
+  - `npm run check` and `npm run e2e` green, or only known flakes;
+  - the variables are set;
+  - the VAPID pair is ready;
+  - the Gemini tier is checked.
+- [ ] Update this plan and `CLAUDE.md` → commit `Refonte : phase 7 — prêt pour la bascule (Cloudflare)`
 
 ---
 
-## Session C — launch day (the 1st, morning)
+## Session B′ outcome (2026-09-27, one session, on branch `phase-7-plan-cloudflare`)
 
-### Task 10: Runbook
+**Decisions:** D9 = `https://stouchi-app.pages.dev` (swap in a custom domain later if there is one), D10 = PostHog, D11 = Pages production branch `production`.
+
+**New facts found:**
+
+- **Cloudflare Pages redirects `/index.html` to `/` (308).** Checked with `wrangler pages dev`. The old worker precached `/index.html`, so the offline start would have broken on Pages. Fixed (Task 13).
+- **The repo is connected to a Vercel project `stouchi`**, and it deploys `main` to Vercel "Production" on every merge. **The user disconnects it** (Cloudflare is the host), after checking which Supabase project its env points at.
+- **Cloudflare has a Worker `stouchi` connected to the repo (Workers Builds), and its builds fail**, because `wrangler.jsonc` is a Pages config. No Pages project `stouchi-app` is visible from here (wrangler isn't logged in). **The user creates the Pages project** `stouchi-app` from the GitHub repo (build `npm run build`, output `dist`, production branch `production`, previews for the other branches), then deletes the `stouchi` Worker or disconnects its builds.
+- **The iPhone "input flake" wasn't lost input.** The typed value and the app state were right. The save waited behind the first pull's single IndexedDB transaction: 214 rows took ~7 s to commit in Playwright's WebKit, and every write that touches the outbox waited. A backfilled account with years of rows would hit the same thing on a real phone's first open. Fixed by batching (Task 15).
+- `/api/aam` runs under Cloudflare's runtime (`workerd`, locally): a real turn against `stouchi-test` got 200 in about 2 s, a 33 kB body 413, GET 405, no JWT 401. The CommonJS pipeline and `posthog-node` load fine. **The CPU time per request on the real edge (the free plan's limit is 10 ms) is still to read on a preview** (Pages → Functions → Metrics).
+
+**Done (code; `npm run check` 1265/1265, first-load JS 125.3 kB):**
+
+- **Task 12, errors on PostHog:**
+  - `src/app/monitoring.ts` loads PostHog after `load` and idle, with exception capture on and autocapture, replay, heatmaps, dead clicks, rage clicks and surveys off, text masked;
+  - `before_send` = the new `scrubCapture()` (`src/shared/scrub.ts`): it drops element text, strips queries from every URL, masks exception messages, and keeps only PostHog's own person properties;
+  - `sync_failed` never has an empty `code`;
+  - `/api/aam` reports a scrubbed `$exception` with one `fetch` (`src/server/monitoring.ts`);
+  - the release comes from `CF_PAGES_COMMIT_SHA`;
+  - `@sentry/*` removed.
+- **Task 13, hosting:**
+  - the shell is precached and served as `/`, a redirected response is stored as a plain copy, and a failed precache fails the install;
+  - the worker's version also hashes `index.html` (Session A m6);
+  - `_headers`: `sw.js` `no-cache`, `/assets/*` immutable;
+  - `api/aam.ts` and `vercel.json` deleted;
+  - `wrangler` 4.141.0 pinned, `npm run preview:pages`;
+  - **the E2E suite now runs on a local Cloudflare Pages server** (`playwright.config.ts`), so the redirect, `_headers` and the Function are exercised on every run;
+  - `.node-version` = 24 for the Pages build.
+- **Task 14, CI:**
+  - `eval.yml` nightly at 02:00 UTC, plus on pushes to `main` touching the assistant;
+  - `db-backup.yml` skips green (with a warning) while its secrets are missing, and fails on a manual run;
+  - `dependabot.yml` ignores TypeScript ≥ 6.1, ESLint and `@eslint/js` ≥ 10, and Babel ≥ 8;
+  - the spec's §8.1, §8.5, §8.6 and §8.7 no longer say Vercel, `master` or Sentry.
+- **Task 15, reliability:**
+  - `pull` writes in batches of 50 rows (`PULL_BATCH`), one transaction each; a waiting local write still wins;
+  - each batch saves the cursor of its last row (rows come oldest first), so a pull cut short resumes instead of starting over;
+  - "Hors ligne" clears as soon as the server answers, unless the browser has gone offline since;
+  - the router catches a hash change made before its listener attached (`startRouter`), which made a navigation during boot land on the wrong screen;
+  - Phase 6 M6 (`couple:132`): the baseline is read once it's stable, the server row is checked first, and the couple tests get 60 s;
+  - a failed round while the browser says online is retried once after 2 s;
+  - `couple:168` skips with a reason when the day's request cap is used up.
+  - On iPhone 13, `core`, `me`, `onboarding` and `chat` pass (23/23, and `core` twice in a row).
+- **Task 16, legacy banner** (in `budget-maison`, branch `legacy`, worktree `%TEMP%/bm-legacy`, **not committed**):
+  - `read-only.js` links to `https://stouchi-app.pages.dev/`, with a test that it never points at the old address;
+  - the banner says "reconnecte-toi avec le même e-mail";
+  - `npm run test:legacy` 15/15.
+
+**Still to do:**
+
+- **The user:**
+  - create the Pages project and set its variables (the lists above);
+  - disconnect the Vercel `stouchi` project and the failing `stouchi` Worker;
+  - add the GitHub secrets;
+  - lock PostHog's project settings (replay off, alerts);
+  - the Auth settings on production;
+  - the production VAPID pair;
+  - the Gemini tier;
+  - rotate the `stouchi-test` keys;
+  - the backfill dry run on production.
+- **Claude, once the Pages preview exists:**
+  - rerun Task 13's preview checks (headers, 308, Function CPU time);
+  - the full `npm run e2e` three times;
+  - Task 17's rehearsal with the user's phones.
+- Close Dependabot #4, #6, #7 and #8 (the new ignore rules keep them from coming back). Merge #1, #2, #3 and #5 after a rebase: their CI is green.
+
+## Session C — launch day (Sunday 1 November 2026, morning)
+
+### Task 10: Runbook (rewritten for Cloudflare Pages)
 
 Each numbered step is announced, approved, run, then checked. If a check fails, stop and roll back (below).
 
-1. **Announce** in the legacy app's household, if the user wants: the time of the switch. Between steps 5 and 9 the banner's link still opens the frozen app: say so in the announcement.
-2. **Legacy app on its own project.**
-   - Push the `legacy` branch.
-   - `stouchi-ancien` deploys it with the legacy env vars.
-   - Check that it opens and reads data.
-3. **Merge `legacy` → `master`** (the join-limit and read-only `app.js`) and let Vercel deploy it to production. Check that the legacy app still works: the new `app.js` accepts both join replies.
-4. **Production migrations** `20260923`–`20260930`, in order, as found in Task 9. Run `npm run check:supabase` against production (with the anon key; no service key). The legacy app still works, because the migrations are additive.
-5. **Freeze:** `legacy_read_only.sql`. It raises `freeze failed: … still writable` and changes nothing if a grant survives (for example one made by another grantor): stop and look. Check that opening the legacy app shows the banner (the probe on open), and that a legacy write does too.
-6. **Final backfill:**
-   - `npm run backfill`: verification passes, with the same issues as the dry run plus any rows added since.
-   - Then `npm run backfill -- --apply`.
-   - Then `validate_constraints.sql`.
-   - Remove the service key from `.env`.
-7. **`notify-run` on production:**
-   - Run `npm run build:notify`.
-   - Deploy with `npx supabase functions deploy notify-run --no-verify-jwt --use-api --project-ref gfbakmwllhuhfdydbcfa`.
-   - Set the secrets (VAPID ×3, `GEMINI_API_KEY`), the Vault entries and `notify-schedule.sql`.
-   - A manual run answers 200.
-8. **Vercel production env** set from Task 9's list, Sentry included.
-8b. **Record `legacy` on `rebuild`**, after its last commit: `git checkout rebuild && git merge -s ours legacy -m "Refonte : lancement — historique de l'ancienne version (sans son contenu)"`. This keeps `rebuild`'s files as they are. Without it, step 9 refuses to fast-forward.
-9. **Launch:** `git checkout master && git merge --ff-only rebuild && git push`. Vercel deploys the new app.
+1. **Announce** in the legacy household, if the user wants:
+   - the time of the switch;
+   - the new address `<PROD_URL>`;
+   - "reconnecte-toi avec le même e-mail";
+   - the old address stays readable for 14 days.
+2. **Legacy read-only build to production** (`budget-maison`):
+   - push `legacy`;
+   - merge it into `master` through a PR;
+   - Vercel deploys it.
+   - Check: the legacy app works normally. It shows no banner while unfrozen, and it accepts both join replies.
+3. **Production migrations**: the 7 files listed above, one by one, in order. Then `npm run check:supabase` against production, with the anon key and no service key. The legacy app still works, because the migrations are additive.
+4. **Freeze:** `legacy_read_only.sql`. If it raises `freeze failed: … still writable`, it changed nothing: stop and look.
+   - Check: opening the legacy app shows the banner (the probe on open), and its link opens `<PROD_URL>`.
+5. **Final backfill:**
+   - `npm run backfill`: verification passes, with the dry run's issues plus any rows added since;
+   - then `npm run backfill -- --apply`;
+   - then `validate_constraints.sql`;
+   - remove the service key from `.env`.
+6. **`notify-run` on production:**
+   - `npm run build:notify`;
+   - `npx supabase functions deploy notify-run --no-verify-jwt --use-api --project-ref gfbakmwllhuhfdydbcfa`;
+   - the secrets, the Vault entries and `notify-schedule.sql`;
+   - a manual run answers 200.
+7. **Supabase Auth on production:** Site URL = `<PROD_URL>`, and the allow-list as listed above (if Task 17 didn't already do it).
+8. **Pages Production variables:** a final check against the list above, the production VAPID public key included. Nothing points at `stouchi-test`.
+9. **Launch:** `git push origin main:production` (D11). Pages builds and deploys.
+   - Check: `<PROD_URL>` serves the new app;
+   - the bundle holds the production Supabase URL;
+   - `/api/aam` answers `401` without a JWT, not `503`.
 10. **Smoke test on phones** (the user):
     - log in with a real account: Budget's figures match the backfill report for this period;
-    - log an expense by keypad and by chat;
+    - add an expense by keypad and by chat;
     - Historique finds a legacy expense;
     - Objectif shows the legacy savings;
     - enable push;
-    - on the installed iPhone PWA, in airplane mode, reopen the app: Budget shows (Playwright can't test this on WebKit);
-    - Sentry receives the release.
-11. **Watch** for two hours: the Sentry issues, `ai_dashboard.sql`, and `notify-run`'s next runs.
+    - on the installed iPhone PWA, in airplane mode, reopen: Budget shows;
+    - PostHog (or Sentry) receives the release.
+11. **Watch** for two hours: errors, `ai_dashboard.sql`, the next `notify-run` runs, and the Pages Function metrics (CPU and errors).
 
-**Rollback** (any step from 9 on):
+**Rollback, from step 9 on:**
 
-1. Use Vercel's Instant Rollback to the step-3 deployment.
-2. Apply `legacy_read_write.sql`.
-3. Rows written in the new tables since step 9 stay there. They are listed with a query on `created_at`, and the user decides what to do with them.
+1. Apply `legacy_read_write.sql`. The legacy app at the old address works normally again: the banner only shows on 42501.
+2. Tell the household to go back to the old address.
+3. If the new app itself is broken, use Pages → Deployments → Rollback, or take the production deployment down.
+4. Rows written in the new tables since step 9 stay there. List them with a query on `created_at`, and the user decides what to do with them.
 
-Before step 9, rollback is only `legacy_read_write.sql`.
+**Before step 9**, the rollback is only `legacy_read_write.sql`.
 
-- [ ] Steps 1–11 → update this plan (outcome) and `CLAUDE.md` (status: launched; `master` is the new app) → commit `Refonte : phase 7 — lancement`
+- [ ] Steps 1–11 → update this plan (outcome) and `CLAUDE.md` (status: launched on Cloudflare at `<PROD_URL>`) → commit `Refonte : phase 7 — lancement`
 
 ---
 
@@ -531,11 +566,34 @@ Before step 9, rollback is only `legacy_read_write.sql`.
 
 **Files:**
 
-- Delete: the legacy app files (`index.html` at the root, `app.js`, `styles.css`, `budget-facts.js`, `server.js`, `assets/` used only by them), the legacy tests that test only them, and the backfill's `appDiffs` dependency on `budget-facts.js`. The backfill is kept for the record but no longer compares, or it is deleted with the user's agreement.
-- Modify: `package.json` (`start`, `test:legacy` in `check`), `CLAUDE.md` (the "Two apps" section)
+- `stouchi`:
+  - Delete `budget-facts.js` and the backfill's `appDiffs` dependency on it. Keep the backfill for the record without the comparison, or delete it if the user agrees.
+  - Update `CLAUDE.md`: remove the legacy-app section.
+- `budget-maison`:
+  - on `master`, `vercel.json` gets a permanent redirect from every path to `<PROD_URL>`, so that old bookmarks keep working;
+  - or the project is deleted, if the user prefers.
 
 **Steps:**
 
-- [ ] With approval: apply `archive_legacy.sql` on production. Delete the `stouchi-ancien` Vercel project and remove the legacy env vars from the main project.
-- [ ] Delete the legacy code → `npm run check`, `npm run e2e` → commit `Refonte : fin de l'ancienne version`
-- [ ] Remind the user (via `/schedule`): +30 days, run `launch_metrics.sql` against §2's targets; +90 days, drop `archive.*` (approval).
+- [ ] With approval: apply `archive_legacy.sql` on production.
+- [ ] With approval: deploy the redirect on `budget-maison`, or delete the project. Remove the legacy env vars from Vercel.
+- [ ] Remove the old address from the Supabase Auth allow-list.
+- [ ] `npm run check`, `npm run e2e` → commit `Refonte : fin de l'ancienne version`
+- [ ] Remind the user (via `/schedule`): at +30 days, run `launch_metrics.sql` against §2's targets; at +90 days, drop `archive.*` (approval).
+
+---
+
+## After launch (backlog, not blocking)
+
+- **Phase 6:**
+  - M5: an offline request leaves a dead card;
+  - M6 and M7: E2E ordering;
+  - M9: a pending inviter must cancel before joining another code;
+  - the Phase 6 ledger items.
+- **Session A:**
+  - `couple_request`'s per-day dedupe swallows a second request after an edit (needs a migration);
+  - M3 compares against the device clock;
+  - m4: breadcrumb timestamps;
+  - m7: a11y on the receipt card and the edit sheet.
+- **Session B:** m5 (an early banner after a lost session).
+- **Out of scope in D7:** Realtime (§8.3 two-device sync), Playwright visual diffs (§8.6), and "median time to log", which isn't measured.

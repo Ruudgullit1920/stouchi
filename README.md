@@ -32,7 +32,7 @@ Product design, UX/UI, and full-stack engineering: a case study.
 | **Role** | Solo: product strategy, user-feedback synthesis, UI and design system, front-end, back-end, data migration, QA |
 | **Problem** | An existing budget app that its users found overwhelming: 12 destinations, 2 competing ways to add an expense, a 5 400-line `app.js` |
 | **Outcome** | A full rebuild around one number, *Reste à dépenser*, with 5 tabs, logging in under 5 seconds, and an assistant that can act on the budget but never does maths itself |
-| **Stack** | Vite · TypeScript (strict) · Preact + Signals · Supabase (Postgres, RLS, Auth, Realtime, Edge Functions) · Vercel · Gemini |
+| **Stack** | Vite · TypeScript (strict) · Preact + Signals · Supabase (Postgres, RLS, Auth, Realtime, Edge Functions) · Cloudflare Pages · Gemini |
 | **Scale** | ~14 000 lines of app code · ~17 000 lines of tests · 18 design-system components · 13 migrations · 758 UI strings |
 | **Quality** | 1 167 unit and component tests · 91 E2E tests on iPhone 13 and Pixel 7 · axe accessibility checks · 28-case assistant eval gate |
 
@@ -252,7 +252,7 @@ flowchart LR
     OB[(IndexedDB outbox)]
     SW[Service worker · push]
   end
-  subgraph Vercel["Vercel serverless"]
+  subgraph CF["Cloudflare Pages Functions"]
     AAM["/api/aam · assistant"]
   end
   subgraph Supa["Supabase"]
@@ -364,7 +364,7 @@ src/
   data/         Supabase client, repositories, outbox, sync
   shared/       money · dates · facts · schemas · i18n/fr.json   ← shared by client, server and cron
   server/       assistant turn handling, notification rules
-api/            aam.ts (Vercel function)
+functions/api/  aam.ts (Cloudflare Pages Function)
 lib/aam-salah/  assistant instructions, action validation, eval fixture
 supabase/       migrations/ and functions/notify-run
 scripts/        backfill, Supabase checks, eval, prototype server

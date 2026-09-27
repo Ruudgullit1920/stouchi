@@ -4,7 +4,7 @@ import { openDB } from 'idb';
 import { openLocal, type LocalDb } from '../../../src/data/localdb';
 import { pendingFor } from '../../../src/data/outbox';
 import { createStore, type Store } from '../../../src/data/store';
-import { pull, pushOnce, startSync, syncOnce, useUser } from '../../../src/data/sync';
+import { PULL_BATCH, pull, pushOnce, startSync, syncOnce, useUser } from '../../../src/data/sync';
 import { writeRow } from '../../../src/data/write';
 import { expense, income, profile, reminder, USER, uuidN } from '../fixtures';
 import { FakeRemote } from './fakeRemote';
@@ -72,6 +72,86 @@ describe('pull, racing local writes', () => {
     await pull(db, remote, store);
     expect(store.expenses.value[0].label).toBe('mine, typed during the pull');
     expect(((await db.get('expenses', e.id)) as { label: string }).label).toBe('mine, typed during the pull');
+  });
+
+  /* A backfilled account's first open pulls years of rows; in one transaction
+     (which also locks outbox and meta) every tap that writes waited seconds. */
+  it('a large pull is written in batches, and a write typed during it waits for one batch, not the whole pull', async () => {
+    for (let i = 0; i < 3 * PULL_BATCH; i++) remote.serverWrite('expenses', expense({ label: `s${i}` }));
+    /* which transactions finish, in order: pull batches (expenses,meta,outbox)
+       and the tap's write (expenses,outbox,meta), started as batch 1 opens */
+    const done: string[] = [];
+    let writing: Promise<unknown> | undefined;
+    const open = db.transaction.bind(db);
+    const spy = vi.spyOn(db, 'transaction').mockImplementation(((
+      names: string[],
+      mode: IDBTransactionMode,
+    ) => {
+      const tx = open(names as never, mode);
+      const label = String(names);
+      if (label === 'expenses,meta,outbox') {
+        void tx.done.then(() => done.push('batch'));
+        writing ??= writeRow(db, USER, 'expenses', expense({ label: 'typed during the pull' }), store);
+      } else if (label === 'expenses,outbox,meta') void tx.done.then(() => done.push('write'));
+      return tx;
+    }) as typeof db.transaction);
+    await pull(db, remote, store);
+    await writing;
+    spy.mockRestore();
+    expect(done).toEqual(['batch', 'write', 'batch', 'batch']);
+    expect(store.expenses.value).toHaveLength(3 * PULL_BATCH + 1);
+  });
+
+  it('a local write still waiting keeps its version in a later batch, and the cursor is saved at the end', async () => {
+    const rows = Array.from({ length: 2 * PULL_BATCH + 1 }, (_, i) => expense({ label: `s${i}` }));
+    for (const r of rows) remote.serverWrite('expenses', r);
+    const last = rows[rows.length - 1];
+    await writeRow(db, USER, 'expenses', { ...last, label: 'mine' }, store);
+    await pull(db, remote, store);
+    expect(store.expenses.value).toHaveLength(rows.length);
+    expect(store.expenses.value.find((e) => e.id === last.id)?.label).toBe('mine');
+    expect(await db.get('meta', 'cursor:expenses')).toBeTruthy();
+  });
+
+  it('a pull cut short (app closed, page reloaded) resumes after the last batch it wrote, not from scratch', async () => {
+    for (let i = 0; i < 2 * PULL_BATCH; i++) remote.serverWrite('expenses', expense({ label: `s${i}` }));
+    const oldestFirst = [...remote.table('expenses').values()].sort((x, y) =>
+      String(x.updated_at).localeCompare(String(y.updated_at)),
+    );
+    const open = db.transaction.bind(db);
+    let batches = 0;
+    const spy = vi.spyOn(db, 'transaction').mockImplementation(((
+      names: string[],
+      mode: IDBTransactionMode,
+    ) => {
+      if (String(names) === 'expenses,meta,outbox' && ++batches === 2) throw new Error('page closed');
+      return open(names as never, mode);
+    }) as typeof db.transaction);
+    await expect(pull(db, remote, store)).rejects.toThrow('page closed');
+    spy.mockRestore();
+    expect(await db.get('meta', 'cursor:expenses')).toBe(String(oldestFirst[PULL_BATCH - 1].updated_at));
+  });
+
+  it('"Hors ligne" clears as soon as the server answers, not after the whole pull', async () => {
+    store.sync.value = { ...store.sync.value, online: false };
+    let onlineDuringPull: boolean | undefined;
+    remote.onPull = (table) => {
+      if (table === 'expenses') onlineDuringPull = store.sync.value.online;
+      return Promise.resolve();
+    };
+    await pull(db, remote, store);
+    expect(onlineDuringPull).toBe(true);
+  });
+
+  it('an answer that lands after the browser went offline never clears "Hors ligne"', async () => {
+    store.sync.value = { ...store.sync.value, online: false };
+    vi.stubGlobal('navigator', { onLine: false });
+    try {
+      await pull(db, remote, store);
+      expect(store.sync.value.online).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('re-reads a short window before the cursor, so a write that committed late is not missed', async () => {
@@ -210,6 +290,43 @@ describe('startSync', () => {
     await vi.waitFor(() =>
       expect([...remote.table('expenses').values()].map((r) => r.label)).toEqual(['second']),
     );
+    stop();
+  });
+
+  /* Session A finding: right after a reconnect the network is often not usable
+     yet; the first round fails and nothing tried again until the 60 s timer. */
+  it('a round that fails on the network while the browser says online is retried once, soon', async () => {
+    remote.failNext('network');
+    const stop = startSync(db, remote, store, fakeWindow(true), { everyMs: 60_000, quickRetryMs: 50 });
+    await vi.waitFor(() => expect(store.sync.value.online).toBe(false));
+    await vi.waitFor(() => expect(store.sync.value).toMatchObject({ online: true, load: 'ready' }));
+    stop();
+  });
+
+  it('the quick retry happens once: a network that stays down waits for the timer, no retry storm', async () => {
+    remote.failNext('network', 10);
+    const stop = startSync(db, remote, store, fakeWindow(true), { everyMs: 60_000, quickRetryMs: 20 });
+    await vi.waitFor(() => expect(remote.pulls.length).toBe(2));
+    await settle();
+    await settle();
+    expect(remote.pulls.length).toBe(2);
+    expect(store.sync.value.online).toBe(false);
+    stop();
+  });
+
+  it('no quick retry while the browser is offline', async () => {
+    const win = fakeWindow(true);
+    remote.failNext('network');
+    /* the connection drops during the failing round */
+    remote.onPull = () => {
+      win.navigator.onLine = false;
+      return Promise.resolve();
+    };
+    const stop = startSync(db, remote, store, win, { everyMs: 60_000, quickRetryMs: 20 });
+    await vi.waitFor(() => expect(store.sync.value.online).toBe(false));
+    await settle();
+    await settle();
+    expect(remote.pulls.length).toBe(1);
     stop();
   });
 });

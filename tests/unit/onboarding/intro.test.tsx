@@ -20,23 +20,23 @@ const selected = () => screen.getAllByRole('tab').map((d) => d.getAttribute('ari
 const current = () => screen.getByRole('heading', { level: 1 }).textContent;
 
 describe('IntroScreen', () => {
-  it('starts on the split slide with the first dot selected', () => {
+  it('starts on the first slide with the first segment selected', () => {
     render(<IntroScreen onDone={() => undefined} />);
-    expect(current()).toContain('réparti tout seul');
+    expect(current()).toContain('C’est noté');
     expect(selected()).toEqual([true, false, false]);
   });
 
-  it('moves on with the arrow and the dots, then hands over after the last slide', () => {
+  it('moves on with the sheet button and the segments, then hands over after the last slide', () => {
     const done = vi.fn();
     render(<IntroScreen onDone={done} />);
     fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
     expect(selected()).toEqual([false, true, false]);
-    expect(current()).toContain('Trois secondes');
+    expect(current()).toContain('réparti tout seul');
     fireEvent.click(screen.getByRole('tab', { name: 'Écran 3' }));
     expect(selected()).toEqual([false, false, true]);
-    expect(current()).toContain('se rapprocher');
+    expect(current()).toContain('en un coup d’œil');
     expect(done).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+    fireEvent.click(screen.getByRole('button', { name: 'C’est parti' }));
     expect(done).toHaveBeenCalledOnce();
     expect(readIntroSeen()).toBe(true);
   });

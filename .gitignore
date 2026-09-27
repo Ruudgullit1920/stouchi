@@ -24,3 +24,5 @@ supabase/functions/notify-run/core.js
 
 # Supabase CLI local state
 supabase/.temp/
+.wrangler
+.wrangler

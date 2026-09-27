@@ -75,5 +75,8 @@ export function back(): void {
 export function startRouter(): () => void {
   const onHash = () => (route.value = parseRoute(location.hash));
   window.addEventListener('hashchange', onHash);
+  /* the hash may have changed between the module's first read and now (the
+     listener attaches after the first render): catch up */
+  if (routePath(route.value) !== routePath(parseRoute(location.hash))) onHash();
   return () => window.removeEventListener('hashchange', onHash);
 }

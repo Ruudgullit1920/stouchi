@@ -15,8 +15,9 @@
   font-weight: 600;
 }
 .avatar {
-  width: 44px;
-  height: 44px;
+  position: relative;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--acc-soft);
   color: var(--acc-ink);
@@ -24,6 +25,21 @@
   font-weight: 700;
   display: grid;
   place-items: center;
+}
+/* on Budget it is a button: a 44 px target (§5.6), the 36 px disc drawn inside */
+button.avatar {
+  isolation: isolate;
+  width: 44px;
+  height: 44px;
+  background: none;
+}
+button.avatar::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--acc-soft);
 }
 .label {
   font-size: 11px;
@@ -105,7 +121,9 @@
   letter-spacing: -0.01em;
 }
 .sec .link {
+  /* a 44 px target that takes no more room than the prototype's text link */
   min-height: 44px;
+  margin: -14px 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--acc-ink);
@@ -142,6 +160,11 @@
   background: #ffffff2e;
   display: grid;
   place-items: center;
+}
+.pot__tile .i3d {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 2px 3px #0000002e);
 }
 .pot__name {
   display: flex;

@@ -92,6 +92,8 @@ export function ChatSheet(props: Props) {
       </p>
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- it scrolls, so keyboard users must reach it (axe scrollable-region-focusable) */}
       <div class="chat-body" ref={body} role="region" aria-label={t('chat.thread')} tabIndex={0}>
+        {/* an empty thread opens on Aam Salah's hello (display only, never sent) */}
+        {!turns.length && <div class="msg him">{t('chat.greeting')}</div>}
         {turns.map((turn) => (
           <TurnView key={turn.id} turn={turn} {...props} />
         ))}

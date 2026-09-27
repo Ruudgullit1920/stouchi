@@ -259,7 +259,7 @@ export function CoupleScreen({ store, api, onBack }: Props) {
   return (
     <div class="me couple">
       <header class="top">
-        <button type="button" class="icon-btn line" aria-label={t('action.back')} onClick={onBack}>
+        <button type="button" class="icon-btn" aria-label={t('action.back')} onClick={onBack}>
           <ChevronLeft size={20} aria-hidden="true" />
         </button>
         <h1 class="set-h1">{t('couple.title')}</h1>

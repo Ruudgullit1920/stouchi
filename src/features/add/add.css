@@ -71,36 +71,44 @@
 .meta-row {
   display: flex;
   gap: 8px;
-  padding: 6px 0 10px;
+  padding: 1px 0 5px;
 }
-.field {
-  display: grid;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mut);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+/* 44 px targets (§5.6); the prototype's 34 px grey pill is the ::before */
+.meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 14px;
 }
-.field--grow {
-  flex: 1;
-}
-.field input {
-  min-height: 44px;
-  padding: 0 12px;
-  border: 0;
-  border-radius: 12px;
+.meta-pill::before {
+  inset: 5px 0;
   background: var(--bg);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--ink);
-  width: 100%;
+  box-shadow: none;
 }
-.field input[aria-invalid='true'] {
-  box-shadow: inset 0 -2px 0 var(--acc-ink);
+.meta-pill svg {
+  flex: none;
+}
+/* the native date input, invisible, over the whole pill: a tap opens the picker */
+.meta-pill__date {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+.meta-pill:has(.meta-pill__date:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.meta-pill:has([aria-invalid='true'])::before {
+  box-shadow: inset 0 0 0 1.5px var(--acc-ink);
+}
+.note-in {
+  margin: 0 0 8px;
 }
 .field-error {
   font-size: 13px;
@@ -128,8 +136,8 @@
 .cta {
   height: 56px;
   border-radius: 18px;
-  /* White on --acc is 3.0 : 1 (tokens.css): the CTA takes the primary button's --ink. */
-  background: var(--ink);
+  /* the prototype's orange CTA; white on --acc is 3.0 : 1, on --acc-cta 4.6 : 1 */
+  background: var(--acc-cta);
   color: #fff;
   font-size: 16px;
   font-weight: 700;
@@ -141,7 +149,7 @@
   gap: 8px;
 }
 .cta:disabled {
-  opacity: 0.45;
+  background: var(--acc-cta-off);
 }
 .danger-link {
   width: 100%;

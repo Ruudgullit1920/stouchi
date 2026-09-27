@@ -31,7 +31,11 @@ export function Shell({ store, screens, onAdd, addOpen, onOpenExpense, onRetry, 
   const push = r.name === 'pot' || r.name === 'notifications';
   return (
     <div class="app">
-      <main key={routePath(r)} class={push ? 'screen push' : 'screen'}>
+      {/* the pot ledger is white (the prototype's .ledger); other pushed screens keep the grey */}
+      <main
+        key={routePath(r)}
+        class={push ? (r.name === 'pot' ? 'screen push ledger' : 'screen push') : 'screen'}
+      >
         <OfflineBadge store={store} />
         <SessionLost store={store} />
         <FailedWrites store={store} onRetry={onRetry} onDiscard={onDiscard} />
