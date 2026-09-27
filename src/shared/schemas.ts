@@ -38,6 +38,9 @@ const ProfileBase = z.object({
   /* display only (currency spec §4). Rows cached before it, or a code this build doesn't
      know yet, read as TND rather than failing the whole profile. */
   currency: z.enum(CURRENCY_CODES).catch('TND'),
+  /* what was left in the account at onboarding: that period's Besoins + Envies
+     (spec §4.6). Optional, so older rows and inserts still parse. */
+  opening_mil: mil.nullable().optional(),
   created_at: instant,
   updated_at: instant,
 });

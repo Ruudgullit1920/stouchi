@@ -261,3 +261,12 @@ button.avatar::before {
   color: var(--mut);
   font-weight: 500;
 }
+
+/* « Il te reste combien ? » (OpeningSheet): the Reste it would give, as they type */
+.opening__preview {
+  margin: 14px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mut);
+  text-align: center;
+}

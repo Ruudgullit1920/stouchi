@@ -131,6 +131,17 @@ the savings deposit is recorded against the goal, bills for the period are reser
 notification ("Salaire reçu, c'est réparti"). If the user changes salary or split mid-period, the
 change applies from the next payday unless they choose "appliquer maintenant".
 
+**Opening balance.** Someone who joins mid-period has already spent part of that salary. Right
+after onboarding, the home screen asks in a bottom sheet « Il te reste combien sur ton compte ? »,
+with the Reste it would give shown live as they type. « C'est parti » stores it; « Plus tard » asks
+again on the next launch, until the next payday opens, after which it is never asked. The period
+onboarding happened in then runs on that amount instead of the salary's Besoins + Envies, split
+between the two in the plan's ratio; unpaid bills are still reserved from it, and the savings share
+is unchanged (that period gets no payday deposit anyway). What the user already logged that period
+is added back when it is stored (`profiles.opening_mil`), so Reste shows the balance they typed
+minus the unpaid bills. Users moved over from the legacy app (they have expenses dated before
+their onboarding day) are never asked.
+
 ### 4.7 Couple mode (optional)
 Moi → Partager à deux → invite code. Each expense gets a small avatar of who logged it; Historique
 gets a Tout / Moi filter; the home number becomes the household's. Aam Salah never edits or deletes
@@ -224,7 +235,7 @@ thousandths, so 2-decimal ones end in 0) — never floats. The currency is a dis
 
 | Table | Key columns |
 |---|---|
-| `profiles` | `user_id` PK, `first_name`, `salary_mil`, `payday` (1–28 or 0 = last day), `split_needs/wants/savings` (sum 100), `onboarded_at`, `currency` (TND EUR USD GBP CAD CHF MAD DZD LYD, default TND; one per household: `set_currency(code)` updates me and my partner, `couple_join` copies the host's) |
+| `profiles` | `user_id` PK, `first_name`, `salary_mil`, `payday` (1–28 or 0 = last day), `split_needs/wants/savings` (sum 100), `onboarded_at`, `currency` (TND EUR USD GBP CAD CHF MAD DZD LYD, default TND; one per household: `set_currency(code)` updates me and my partner, `couple_join` copies the host's), `opening_mil` (nullable, ≥ 0, §4.6) |
 | `households`, `household_members` | kept from today |
 | `expenses` | `id` uuid (client-generated), `user_id`, `household_id` null, `amount_mil` > 0, `category`, `pot` (`needs`/`wants`), `label` ≤ 60, `spent_on` date, `source` (`manual`/`chat`/`bill`), `bill_id` null, `created_at`, `updated_at`, `deleted_at` |
 | `bills` | `id`, `user_id`, `household_id` null, `label`, `amount_mil`, `frequency` (`monthly`/`bimonthly`/`quarterly`/`yearly`), `day`, `starts_on` (anchors non-monthly bills), `active` |

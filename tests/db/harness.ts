@@ -49,6 +49,7 @@ const MIGRATIONS = [
   '20260930_legacy_join_limit.sql',
   '20261001_push_subscription_limits.sql',
   '20261002_currency.sql',
+  '20261003_opening_balance.sql',
 ];
 
 export async function freshDb(): Promise<PGlite> {

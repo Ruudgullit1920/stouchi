@@ -1,4 +1,5 @@
 import { Eye, EyeOff, Plus } from 'lucide-preact';
+import { useEffect } from 'preact/hooks';
 import type { ScreenProps } from '../../app/Shell';
 import { navigate } from '../../app/router';
 import { CATEGORY_ICON, categoryI3d } from '../../design/components/CategoryIcon';
@@ -8,7 +9,8 @@ import { LedgerRow } from '../../design/components/LedgerRow';
 import { SegmentedBar } from '../../design/components/SegmentedBar';
 import { Skeleton } from '../../design/components/Skeleton';
 import { useRolling } from '../../design/useRolling';
-import { syncNow } from '../../data/app';
+import { syncNow, writeMine } from '../../data/app';
+import type { Row } from '../../data/localdb';
 import { categoryLabel } from '../../shared/categories';
 import { authorOf } from '../../shared/couple';
 import { todayTunis } from '../../shared/dates';
@@ -20,17 +22,25 @@ import { titleOf } from '../../shared/ledger';
 import { formatMoney } from '../../shared/money';
 import { Bell } from '../notifications/Bell';
 import { HIDDEN, hideAmounts, toggleHideAmounts } from './hideAmounts';
+import { maybeAskOpening } from './OpeningSheet';
 import { activeGoal } from '../../shared/payday';
 import { PotCard } from './PotCard';
 import { UpcomingList } from './UpcomingList';
 import './budget.css';
 
+const writeProfile = (table: 'profiles', row: Row) => writeMine(table, row);
+
 /** Home (spec §3): what can I still spend? */
 export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
   const profile = store.profile.value;
-  const { load } = store.sync.value;
+  const { load, pulled } = store.sync.value;
   const facts = profile ? computeFacts(factsInput(store, profile, todayTunis())) : null;
   const left = useRolling(facts?.left ?? 0);
+  /* a new user who joined mid-period: what is left in the account (spec §4.6).
+     After a pull, so an answer given on another device, and old expenses, are known. */
+  useEffect(() => {
+    if (pulled) maybeAskOpening(store, writeProfile);
+  }, [profile, pulled]);
 
   if (!profile && load === 'loading') return <Skeleton lines={8} />;
   if (!profile && load === 'error') return <ErrorState onRetry={() => void syncNow()} />;
