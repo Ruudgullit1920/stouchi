@@ -1,4 +1,4 @@
-import { Sparkles } from 'lucide-preact';
+import { Clock, Sparkles, TrendingDown, TrendingUp } from 'lucide-preact';
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { ScreenProps } from '../../app/Shell';
@@ -12,9 +12,9 @@ import { MonthBars } from '../../design/components/MonthBars';
 import { SearchField } from '../../design/components/SearchField';
 import { Skeleton } from '../../design/components/Skeleton';
 import { PERIODS_KEPT } from '../../data/app';
-import { categoryLabel, isCategory, type CategoryKey } from '../../shared/categories';
+import { categoryLabel, isCategory, type CategoryKey, type Pot } from '../../shared/categories';
 import { authorOf } from '../../shared/couple';
-import { addDays, isInPeriod, payPeriod, periodsBack, todayTunis } from '../../shared/dates';
+import { addDays, daysBetween, isInPeriod, payPeriod, periodsBack, todayTunis } from '../../shared/dates';
 import { monthName } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { groupByDay, historyLine, periodTotals, potBreakdown, titleOf } from '../../shared/ledger';
@@ -39,6 +39,8 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
   });
   /* couple mode: Tout, or only the rows I logged (plan D9) */
   const [mine, setMine] = useState(false);
+  /* the list's Tout / Besoins / Envies pills (prototype #h-filters): display only */
+  const [potFilter, setPotFilter] = useState<Pot | 'all'>('all');
 
   const profile = store.profile.value;
   if (!profile) return <Skeleton lines={8} />;
@@ -154,7 +156,12 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
     ...potBreakdown(expenses, 'wants', period).categories,
   ].sort((a, b) => b.total - a.total);
   const active = cat && cats.some((c) => c.key === cat) ? cat : null;
-  const shown = inPeriod.filter((e) => !active || e.category === active);
+  const shown = inPeriod.filter(
+    (e) => (!active || e.category === active) && (potFilter === 'all' || e.pot === potFilter),
+  );
+  /* the card's chip: the day of the period now, else the change against the period before */
+  const before = index > 0 ? totals[index - 1].needs + totals[index - 1].wants : 0;
+  const change = before ? Math.round(((total - before) / before) * 100) : null;
   const line = historyLine(expenses, period, previous);
 
   return (
@@ -166,6 +173,23 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
       {who}
 
       <section class="dark monthcard">
+        {current ? (
+          <span class="mc-chip">
+            <Clock size={13} aria-hidden="true" />
+            {t('history.day', { n: daysBetween(period.start, today) + 1 })}
+          </span>
+        ) : (
+          change !== null && (
+            <span class="mc-chip">
+              {change > 0 ? (
+                <TrendingUp size={13} aria-hidden="true" />
+              ) : (
+                <TrendingDown size={13} aria-hidden="true" />
+              )}
+              {t('history.vs', { pct: Math.abs(change), month: monthName(periods[index - 1].label) })}
+            </span>
+          )
+        )}
         <p class="monthcard__k">
           {monthName(period.label)} {period.label.slice(0, 4)}
           {current && ` · ${t('history.current')}`}
@@ -276,6 +300,20 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
                 amount: formatTnd(shown.reduce((s, e) => s + e.amount_mil, 0)),
               })}
             </span>
+          </div>
+          <div class="hfilters" role="group" aria-label={t('history.potFilter')}>
+            {(['all', 'needs', 'wants'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                aria-pressed={potFilter === k}
+                aria-label={t('history.potFilter.one', { pot: k === 'all' ? t('pot.all') : t(`pot.${k}`) })}
+                onClick={() => setPotFilter(k)}
+              >
+                {k !== 'all' && <i style={{ background: COLOR[k] }} aria-hidden="true" />}
+                {k === 'all' ? t('pot.all') : t(`pot.${k}`)}
+              </button>
+            ))}
           </div>
           <div class="list">
             {groupByDay(shown).map((d) => (

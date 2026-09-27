@@ -49,6 +49,57 @@
   padding: 18px 18px 12px;
   margin-top: 14px;
 }
+.monthcard {
+  position: relative;
+}
+.mc-chip {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #ffffff1f;
+  font-size: 12px;
+  font-weight: 600;
+}
+/* the list's pot pills (prototype .fchip): white on the grey page */
+.hfilters {
+  display: flex;
+  gap: 8px;
+  margin: -4px 0 10px;
+}
+.hfilters button {
+  position: relative;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+/* a 44 px touch target around the 34 px pill (§5.6) */
+.hfilters button::after {
+  content: '';
+  position: absolute;
+  inset: -5px 0;
+}
+.hfilters button i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.hfilters button[aria-pressed='true'] {
+  background: var(--ink);
+  color: #fff;
+}
 .monthcard__k {
   font-size: 13px;
   font-weight: 600;

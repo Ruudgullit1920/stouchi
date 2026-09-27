@@ -73,6 +73,16 @@ describe('HistoryScreen', () => {
     expect(screen.getByText('Carrefour')).toBeTruthy();
   });
 
+  it('narrows the list to one pot with its pills, and marks the day of the period', () => {
+    render(<HistoryScreen store={store} />);
+    expect(screen.getByText('J10')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Dépenses : Envies' }));
+    expect(screen.queryByText('Carrefour')).toBeNull();
+    expect(screen.getByText('Café Chez Ali')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Dépenses : Tout' }));
+    expect(screen.getByText('Carrefour')).toBeTruthy();
+  });
+
   it('searches every period, grouped by month, with the match highlighted', () => {
     const { container } = render(<HistoryScreen store={store} />);
     fireEvent.input(search(), { target: { value: 'cafe' } });

@@ -126,6 +126,7 @@ export function BillsScreen({ store, write, onBack }: Props) {
             <Plus size={18} aria-hidden="true" />
             {t('me.bills.add')}
           </button>
+          <p class="hint center">{t('me.bills.halfHint')}</p>
         </>
       )}
     </div>
