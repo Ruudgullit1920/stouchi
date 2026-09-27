@@ -69,7 +69,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
       <div class="hero">
         <p class={facts.left < 0 ? 'big num big--over' : 'big num'}>
           {money(left)}
-          <span class="unit">{t('unit.tnd')}</span>
+          <span class="unit">{t('unit.money')}</span>
         </p>
         <p class="perday">
           <b class="num">{t('budget.perDay', { amount: money(facts.perDay) })}</b>

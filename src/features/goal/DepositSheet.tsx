@@ -64,7 +64,7 @@ export function DepositSheet({ store, goal, write, undo, onDone }: Props) {
         label={t('goal.deposit.amount')}
         value={amount}
         onChange={setAmount}
-        unit={t('unit.tnd')}
+        unit={t('unit.money')}
       />
       <div class="qchips">
         {QUICK.map((n) => (

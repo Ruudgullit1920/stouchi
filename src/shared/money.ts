@@ -2,6 +2,7 @@
    Other currencies keep the same unit, thousandths (currency spec §4). */
 
 import { CURRENCIES, currencyOf, type CurrencyCode } from './currencies';
+import { currentCurrency } from './currentCurrency';
 
 export type Mil = number;
 export const MIL_PER_TND = 1000;
@@ -11,7 +12,7 @@ export const MAX_MIL = 1_000_000_000;
 const GROUP = '[ \u00a0\u202f]';
 
 /** How many decimals an amount may have in this currency (the rest of the thousandths stay 0). */
-export function maxDecimals(currency: CurrencyCode = 'TND'): 2 | 3 {
+export function maxDecimals(currency: CurrencyCode = currentCurrency()): 2 | 3 {
   return currencyOf(currency).decimals;
 }
 
@@ -31,7 +32,7 @@ const PARSERS = new Map(
 
 /** What a person types → millimes, or null when it can't be read without guessing.
  * "12,345" is refused in a 2-decimal currency rather than read as 12 345. */
-export function parseMoney(input: string, currency: CurrencyCode = 'TND'): Mil | null {
+export function parseMoney(input: string, currency: CurrencyCode = currentCurrency()): Mil | null {
   const { amount, suffix } = PARSERS.get(currencyOf(currency).code)!;
   const m = amount.exec(input.trim().replace(suffix, ''));
   if (!m) return null;
@@ -63,7 +64,7 @@ export function formatMoney(
   {
     unit = true,
     sign = false,
-    currency = 'TND',
+    currency = currentCurrency(),
   }: { unit?: boolean; sign?: boolean; currency?: CurrencyCode } = {},
 ): string {
   const c = currencyOf(currency);

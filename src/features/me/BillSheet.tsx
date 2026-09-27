@@ -134,7 +134,7 @@ export function BillSheet({ store, bill, write, onDone }: Props) {
         value={amount}
         onChange={setAmount}
         digits={6}
-        unit={t('unit.tnd')}
+        unit={t('unit.money')}
       />
       <p class="flabel">{t('me.bill.freq')}</p>
       <div class="seg2 four">

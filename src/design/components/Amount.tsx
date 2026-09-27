@@ -13,7 +13,7 @@ export function Amount({ mil, sign = false, class: extra = '' }: Props) {
       {formatMoney(mil, { unit: false, sign })}
       <span class="amount__unit">
         {' '}
-        {t('unit.tnd')}
+        {t('unit.money')}
       </span>
     </span>
   );

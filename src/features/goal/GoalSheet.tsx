@@ -110,7 +110,7 @@ export function GoalSheet({ store, goal, current, write, onDone }: Props) {
           value={target}
           onChange={setTarget}
           digits={7}
-          unit={t('unit.tnd')}
+          unit={t('unit.money')}
         />
       </label>
       <button

@@ -104,7 +104,7 @@ export function GoalScreen({ store }: ScreenProps) {
         </span>
         <span class="goal-card__saved num">
           {money(v.saved, false)}
-          <span class="unit">{t('unit.tnd')}</span>
+          <span class="unit">{t('unit.money')}</span>
         </span>
         <span class="goal-card__target">{t('goal.of', { amount: money(goal.target_mil) })}</span>
         <span class="goal-card__bar" aria-hidden="true">

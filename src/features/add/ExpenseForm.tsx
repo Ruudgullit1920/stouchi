@@ -92,7 +92,7 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
         <output class="big num" aria-label={t('add.amount')}>
           {amount || '0'}
         </output>
-        <span class="unit">{t('unit.tnd')}</span>
+        <span class="unit">{t('unit.money')}</span>
       </p>
       <div class="seg2">
         {POTS.map((p) => (

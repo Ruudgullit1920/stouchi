@@ -64,7 +64,7 @@ export function SalarySheet({ store, write, onDone }: Props) {
   return (
     <div class="me-sheet">
       <p class="hint">{t('setup.salary.hint')}</p>
-      <AmountInput label={t('me.salary')} value={salary} onChange={setSalary} unit={t('unit.tnd')} />
+      <AmountInput label={t('me.salary')} value={salary} onChange={setSalary} unit={t('unit.money')} />
       {salary > 0 && !ok && (
         <p class="field-error" role="alert">
           {t('setup.salary.min')}

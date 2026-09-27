@@ -69,7 +69,7 @@ export function BillsScreen({ store, write, onBack }: Props) {
             <div class="label">{t('me.bills.reserved')}</div>
             <div class="big num">
               {money(reserved, false)}
-              <span class="unit">{t('unit.tnd')}</span>
+              <span class="unit">{t('unit.money')}</span>
             </div>
             <div class={meter.level === 'ok' ? 'meter' : 'meter warn'} data-testid="bills-meter">
               <div class="mh">

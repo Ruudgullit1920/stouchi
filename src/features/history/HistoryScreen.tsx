@@ -198,7 +198,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
         </p>
         <p class="big num monthcard__total">
           {formatMoney(total, { unit: false })}
-          <span class="unit">{t('unit.tnd')}</span>
+          <span class="unit">{t('unit.money')}</span>
         </p>
         <MonthBars
           label={t('history.pick')}
