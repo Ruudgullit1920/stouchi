@@ -20,6 +20,7 @@ import { titleOf } from '../../shared/ledger';
 import { formatTnd } from '../../shared/money';
 import { Bell } from '../notifications/Bell';
 import { HIDDEN, hideAmounts, toggleHideAmounts } from './hideAmounts';
+import { activeGoal } from '../../shared/payday';
 import { PotCard } from './PotCard';
 import { UpcomingList } from './UpcomingList';
 import './budget.css';
@@ -117,6 +118,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           pct={facts.split.savings}
           budget={savings.budget}
           hidden={hidden}
+          goal={activeGoal(store.goals.value)?.name}
           onOpen={() => navigate('#/goal')}
         />
       </div>

@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-preact';
+import { ChevronRight, CircleCheck } from 'lucide-preact';
 import { Icon3D, i3dFile } from '../../design/i3d';
 import type { PotFacts } from '../../shared/facts';
 import { t } from '../../shared/i18n/t';
@@ -22,10 +22,12 @@ type Props = {
   hidden: boolean;
   /** couple mode: Besoins are the household's (plan D9) */
   shared?: boolean;
+  /** Épargne: the goal it goes to, shown as "→ Notre maison" (prototype) */
+  goal?: string;
   onOpen: () => void;
 };
 
-export function PotCard({ kind, pct, facts, budget, hidden, shared = false, onOpen }: Props) {
+export function PotCard({ kind, pct, facts, budget, hidden, shared = false, goal, onOpen }: Props) {
   const { icon, color } = LOOK[kind];
   const money = (m: Mil) => (hidden ? HIDDEN : formatTnd(m, { unit: false }));
   const over = facts && facts.left < 0;
@@ -39,9 +41,10 @@ export function PotCard({ kind, pct, facts, budget, hidden, shared = false, onOp
           {t(`pot.${kind}`)}
           {shared && <span class="pot__tag">{t('budget.pot.shared')}</span>}
           {facts?.warn && !over && <span class="pot__tag">{t('budget.pot.warn')}</span>}
+          {kind === 'savings' && <CircleCheck size={16} aria-hidden="true" />}
         </span>
         <span class="pot__desc">
-          {pct} % · {t(`pot.${kind}.desc`)}
+          {pct} % · {goal ? t('budget.pot.toGoal', { goal }) : t(`pot.${kind}.desc`)}
         </span>
       </span>
       <span class="pot__amt">

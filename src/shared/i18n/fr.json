@@ -291,6 +291,7 @@
   "budget.of": "sur {amount}",
   "budget.split": "Ton salaire, réparti",
   "budget.bills": "Factures",
+  "budget.pot.toGoal": "→ {goal}",
   "budget.upcoming": "À venir",
   "budget.recent": "Récent",
   "budget.seeAll": "Tout voir",
