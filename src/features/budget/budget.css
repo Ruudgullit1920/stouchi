@@ -26,11 +26,20 @@
   display: grid;
   place-items: center;
 }
-/* 36 px like the prototype, in a 44 px touch target (§5.6) */
-button.avatar::after {
+/* on Budget it is a button: a 44 px target (§5.6), the 36 px disc drawn inside */
+button.avatar {
+  isolation: isolate;
+  width: 44px;
+  height: 44px;
+  background: none;
+}
+button.avatar::before {
   content: '';
   position: absolute;
-  inset: -4px;
+  inset: 4px;
+  z-index: -1;
+  border-radius: 50%;
+  background: var(--acc-soft);
 }
 .label {
   font-size: 11px;

@@ -70,14 +70,14 @@
 .hfilters {
   display: flex;
   gap: 8px;
-  margin: -4px 0 10px;
+  margin: -9px 0 5px;
 }
 .hfilters button {
   position: relative;
-  height: 34px;
+  isolation: isolate;
+  height: 44px;
   padding: 0 14px;
   border-radius: 999px;
-  background: var(--card);
   font-size: 13px;
   font-weight: 600;
   display: inline-flex;
@@ -85,11 +85,14 @@
   gap: 6px;
   white-space: nowrap;
 }
-/* a 44 px touch target around the 34 px pill (§5.6) */
-.hfilters button::after {
+/* a 44 px target (§5.6), the prototype's 34 px pill drawn inside */
+.hfilters button::before {
   content: '';
   position: absolute;
-  inset: -5px 0;
+  inset: 5px 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: var(--card);
 }
 .hfilters button i {
   width: 8px;
@@ -97,8 +100,10 @@
   border-radius: 50%;
 }
 .hfilters button[aria-pressed='true'] {
-  background: var(--ink);
   color: #fff;
+}
+.hfilters button[aria-pressed='true']::before {
+  background: var(--ink);
 }
 .monthcard__k {
   font-size: 13px;

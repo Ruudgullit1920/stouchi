@@ -71,14 +71,18 @@
 .meta-row {
   display: flex;
   gap: 8px;
-  padding: 6px 0 10px;
+  padding: 1px 0 5px;
 }
+/* 44 px targets (§5.6); the prototype's 34 px grey pill is the ::before */
 .meta-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 34px;
+  height: 44px;
   padding: 0 14px;
+}
+.meta-pill::before {
+  inset: 5px 0;
   background: var(--bg);
   box-shadow: none;
 }
@@ -100,7 +104,7 @@
   outline: 2px solid var(--ink);
   outline-offset: 2px;
 }
-.meta-pill:has([aria-invalid='true']) {
+.meta-pill:has([aria-invalid='true'])::before {
   box-shadow: inset 0 0 0 1.5px var(--acc-ink);
 }
 .note-in {

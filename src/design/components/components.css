@@ -33,33 +33,36 @@
 }
 
 /* Pill */
+/* The spec's 44 px touch target (§5.6) with the prototype's 36 px pill drawn
+   inside it by ::before: the button's own box stays 44 px tall. */
 .pill {
   position: relative;
+  isolation: isolate;
   flex: none;
-  height: 36px;
+  height: 44px;
   min-width: 44px;
   padding: 0 16px;
   border-radius: var(--r-pill);
-  background: var(--card);
   color: var(--ink);
   font-weight: 600;
   font-size: 13px;
   white-space: nowrap;
-  box-shadow: inset 0 0 0 1px var(--line);
   transition: transform var(--t-press) var(--ease);
 }
-/* the prototype's 36 px pill in the spec's 44 px touch target (§5.6) */
-.pill::after {
+.pill::before {
   content: '';
   position: absolute;
-  inset: -4px 0;
+  inset: 4px 0;
+  z-index: -1;
+  border-radius: var(--r-pill);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
-/* a row of pills; the 4 px padding keeps the targets' overflow tappable */
+/* a row of pills (their 4 px of clear edge makes up the prototype's spacing) */
 .filters {
   display: flex;
   gap: 8px;
   margin: -4px 0 10px;
-  padding: 4px 0;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -67,8 +70,10 @@
   transform: scale(0.95);
 }
 .pill[aria-pressed='true'] {
-  background: var(--ink);
   color: #fff;
+}
+.pill[aria-pressed='true']::before {
+  background: var(--ink);
   box-shadow: none;
 }
 
@@ -291,35 +296,33 @@ span.ic.d3 .i3d,
   font-weight: 800;
   letter-spacing: -0.02em;
 }
+/* A 44 px touch target (§5.6); ::before draws the prototype's 40 px white disc. */
 .icon-btn {
   position: relative;
-  width: 40px;
-  height: 40px;
+  isolation: isolate;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: grid;
   place-items: center;
+}
+.icon-btn::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  border-radius: 50%;
   background: var(--card);
   box-shadow: 0 1px 2px #0000000d;
 }
-/* the prototype's 40 px disc inside the spec's 44 px touch target (§5.6) */
-.icon-btn::after {
-  content: '';
-  position: absolute;
-  inset: -2px;
-}
-.icon-btn.line {
-  box-shadow: none;
-  border: 1px solid var(--line);
+.icon-btn.line::before {
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 /* a sheet's close: the prototype's 36 px grey disc */
-.icon-btn.close {
-  width: 36px;
-  height: 36px;
+.icon-btn.close::before {
+  inset: 4px;
   background: var(--bg);
   box-shadow: none;
-}
-.icon-btn.close::after {
-  inset: -4px;
 }
 @keyframes slide-up {
   from {
