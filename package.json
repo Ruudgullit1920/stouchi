@@ -32,7 +32,7 @@
     "@supabase/postgrest-js": "^2.117.1",
     "@supabase/supabase-js": "^2.117.1",
     "idb": "^8.0.3",
-    "lucide-preact": "^1.47.0",
+    "lucide-preact": "^1.48.0",
     "posthog-js": "^1.434.14",
     "posthog-node": "^5.54.1",
     "preact": "^10.29.8",
