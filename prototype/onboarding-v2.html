@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stouchi · Onboarding v2</title>
+<!-- Design proposal only: the 3 intro screens and the login, side by side.
+     Not wired to anything. Open the file directly or via the prototype server. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0E0F12; --ink2:#3A3D44; --mut:#80858F; --line:#ECEDF1;
+  --acc:#FF5A36; --acc2:#FF9A5B;
+  --need:#3E7BFA; --want:#8B5CF6; --save:#12B076;
+  --spring:cubic-bezier(.34,1.56,.64,1); --out:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);min-height:100vh;
+  background:radial-gradient(60% 50% at 10% 0%,#EFE7FF 0,transparent 70%),radial-gradient(50% 40% at 95% 10%,#FFE6DA 0,transparent 70%),#F7F6FB;
+  -webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+/* ── board ─────────────────────────────────────────── */
+.board-head{max-width:1480px;margin:0 auto;padding:32px 16px 8px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.board-head .board-mark{font-size:40px;color:inherit}
+.board-head p{color:var(--mut);font-size:14px;margin-top:4px}
+.replay{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;background:#fff;font-size:13px;font-weight:700;box-shadow:0 1px 2px #0000000f,0 0 0 1px #0000000a}
+.replay:active{transform:scale(.96)}
+.board{max-width:1480px;margin:0 auto;padding:24px 16px 48px;display:flex;gap:28px;justify-content:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;align-items:center;gap:14px}
+.cap{font-size:13px;font-weight:700;color:var(--ink2)}
+.cap span{color:var(--mut);font-weight:600;margin-right:6px}
+
+/* ── phone ─────────────────────────────────────────── */
+.phone{width:340px;height:720px;max-width:calc(100vw - 32px);border-radius:48px;background:#fff;padding:9px;
+  box-shadow:0 40px 70px -30px #2B1B5A40,0 0 0 1px #0000000d}
+.scr{position:relative;height:100%;border-radius:40px;overflow:hidden;display:flex;flex-direction:column;background:var(--mesh)}
+.status{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 0;font-size:14px;font-weight:700}
+.status svg{height:11px}
+.top{display:flex;align-items:center;gap:14px;padding:14px 20px 0}
+.seg{flex:1;display:flex;gap:6px}
+.seg i{flex:1;height:4px;border-radius:2px;background:#0E0F1214;overflow:hidden;position:relative}
+.seg i.done::after,.seg i.cur::after{content:'';position:absolute;inset:0;background:var(--ink);border-radius:2px;transform-origin:left}
+.play .seg i.cur::after{animation:fill 7s linear both}
+.skip{font-size:13px;font-weight:700;color:var(--ink2);opacity:.7}
+.stage{position:relative;flex:1}
+
+.sheet{position:relative;margin:0 10px 10px;padding:22px 20px 16px;border-radius:30px;text-align:center;
+  background:#ffffffd9;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 10px 30px -12px #1B1F3A26}
+.sheet h2{font-size:26px;line-height:1.12;font-weight:800;letter-spacing:-.035em}
+.sheet h2 em{font-style:normal;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet p{font-size:14px;line-height:1.45;color:var(--mut);margin:10px auto 0;max-width:260px}
+.cta{position:relative;overflow:hidden;width:100%;height:54px;margin-top:18px;border-radius:999px;background:var(--ink);color:#fff;
+  font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s var(--out)}
+.cta:active{transform:scale(.97)}
+.cta svg{width:18px;height:18px;transition:transform .2s var(--out)}
+.cta:hover svg{transform:translateX(3px)}
+.cta::after{content:'';position:absolute;inset:0 auto 0 0;width:40%;background:linear-gradient(100deg,transparent,#ffffff2e,transparent);animation:shimmer 3.2s 1.5s ease-in-out infinite}
+
+/* ── shared bits ───────────────────────────────────── */
+.i3d{display:block;object-fit:contain;filter:drop-shadow(0 6px 8px #1B1F3A26)}
+.float{position:absolute;animation:bob 4.5s ease-in-out infinite}
+.float .i3d{width:100%;height:100%}
+.orb{position:absolute;border-radius:50%;background:#ffffffb3;backdrop-filter:blur(8px);display:grid;place-items:center;box-shadow:0 8px 20px -8px #1B1F3A33;animation:bob 5s ease-in-out infinite}
+.spark{position:absolute;width:14px;height:14px;animation:twinkle 2.6s ease-in-out infinite}
+.spark::before{content:'';position:absolute;inset:0;background:var(--sc,#fff);clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%)}
+.glass{background:#ffffffe6;border-radius:22px;box-shadow:0 18px 40px -18px #1B1F3A40,0 0 0 1px #ffffffaa inset}
+.num{font-variant-numeric:tabular-nums}
+/* everything with .in waits for .play, then rises in with its own delay */
+.in{opacity:0}
+.play .in{animation:up .6s var(--out) both;animation-delay:var(--d,0s)}
+.play .pop{animation:pop .55s var(--spring) both;animation-delay:var(--d,0s)}
+
+/* ── 1 · Noter ─────────────────────────────────────── */
+.s1{--mesh:radial-gradient(90% 55% at 15% 8%,#FFD6C2 0,transparent 70%),radial-gradient(70% 45% at 95% 30%,#FFE8D2 0,transparent 70%),linear-gradient(#FFF5EE,#FFFFFF 78%);
+  --grad:linear-gradient(90deg,var(--acc),var(--acc2))}
+.chat{position:absolute;left:36px;right:36px;top:40px;padding:14px}
+.s1 .float{z-index:2}
+.chat-h{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.av{width:36px;height:36px;border-radius:50%;background:#FFE9E3;display:grid;place-items:center}
+.av img{width:26px;height:26px}
+.chat-h b{font-size:14px;display:block}
+.chat-h small{font-size:11.5px;color:var(--save);font-weight:600;display:flex;align-items:center;gap:5px}
+.chat-h small::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--save)}
+.msg{display:flex;justify-content:flex-end;margin-top:12px}
+.bub{padding:9px 14px;border-radius:18px 18px 6px 18px;background:linear-gradient(135deg,var(--acc),var(--acc2));color:#fff;font-size:14px;font-weight:600;transform-origin:right bottom}
+.typing{display:flex;gap:4px;width:52px;padding:10px 12px;margin-top:10px;border-radius:18px 18px 18px 6px;background:#F3F4F7;opacity:0}
+.typing i{width:6px;height:6px;border-radius:50%;background:#B7BBC4;animation:dot 1s ease-in-out infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.play .typing{animation:blink 1.1s .8s both}
+.rc{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px;margin-top:-30px;padding:10px;border-radius:16px;background:#F7F8FA;transform-origin:left top;opacity:0}
+.rc .t{width:42px;height:42px;border-radius:13px;background:#E7EFFF;display:grid;place-items:center}
+.rc .t img{width:28px;height:28px}
+.rc b{font-size:14px;display:block}
+.rc span{font-size:12px;color:var(--mut)}
+.rc .amt{font-size:15px;font-weight:800}
+.ok{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px;font-weight:700}
+.ok .yes{display:flex;align-items:center;gap:6px;color:var(--save)}
+.ok .yes svg{width:18px;height:18px}
+.ok .yes path{stroke-dasharray:24;stroke-dashoffset:24}
+.play .ok .yes path{animation:draw .4s 2.3s var(--out) forwards}
+.ok .undo{padding:5px 10px;border-radius:999px;background:#fff;box-shadow:0 0 0 1px var(--line);color:var(--ink2)}
+.mic{position:absolute;left:0;right:0;margin:0 auto;width:max-content;bottom:26px;display:flex;align-items:center;gap:10px;padding:6px 16px 6px 6px;border-radius:999px;background:#ffffffcc;backdrop-filter:blur(8px);font-size:12.5px;font-weight:700;color:var(--ink2);box-shadow:0 8px 20px -10px #1B1F3A33;white-space:nowrap}
+.mic .m{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--acc),var(--acc2));display:grid;place-items:center;animation:ring 1.8s ease-out infinite}
+.mic .m svg{width:18px;height:18px;color:#fff}
+
+/* ── 2 · Répartir ──────────────────────────────────── */
+.s2{--mesh:radial-gradient(90% 55% at 85% 5%,#E3D9FF 0,transparent 70%),radial-gradient(70% 50% at 5% 35%,#DCE7FF 0,transparent 70%),linear-gradient(#F6F3FF,#FFFFFF 78%);
+  --grad:linear-gradient(90deg,var(--want),var(--need))}
+.pay{position:absolute;left:50%;top:34px;width:210px;margin-left:-105px;padding:14px 16px;display:flex;align-items:center;gap:12px}
+.pay img{width:44px;height:44px}
+.pay small{font-size:11.5px;color:var(--mut);font-weight:600;display:block}
+.pay b{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.pay b em{font-style:normal;font-size:13px;color:var(--mut);font-weight:700;margin-left:4px}
+.wires{position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible}
+.wires path{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-dasharray:6 7;opacity:.55}
+.wires .flow{stroke-dasharray:0 200;opacity:0}
+.play .wires .flow{animation:travel 1.1s var(--d) ease-in forwards}
+.pots3{position:absolute;left:14px;right:14px;top:212px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pt{padding:12px 6px 12px;text-align:center;border-radius:20px}
+.pt .ic{width:46px;height:46px;margin:0 auto;border-radius:15px;display:grid;place-items:center;background:var(--soft)}
+.pt .ic img{width:32px;height:32px}
+.pt .pc{font-size:22px;font-weight:800;letter-spacing:-.03em;margin-top:8px;color:var(--c)}
+.pt .nm{font-size:12px;font-weight:700;margin-top:1px}
+.pt .am{font-size:11.5px;color:var(--mut);font-weight:600;margin-top:2px}
+.auto{position:absolute;left:0;right:0;margin:0 auto;width:max-content;top:360px;display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:#ffffffcc;font-size:12px;font-weight:700;color:var(--ink2);white-space:nowrap;box-shadow:0 6px 16px -10px #1B1F3A40}
+.auto svg{width:14px;height:14px;color:var(--want);animation:spin 3s linear infinite}
+
+/* ── 3 · Suivre ────────────────────────────────────── */
+.s3{--mesh:radial-gradient(90% 55% at 12% 6%,#CDF3E1 0,transparent 70%),radial-gradient(70% 50% at 95% 35%,#DDEBFF 0,transparent 70%),linear-gradient(#F1FBF6,#FFFFFF 78%);
+  --grad:linear-gradient(90deg,var(--save),#1BA3C6)}
+.today{position:absolute;left:24px;right:40px;top:40px;padding:16px 18px 18px}
+.today .h{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--mut)}
+.today .h img{width:22px;height:22px}
+.today .big{display:flex;align-items:baseline;gap:6px;margin-top:6px}
+.today .big b{font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1}
+.today .big span{font-size:15px;font-weight:700;color:var(--mut)}
+.bar{height:8px;border-radius:999px;background:#EEF0F3;margin-top:14px;overflow:hidden}
+.bar i{display:block;height:100%;width:62%;border-radius:999px;background:linear-gradient(90deg,var(--save),#3DDC97);transform-origin:left;transform:scaleX(0)}
+.play .bar i{animation:grow 1s .5s var(--out) forwards}
+.today .f{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;font-weight:600;color:var(--mut)}
+.goal{position:absolute;right:22px;left:70px;top:222px;padding:14px;display:flex;align-items:center;gap:14px}
+.ringw{position:relative;width:62px;height:62px;flex:none}
+.ringw svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ringw circle{fill:none;stroke-width:6}
+.ringw .bg{stroke:#E2F6EE}
+.ringw .fg{stroke:var(--save);stroke-linecap:round;stroke-dasharray:163;stroke-dashoffset:163}
+.play .ringw .fg{animation:ring24 1.2s 1.1s var(--out) forwards}
+.ringw img{position:absolute;inset:14px;width:34px;height:34px}
+.goal b{font-size:15px;display:block}
+.goal small{font-size:12px;color:var(--mut);font-weight:600}
+.goal .plus{display:inline-block;margin-top:6px;padding:3px 9px;border-radius:999px;background:#E2F6EE;color:var(--save);font-size:12px;font-weight:800}
+.play .goal{animation:up .6s .9s var(--out) both,bump .4s 2.35s var(--spring)}
+.coin{position:absolute;left:112px;top:120px;width:34px;height:34px;opacity:0}
+.play .coin{animation:drop .9s 1.5s cubic-bezier(.5,0,.75,0) both}
+.streak{position:absolute;left:0;right:0;margin:0 auto;width:max-content;top:340px;display:flex;align-items:center;gap:8px;padding:7px 14px 7px 8px;border-radius:999px;background:#ffffffd9;font-size:12.5px;font-weight:700;white-space:nowrap;box-shadow:0 8px 20px -10px #1B1F3A40}
+.streak img{width:24px;height:24px}
+
+/* ── 4 · Connexion ─────────────────────────────────── */
+.s4{--mesh:radial-gradient(80% 45% at 50% 0%,#FFDCCB 0,transparent 70%),radial-gradient(60% 40% at 100% 30%,#ECE4FF 0,transparent 70%),linear-gradient(#FFF7F2,#FFFFFF 70%);
+  --grad:linear-gradient(90deg,var(--acc),#E0457B)}
+.s4 .top{justify-content:center}
+.wordmark{font-size:19px;font-weight:800;letter-spacing:-.055em;line-height:1;color:var(--ink);white-space:nowrap}
+.wordmark span{display:inline-block;width:.22em;height:.22em;margin-left:.08em;border-radius:50%;background:var(--acc)}
+.hub{position:absolute;left:50%;top:50%;width:0;height:0}
+.tile{position:absolute;left:-44px;top:-44px;width:88px;height:88px;border-radius:24px;background:#131315;display:grid;place-items:center;box-shadow:0 18px 30px -12px #13131580,0 0 0 1px #ffffff14 inset}
+.tile span{font-size:50px;font-weight:800;color:#fff;letter-spacing:-.04em;line-height:1;margin:-6px 0 0 4px}
+.tile span b{display:inline-block;width:.22em;height:.22em;margin-left:.08em;border-radius:50%;background:var(--acc)}
+.wave{position:absolute;left:28px;top:-66px;width:40px;height:40px;transform-origin:70% 90%}
+.play .wave{animation:pop .5s .5s var(--spring) both,wave 1.4s 1s ease-in-out 2}
+.orbit{position:absolute;left:-88px;top:-88px;width:176px;height:176px;border-radius:50%;border:1.5px dashed #0E0F121f;animation:spin 36s linear infinite}
+.orbit .o{position:absolute;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#ffffffd9;display:grid;place-items:center;box-shadow:0 8px 18px -8px #1B1F3A40;animation:spin 36s linear infinite reverse}
+.orbit .o img{width:28px;height:28px}
+.s4 .sheet{padding-top:20px}
+.s4 .sheet p{margin-top:6px}
+.gbtn{width:100%;height:50px;margin-top:16px;border-radius:999px;background:#fff;box-shadow:0 0 0 1.5px var(--line);display:flex;align-items:center;justify-content:center;gap:10px;font-size:14.5px;font-weight:700;transition:transform .15s,box-shadow .2s}
+.gbtn:hover{box-shadow:0 0 0 1.5px #D5D7DD}
+.gbtn:active{transform:scale(.97)}
+.gbtn svg{width:19px;height:19px}
+.or{display:flex;align-items:center;gap:10px;margin:14px 0 10px;font-size:12px;font-weight:600;color:var(--mut)}
+.or::before,.or::after{content:'';flex:1;height:1px;background:var(--line)}
+.field{position:relative;display:flex;align-items:center;gap:10px;height:50px;padding:0 16px;margin-top:8px;border-radius:16px;background:#F5F6F8;box-shadow:0 0 0 1.5px transparent;transition:box-shadow .2s,background .2s}
+.field:focus-within{background:#fff;box-shadow:0 0 0 1.5px var(--acc),0 0 0 5px #FF5A361f}
+.field svg{width:18px;height:18px;color:var(--mut);flex:none}
+.field input{flex:1;min-width:0;border:0;background:none;outline:0;font:inherit;font-size:14.5px;font-weight:600;color:var(--ink)}
+.field input::placeholder{color:#A9ADB5;font-weight:500}
+.s4 .cta{margin-top:12px;background:linear-gradient(135deg,var(--acc),#FF7A45)}
+.s4 .cta::after{animation-delay:2.5s}
+.foot{margin-top:12px;font-size:13px;color:var(--mut);font-weight:500}
+.foot button{font-weight:800;color:var(--acc)}
+
+/* ── keyframes ─────────────────────────────────────── */
+@keyframes up{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes pop{0%{opacity:0;transform:scale(.5)}100%{opacity:1;transform:scale(1)}}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(var(--r,0deg))}50%{transform:translateY(-9px) rotate(calc(var(--r,0deg) * -1))}}
+@keyframes twinkle{0%,100%{opacity:.25;transform:scale(.55) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+@keyframes dot{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-3px);opacity:1}}
+@keyframes blink{0%{opacity:0;transform:scale(.8)}15%,80%{opacity:1;transform:none}100%{opacity:0;transform:scale(.9)}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes grow{to{transform:scaleX(1)}}
+@keyframes ring{0%{box-shadow:0 0 0 0 #FF5A3666}100%{box-shadow:0 0 0 14px #FF5A3600}}
+@keyframes shimmer{0%{transform:translateX(-120%)}55%,100%{transform:translateX(320%)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes travel{0%{opacity:0;stroke-dasharray:0 200}20%{opacity:1}100%{opacity:1;stroke-dasharray:200 0}}
+@keyframes ring24{to{stroke-dashoffset:124}}
+@keyframes drop{0%{opacity:0;transform:translateY(-50px) rotate(-20deg)}25%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translateY(150px) rotate(10deg) scale(.6)}}
+@keyframes bump{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes wave{0%,100%{transform:rotate(0)}25%{transform:rotate(18deg)}75%{transform:rotate(-10deg)}}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;animation-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<header class="board-head">
+  <div><h1 class="wordmark board-mark">stouchi<span></span></h1><p>Onboarding v2 · 3 écrans d'intro + connexion</p></div>
+  <button class="replay" id="replay"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>Rejouer les animations</button>
+</header>
+
+<main class="board">
+
+  <!-- 1 · NOTER ─ talk to Aam Salah, it files the expense -->
+  <div class="col"><div class="phone"><div class="scr s1">
+    <div class="status">9:41<svg viewBox="0 0 60 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/><rect x="34" y="0.5" width="22" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="36" y="2.5" width="16" height="6" rx="1.5"/></svg></div>
+    <div class="top"><span class="wordmark">stouchi<span></span></span><div class="seg"><i class="cur"></i><i></i><i></i></div><button class="skip">Passer</button></div>
+    <div class="stage">
+      <div class="float" style="right:14px;top:6px;width:50px;height:50px;--r:-10deg"><img class="i3d" data-i="Hot beverage" alt=""></div>
+      <div class="float" style="right:10px;top:236px;width:48px;height:48px;--r:8deg;animation-delay:-1.5s"><img class="i3d" data-i="Shopping bags" alt=""></div>
+      <div class="float" style="left:12px;top:150px;width:42px;height:42px;--r:6deg;animation-delay:-3s"><img class="i3d" data-i="Fuel pump" alt=""></div>
+      <span class="spark" style="right:44px;top:14px;--sc:var(--acc2)"></span>
+      <span class="spark" style="left:70px;top:250px;--sc:#FFC53D;animation-delay:-1.2s"></span>
+
+      <div class="chat glass in" style="--d:.05s">
+        <div class="chat-h"><div class="av"><img class="i3d" data-i="Old man/Default" alt=""></div><div><b>Aam Salah</b><small>En ligne</small></div></div>
+        <div class="msg"><div class="bub pop" style="--d:.35s">50 courses hier</div></div>
+        <div class="typing"><i></i><i></i><i></i></div>
+        <div class="rc pop" style="--d:1.85s">
+          <div class="t"><img class="i3d" data-i="Shopping cart" alt=""></div>
+          <div><b>Courses</b><span>Hier · Besoins</span></div>
+          <div class="amt num">−50</div>
+        </div>
+        <div class="ok in" style="--d:2.1s">
+          <span class="yes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Noté</span>
+          <span class="undo">Annuler</span>
+        </div>
+      </div>
+      <div class="mic in" style="--d:2.6s"><span class="m"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Parle ou écris</div>
+    </div>
+    <div class="sheet">
+      <h2>Dis-le.<br><em>C'est noté.</em></h2>
+      <p>« 12 café », « 50 courses »… Aam Salah range tout pour toi. Fini les carnets.</p>
+      <button class="cta" data-next>Suivant<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div></div><div class="cap"><span>01</span>Noter</div></div>
+
+  <!-- 2 · RÉPARTIR ─ payday splits 50 / 30 / 20 on its own -->
+  <div class="col"><div class="phone"><div class="scr s2">
+    <div class="status">9:41<svg viewBox="0 0 60 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/><rect x="34" y="0.5" width="22" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="36" y="2.5" width="16" height="6" rx="1.5"/></svg></div>
+    <div class="top"><span class="wordmark">stouchi<span></span></span><div class="seg"><i class="done"></i><i class="cur"></i><i></i></div><button class="skip">Passer</button></div>
+    <div class="stage">
+      <span class="spark" style="left:30px;top:30px;--sc:var(--want)"></span>
+      <span class="spark" style="right:30px;top:120px;--sc:var(--need);animation-delay:-1s"></span>
+      <span class="spark" style="left:50px;top:400px;--sc:#FFC53D;animation-delay:-1.8s"></span>
+      <svg class="wires" viewBox="0 0 322 460" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M161 104 C161 150 60 160 60 212" stroke="var(--need)"/>
+        <path d="M161 104 L161 212" stroke="var(--want)"/>
+        <path d="M161 104 C161 150 262 160 262 212" stroke="var(--save)"/>
+        <path class="flow" d="M161 104 C161 150 60 160 60 212" stroke="var(--need)" style="--d:.7s;stroke-width:3.5"/>
+        <path class="flow" d="M161 104 L161 212" stroke="var(--want)" style="--d:.85s;stroke-width:3.5"/>
+        <path class="flow" d="M161 104 C161 150 262 160 262 212" stroke="var(--save)" style="--d:1s;stroke-width:3.5"/>
+      </svg>
+      <div class="pay glass in" style="--d:.05s">
+        <img class="i3d" data-i="Dollar banknote" alt="">
+        <div><small>Paie du 1er</small><b>+<span class="num" data-count="2000">0</span><em>TND</em></b></div>
+      </div>
+      <div class="pots3">
+        <div class="pt glass pop" style="--d:1.5s;--c:var(--need);--soft:#E7EFFF"><div class="ic"><img class="i3d" data-i="House" alt=""></div><div class="pc">50 %</div><div class="nm">Besoins</div><div class="am num">1 000</div></div>
+        <div class="pt glass pop" style="--d:1.65s;--c:var(--want);--soft:#F0EAFF"><div class="ic"><img class="i3d" data-i="Sparkles" alt=""></div><div class="pc">30 %</div><div class="nm">Envies</div><div class="am num">600</div></div>
+        <div class="pt glass pop" style="--d:1.8s;--c:var(--save);--soft:#E2F6EE"><div class="ic"><img class="i3d" data-i="Money bag" alt=""></div><div class="pc">20 %</div><div class="nm">Épargne</div><div class="am num">400</div></div>
+      </div>
+      <div class="auto in" style="--d:2.3s"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Automatique, chaque mois</div>
+    </div>
+    <div class="sheet">
+      <h2>Ton salaire,<br><em>réparti tout seul.</em></h2>
+      <p>Chaque paie : 50 % pour vivre, 30 % pour te faire plaisir, 20 % de côté.</p>
+      <button class="cta" data-next>Suivant<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div></div><div class="cap"><span>02</span>Répartir</div></div>
+
+  <!-- 3 · SUIVRE ─ one number a day, the rest goes to the goal -->
+  <div class="col"><div class="phone"><div class="scr s3">
+    <div class="status">9:41<svg viewBox="0 0 60 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/><rect x="34" y="0.5" width="22" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="36" y="2.5" width="16" height="6" rx="1.5"/></svg></div>
+    <div class="top"><span class="wordmark">stouchi<span></span></span><div class="seg"><i class="done"></i><i class="done"></i><i class="cur"></i></div><button class="skip">Passer</button></div>
+    <div class="stage">
+      <span class="spark" style="right:18px;top:26px;--sc:var(--save)"></span>
+      <span class="spark" style="left:26px;top:250px;--sc:#FFC53D;animation-delay:-1.4s"></span>
+      <div class="today glass in" style="--d:.05s">
+        <div class="h"><img class="i3d" data-i="Sun" alt="">Aujourd'hui, tu peux dépenser</div>
+        <div class="big"><b class="num" data-count="46">0</b><span>TND</span></div>
+        <div class="bar"><i></i></div>
+        <div class="f"><span>Dans le rythme</span><span>9 j avant la paie</span></div>
+      </div>
+      <img class="coin i3d" data-i="Coin" alt="">
+      <div class="goal glass">
+        <div class="ringw"><svg viewBox="0 0 62 62"><circle class="bg" cx="31" cy="31" r="26"/><circle class="fg" cx="31" cy="31" r="26"/></svg><img class="i3d" data-i="House" alt=""></div>
+        <div><b>Notre maison</b><small>4 800 / 20 000</small><br><span class="plus">+400 ce mois</span></div>
+      </div>
+      <div class="streak in" style="--d:2.6s"><img class="i3d" data-i="Party popper" alt="">3 jours dans ton budget</div>
+    </div>
+    <div class="sheet">
+      <h2>Ton budget du jour,<br><em>en un coup d'œil.</em></h2>
+      <p>Un seul chiffre le matin. Le reste file vers ton projet.</p>
+      <button class="cta" data-next>C'est parti<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div></div><div class="cap"><span>03</span>Suivre</div></div>
+
+  <!-- 4 · CONNEXION ─ Google first: one tap for people who hate forms -->
+  <div class="col"><div class="phone"><div class="scr s4">
+    <div class="status">9:41<svg viewBox="0 0 60 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/><rect x="34" y="0.5" width="22" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="36" y="2.5" width="16" height="6" rx="1.5"/></svg></div>
+    <div class="stage">
+      <div class="hub">
+        <div class="orbit">
+          <span class="o" style="left:50%;top:0"><img class="i3d" data-i="House" alt=""></span>
+          <span class="o" style="left:97.5%;top:34.5%"><img class="i3d" data-i="Sparkles" alt=""></span>
+          <span class="o" style="left:79.4%;top:90.5%"><img class="i3d" data-i="Money bag" alt=""></span>
+          <span class="o" style="left:20.6%;top:90.5%"><img class="i3d" data-i="Hot beverage" alt=""></span>
+          <span class="o" style="left:2.5%;top:34.5%"><img class="i3d" data-i="Shopping cart" alt=""></span>
+        </div>
+        <div class="tile pop" style="--d:.1s" role="img" aria-label="stouchi"><span>s<b></b></span></div>
+        <img class="wave i3d" data-i="Waving hand/Default" alt="">
+      </div>
+    </div>
+    <div class="sheet">
+      <h2>Ton argent,<br><em>enfin tranquille.</em></h2>
+      <p>Aam Salah s'occupe du reste.</p>
+      <button class="gbtn"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>Continuer avec Google</button>
+      <div class="or">ou avec ton e-mail</div>
+      <label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/></svg><input type="email" placeholder="toi@exemple.tn" autocomplete="email" aria-label="Adresse e-mail"></label>
+      <label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="3"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><input type="password" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe"></label>
+      <button class="cta">Se connecter<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+      <p class="foot">Nouveau ici ? <button>Créer un compte</button></p>
+    </div>
+  </div></div><div class="cap"><span>04</span>Connexion</div></div>
+
+</main>
+
+<script>
+/* 3D icons: Microsoft Fluent Emoji 3D (MIT), pinned like in index.html.
+ * data-i="Name" or "Name/Default" for skin-tone emojis. */
+const F3D = 'https://cdn.jsdelivr.net/gh/microsoft/fluentui-emoji@1ffb34c752ecf5d402f04cfb4b392c77f57c54bc/assets/';
+document.querySelectorAll('img[data-i]').forEach(img => {
+  const [name, tone] = img.dataset.i.split('/');
+  const file = name.toLowerCase().replace(/ /g, '_') + '_3d' + (tone ? '_' + tone.toLowerCase() : '');
+  img.src = F3D + encodeURIComponent(name) + (tone ? '/' + tone : '') + '/3D/' + file + '.png';
+});
+
+const fmt = n => Math.round(n).toLocaleString('fr-FR').replace(/\s/g, ' ');
+function countUp(el){
+  const to = +el.dataset.count, t0 = performance.now(), dur = 900, delay = 250;
+  const tick = now => { const k = Math.min(Math.max((now - t0 - delay) / dur, 0), 1);
+    el.textContent = fmt(to * (1 - Math.pow(1 - k, 3))); if (k < 1) requestAnimationFrame(tick); };
+  requestAnimationFrame(tick);
+}
+/* .play starts every entrance; removing and re-adding it replays the story */
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function play(scr){
+  scr.classList.remove('play'); void scr.offsetWidth; scr.classList.add('play');
+  scr.querySelectorAll('[data-count]').forEach(el => still ? el.textContent = fmt(+el.dataset.count) : countUp(el));
+}
+const screens = [...document.querySelectorAll('.scr')];
+const playAll = () => screens.forEach(play);
+playAll();
+if (!still) setInterval(playAll, 7000);
+document.getElementById('replay').onclick = playAll;
+/* "Suivant" brings the next phone into view (useful when the board stacks on a phone) */
+document.querySelectorAll('[data-next]').forEach((b, i) => b.onclick = () => {
+  const next = screens[i + 1]; next.closest('.col').scrollIntoView({behavior:'smooth', block:'center', inline:'center'}); play(next);
+});
+</script>
+</body>
+</html>
