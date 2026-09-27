@@ -25,6 +25,6 @@ jobs:
         run: test -n "$GEMINI_API_KEY" || { echo "::error::The GEMINI_API_KEY secret is not set"; exit 1; }
       - name: ≥ 22/24 (rate 0.9167) on the production model
         run: npm run eval -- --models gemini:gemini-3.5-flash-lite --min-rate 0.9167
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with: { name: eval-report, path: .eval/ }
