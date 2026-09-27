@@ -1,16 +1,16 @@
-import { Droplet, KeyRound, Landmark, Smartphone, Wifi, Zap, type LucideIcon } from 'lucide-preact';
+import { Icon3D, i3d } from '../../design/i3d';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { formatTnd } from '../../shared/money';
 import { AmountInput } from './AmountInput';
 import { billLabel, meter, type BillKey, type DraftBill, type StepProps } from './draft';
 
-const ICONS: Record<BillKey, LucideIcon> = {
-  loyer: KeyRound,
-  steg: Zap,
-  sonede: Droplet,
-  net: Wifi,
-  tel: Smartphone,
-  credit: Landmark,
+const ICONS: Record<BillKey, string> = {
+  loyer: 'key-round',
+  steg: 'zap',
+  sonede: 'droplet',
+  net: 'wifi',
+  tel: 'smartphone',
+  credit: 'landmark',
 };
 
 export function StepBills({ draft, set }: StepProps) {
@@ -24,7 +24,6 @@ export function StepBills({ draft, set }: StepProps) {
       <p class="su-hint">{t('setup.bills.hint')}</p>
       <div class="bills">
         {draft.bills.map((b) => {
-          const Icon = ICONS[b.key];
           const label = t(billLabel(b.key));
           return (
             <div key={b.key} class={b.on ? 'bill on' : 'bill'}>
@@ -34,8 +33,8 @@ export function StepBills({ draft, set }: StepProps) {
                 aria-pressed={b.on}
                 onClick={() => change(b.key, { on: !b.on })}
               >
-                <span class="ic" aria-hidden="true">
-                  <Icon />
+                <span class="ic d3" aria-hidden="true">
+                  <Icon3D src={i3d(ICONS[b.key])} />
                 </span>
                 <span class="n">
                   {label}

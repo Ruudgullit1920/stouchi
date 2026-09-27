@@ -20,7 +20,8 @@ import {
   Zap,
   type LucideIcon,
 } from 'lucide-preact';
-import type { CategoryKey } from '../../shared/categories';
+import { CATEGORIES, type CategoryKey } from '../../shared/categories';
+import { i3d } from '../i3d';
 
 /** Lucide icon per category — the same names as CATEGORIES[k].icon in src/shared/categories.ts. */
 export const CATEGORY_ICON: Record<CategoryKey, LucideIcon> = {
@@ -44,3 +45,6 @@ export const CATEGORY_ICON: Record<CategoryKey, LucideIcon> = {
   beaute: Scissors,
   autre: CircleEllipsis,
 };
+
+/** the category's 3D icon (prototype I3D) */
+export const categoryI3d = (k: CategoryKey): string | undefined => i3d(CATEGORIES[k].icon);

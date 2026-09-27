@@ -83,9 +83,10 @@
   display: grid;
   place-items: center;
 }
-.rv-pot .tile svg {
-  width: 21px;
-  height: 21px;
+.rv-pot .tile .i3d {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 2px 3px #0000002e);
 }
 .rv-pot .name {
   font-size: 16px;

@@ -1,6 +1,7 @@
-import { Droplet, KeyRound, Landmark, Smartphone, Trash2, Wifi, Zap, type LucideIcon } from 'lucide-preact';
+import { Trash2 } from 'lucide-preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { showToast } from '../../app/ui';
+import { Icon3D, i3d } from '../../design/i3d';
 import type { Row } from '../../data/localdb';
 import type { Store } from '../../data/store';
 import { todayTunis } from '../../shared/dates';
@@ -14,14 +15,6 @@ const LABEL_MAX = 60;
 const ARM_MS = 3_000;
 export const FREQUENCIES: Bill['frequency'][] = ['monthly', 'bimonthly', 'quarterly', 'yearly'];
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
-const ICONS: Record<string, LucideIcon> = {
-  'key-round': KeyRound,
-  zap: Zap,
-  droplet: Droplet,
-  wifi: Wifi,
-  smartphone: Smartphone,
-  landmark: Landmark,
-};
 
 export const dayText = (d: number): string => (d === 1 ? t('setup.payday.first') : String(d));
 
@@ -94,7 +87,6 @@ export function BillSheet({ store, bill, write, onDone }: Props) {
       {suggestions.length > 0 && (
         <div class="sugchips">
           {suggestions.map((p) => {
-            const Icon = ICONS[p.icon];
             return (
               <button
                 key={p.key}
@@ -105,8 +97,8 @@ export function BillSheet({ store, bill, write, onDone }: Props) {
                   setError(false);
                 }}
               >
-                <span class="ic tone-need" aria-hidden="true">
-                  <Icon />
+                <span class="ic d3" aria-hidden="true">
+                  <Icon3D src={i3d(p.icon)} />
                 </span>
                 {t(billLabel(p.key))}
               </button>

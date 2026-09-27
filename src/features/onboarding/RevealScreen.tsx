@@ -1,7 +1,8 @@
 /* The reveal, ported from prototype #f-reveal (spec §4.1): the salary coin, the
  * three pots dropping in with their amounts, confetti once. The button works
  * from the first frame; under reduced motion nothing moves. */
-import { ArrowRight, Coins, House, Sparkles, type LucideIcon } from 'lucide-preact';
+import { ArrowRight } from 'lucide-preact';
+import { Icon3D, i3dFile } from '../../design/i3d';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Row, Table } from '../../data/localdb';
 import { reducedMotion } from '../../design/motion';
@@ -70,18 +71,18 @@ export function RevealScreen({
 
   const split = { needs: profile.split_needs, wants: profile.split_wants, savings: profile.split_savings };
   const pots = splitSalary(profile.salary_mil, split);
-  const rows: { pot: keyof typeof pots; icon: LucideIcon; desc: string }[] = [
+  const rows: { pot: keyof typeof pots; icon: string; desc: string }[] = [
     {
       pot: 'needs',
-      icon: House,
+      icon: 'house',
       desc: billsMil
         ? t('reveal.needs.bills', { pct: split.needs, bills: formatTnd(billsMil) })
         : t('reveal.needs.desc', { pct: split.needs }),
     },
-    { pot: 'wants', icon: Sparkles, desc: t('reveal.wants.desc', { pct: split.wants }) },
+    { pot: 'wants', icon: 'sparkles', desc: t('reveal.wants.desc', { pct: split.wants }) },
     {
       pot: 'savings',
-      icon: Coins,
+      icon: 'money_bag',
       desc: t('reveal.savings.desc', { pct: split.savings, goal: goalName ?? t('pot.savings') }),
     },
   ];
@@ -117,13 +118,13 @@ export function RevealScreen({
 
 function PotRow({
   pot,
-  icon: Icon,
+  icon,
   desc,
   amount,
   delay,
 }: {
   pot: 'needs' | 'wants' | 'savings';
-  icon: LucideIcon;
+  icon: string;
   desc: string;
   amount: Mil;
   delay: number;
@@ -132,7 +133,7 @@ function PotRow({
   return (
     <div class={`rv-pot rv-pot--${pot}`} style={{ animationDelay: `${delay}s` }}>
       <div class="tile" aria-hidden="true">
-        <Icon />
+        <Icon3D src={i3dFile(icon)} />
       </div>
       <div>
         <div class="name">{t(`pot.${pot}` as StringKey)}</div>

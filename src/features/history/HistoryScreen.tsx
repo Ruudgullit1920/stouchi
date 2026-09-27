@@ -3,7 +3,7 @@ import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { ScreenProps } from '../../app/Shell';
 import { navigate, route } from '../../app/router';
-import { CATEGORY_ICON } from '../../design/components/CategoryIcon';
+import { CATEGORY_ICON, categoryI3d } from '../../design/components/CategoryIcon';
 import { DayHeader } from '../../design/components/DayHeader';
 import { EmptyState } from '../../design/components/EmptyState';
 import { Highlight } from '../../design/components/Highlight';
@@ -69,6 +69,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
     <LedgerRow
       key={e.id}
       icon={CATEGORY_ICON[e.category]}
+      img={categoryI3d(e.category)}
       tint={SOFT[e.pot]}
       title={title}
       subtitle={`${categoryLabel(e.category)} · ${t(`pot.${e.pot}`)}`}

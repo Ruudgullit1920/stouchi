@@ -54,11 +54,29 @@ describe('PotScreen', () => {
 
   it('shows what is left per day only for the current period', () => {
     render(<PotScreen store={store} />);
-    expect(screen.getByText('Il te reste')).toBeTruthy();
-    expect(screen.getByText(/\/ jour/)).toBeTruthy();
+    expect(screen.getByText('TND restants')).toBeTruthy();
+    expect(screen.getByText(/\/jour/)).toBeTruthy();
     fireEvent.click(prev());
-    expect(screen.getByText('Non dépensé')).toBeTruthy();
-    expect(screen.queryByText(/\/ jour/)).toBeNull();
+    expect(screen.getByText('TND non dépensés')).toBeTruthy();
+    expect(screen.getByText('Budget tenu')).toBeTruthy();
+    expect(screen.queryByText(/\/jour/)).toBeNull();
+  });
+
+  it('says whether the spending keeps pace with the period', () => {
+    render(<PotScreen store={store} />);
+    // 460 of a 1 000 budget on day 10 of 30: well ahead of the days gone
+    expect(screen.getByText('Rythme rapide')).toBeTruthy();
+    expect(screen.getByText('460 / 1 000 dépensés')).toBeTruthy();
+  });
+
+  it('filters the list from a breakdown row, and clears it on a second tap', () => {
+    render(<PotScreen store={store} />);
+    const row = screen.getByRole('button', { name: /^Courses, \d+ %$/ });
+    fireEvent.click(row);
+    expect(row.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByText('Loyer', { selector: '.ledger-row__title' })).toBeNull();
+    fireEvent.click(row);
+    expect(screen.getByText('Loyer', { selector: '.ledger-row__title' })).toBeTruthy();
   });
 
   it('narrows the list with a category pill', () => {

@@ -1,10 +1,13 @@
 import type { ComponentChildren, ComponentType } from 'preact';
 import type { Mil } from '../../shared/money';
+import { Icon3D } from '../i3d';
 import { Amount, HIDDEN } from './Amount';
 import { AuthorBadge } from './AuthorBadge';
 
 type Props = {
   icon: ComponentType<{ size?: number | string }>;
+  /** the 3D icon (src/design/i3d); it sits on a neutral disc and wins over icon */
+  img?: string;
   /** avatar background, a pot colour token such as var(--need) */
   tint: string;
   /** plain text, or text with <mark>s from a search */
@@ -22,6 +25,7 @@ type Props = {
 /** Spec §5.4 ledger row: 44 px round avatar, title, subtitle, right-aligned amount. */
 export function LedgerRow({
   icon: Icon,
+  img,
   tint,
   title,
   subtitle,
@@ -31,7 +35,11 @@ export function LedgerRow({
   author,
   onClick,
 }: Props) {
-  const avatar = (
+  const avatar = img ? (
+    <span class="ledger-row__avatar ledger-row__avatar--3d" aria-hidden="true">
+      <Icon3D src={img} />
+    </span>
+  ) : (
     <span class="ledger-row__avatar" style={{ background: tint }} aria-hidden="true">
       <Icon size={20} />
     </span>

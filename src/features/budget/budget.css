@@ -143,6 +143,11 @@
   display: grid;
   place-items: center;
 }
+.pot__tile .i3d {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 2px 3px #0000002e);
+}
 .pot__name {
   display: flex;
   align-items: center;

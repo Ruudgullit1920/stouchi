@@ -1,7 +1,7 @@
 import { Eye, EyeOff, Plus } from 'lucide-preact';
 import type { ScreenProps } from '../../app/Shell';
 import { navigate } from '../../app/router';
-import { CATEGORY_ICON } from '../../design/components/CategoryIcon';
+import { CATEGORY_ICON, categoryI3d } from '../../design/components/CategoryIcon';
 import { EmptyState } from '../../design/components/EmptyState';
 import { ErrorState } from '../../design/components/ErrorState';
 import { LedgerRow } from '../../design/components/LedgerRow';
@@ -138,6 +138,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
             <LedgerRow
               key={e.id}
               icon={CATEGORY_ICON[e.category]}
+              img={categoryI3d(e.category)}
               tint={e.pot === 'needs' ? 'var(--need-soft)' : 'var(--want-soft)'}
               title={titleOf(e)}
               subtitle={`${categoryLabel(e.category)} · ${shortDate(e.spent_on)}`}

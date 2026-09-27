@@ -23,8 +23,6 @@
   --warn: #f5a524;
   /* the prototype's #e5484d is 3.9 : 1 on white; errors are small text */
   --danger: #c52f36;
-  /* the prototype's #e5484d is 3.9 : 1 on white; errors are small text */
-  --danger: #c52f36;
 
   --r-card: 24px;
   --r-tile: 18px;

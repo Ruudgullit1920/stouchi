@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, Plus, Receipt } from 'lucide-preact';
 import { closeSheet, openSheet } from '../../app/ui';
+import { Icon3D, billI3d } from '../../design/i3d';
 import type { Row } from '../../data/localdb';
 import { factsInput, type Store } from '../../data/store';
 import { billStatus, billsDueTotal, billsMeter, type BillStatus } from '../../shared/bills';
@@ -103,8 +104,8 @@ export function BillsScreen({ store, write, onBack }: Props) {
               );
               return (
                 <button key={b.id} type="button" class="srow bill-row" onClick={() => edit(b)}>
-                  <span class="ic tone-need" aria-hidden="true">
-                    <Receipt />
+                  <span class="ic d3" aria-hidden="true">
+                    <Icon3D src={billI3d(b.label)} />
                   </span>
                   <span class="tx">
                     <span class="t">{b.label}</span>
