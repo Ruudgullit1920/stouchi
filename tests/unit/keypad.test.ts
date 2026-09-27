@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setCurrentCurrency } from '../../src/shared/currentCurrency';
 import { keypadMil, pressKey, typeAll } from '../../src/shared/keypad';
 
 describe('pressKey', () => {
@@ -40,5 +41,22 @@ describe('keypadMil', () => {
     expect(keypadMil('12,5')).toBe(12_500);
     expect(keypadMil('12,')).toBe(12_000);
     expect(keypadMil('')).toBe(0);
+  });
+});
+
+describe('pressKey and the currency', () => {
+  afterEach(() => setCurrentCurrency('TND'));
+
+  it('stops at two decimals in EUR, three in TND', () => {
+    setCurrentCurrency('EUR');
+    expect(typeAll('4,505')).toBe('4,50');
+    expect(keypadMil('4,50')).toBe(4_500);
+    setCurrentCurrency('TND');
+    expect(typeAll('4,505')).toBe('4,505');
+  });
+
+  it('follows an explicit currency', () => {
+    expect(pressKey('4,50', '5', 'EUR')).toBe('4,50');
+    expect(pressKey('4,50', '5', 'LYD')).toBe('4,505');
   });
 });

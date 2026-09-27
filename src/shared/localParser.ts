@@ -6,7 +6,7 @@ import { categoryLabel, potOf, type CategoryKey } from './categories';
 import { addDays, type ISODate } from './dates';
 import { MIL_PER_TND, parseMoney, type Mil } from './money';
 
-/** The add_expense action, as /api/aam would send it (amount in TND). */
+/** The add_expense action, as /api/aam would send it (amount in units of the current currency). */
 export interface AddExpense {
   type: 'add_expense';
   kind: 'direct';
