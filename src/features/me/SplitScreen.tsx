@@ -8,7 +8,7 @@ import { nextPayday, payPeriod, todayTunis } from '../../shared/dates';
 import { monthName, monthYear, shortDate } from '../../shared/format';
 import { goalView } from '../../shared/goal';
 import { t } from '../../shared/i18n/t';
-import { formatTnd, splitSalary, type Split } from '../../shared/money';
+import { formatMoney, splitSalary, type Split } from '../../shared/money';
 import { activeGoal } from '../../shared/payday';
 import { HIDDEN, hideAmounts } from '../budget/hideAmounts';
 import { currentPlan, nextPlanPatch, pendingPlan } from '../../shared/plan';
@@ -63,7 +63,7 @@ export function SplitScreen({ store, write, onBack }: Props) {
       : null,
     today,
   });
-  const money = (m: number, unit = true) => (hideAmounts.value ? HIDDEN : formatTnd(m, { unit }));
+  const money = (m: number, unit = true) => (hideAmounts.value ? HIDDEN : formatMoney(m, { unit }));
   const preset = SPLIT_PRESETS.find((x) => sameSplit(x.split, split));
 
   const save = async () => {

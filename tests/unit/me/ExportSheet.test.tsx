@@ -5,7 +5,7 @@ import { createStore, type Store } from '../../../src/data/store';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { ExportSheet } from '../../../src/features/me/ExportSheet';
 import type { ExportInput, ExportRange } from '../../../src/shared/exportCsv';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { expense, income, profile, USER } from '../fixtures';
 
 const rows = (): ExportInput => ({
@@ -46,7 +46,7 @@ describe('ExportSheet', () => {
     open();
     expect(fetchRows).toHaveBeenCalledWith({ from: '2025-10-01', to: '2026-09-30' });
     await waitFor(() => expect(screen.getByTestId('export-sum').textContent).toContain('3 lignes'));
-    expect(screen.getByTestId('export-sum').textContent).toContain(formatTnd(20_000));
+    expect(screen.getByTestId('export-sum').textContent).toContain(formatMoney(20_000));
   });
 
   it('reads again when another period is picked', async () => {

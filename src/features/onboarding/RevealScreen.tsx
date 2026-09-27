@@ -9,7 +9,7 @@ import { reducedMotion } from '../../design/motion';
 import { useRolling } from '../../design/useRolling';
 import { todayTunis, type ISODate } from '../../shared/dates';
 import { t, type StringKey } from '../../shared/i18n/t';
-import { formatTnd, splitSalary, type Mil } from '../../shared/money';
+import { formatMoney, splitSalary, type Mil } from '../../shared/money';
 import type { Profile } from '../../shared/schemas';
 import { clearDraft, loadDraft, openingDeposit } from './draft';
 import { dayLabel } from './StepPayday';
@@ -76,7 +76,7 @@ export function RevealScreen({
       pot: 'needs',
       icon: 'house',
       desc: billsMil
-        ? t('reveal.needs.bills', { pct: split.needs, bills: formatTnd(billsMil) })
+        ? t('reveal.needs.bills', { pct: split.needs, bills: formatMoney(billsMil) })
         : t('reveal.needs.desc', { pct: split.needs }),
     },
     { pot: 'wants', icon: 'sparkles', desc: t('reveal.wants.desc', { pct: split.wants }) },
@@ -99,7 +99,7 @@ export function RevealScreen({
       <div class={still ? 'rv still' : 'rv'}>
         <div class="rv-coin">
           <small>{t('reveal.salary')}</small>
-          <b class="num">{formatTnd(profile.salary_mil, { unit: false })}</b>
+          <b class="num">{formatMoney(profile.salary_mil, { unit: false })}</b>
           <small>{t('reveal.when', { when })}</small>
         </div>
         <h1>{t('reveal.title', { name: profile.first_name })}</h1>
@@ -141,7 +141,7 @@ function PotRow({
       </div>
       <div class="amt">
         <b class="num" data-testid="rv-amount">
-          {formatTnd(shown, { unit: false })}
+          {formatMoney(shown, { unit: false })}
         </b>
         <span>{t('reveal.perMonth')}</span>
       </div>

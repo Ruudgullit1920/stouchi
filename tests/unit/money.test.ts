@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SPLIT,
   MAX_MIL,
-  formatTnd,
+  formatMoney,
   isValidSplit,
   milFromTnd,
-  parseTnd,
+  parseMoney,
   splitSalary,
 } from '../../src/shared/money';
 
-describe('parseTnd', () => {
+describe('parseMoney', () => {
   it.each([
     ['12', 12_000],
     ['12,5', 12_500],
@@ -24,16 +24,16 @@ describe('parseTnd', () => {
     ['45 TND', 45_000],
     ['7 dinars', 7_000],
   ])('%j → %i millimes', (input, mil) => {
-    expect(parseTnd(input)).toBe(mil);
+    expect(parseMoney(input)).toBe(mil);
   });
 
   it.each(['', 'abc', '-5', '1,2,3', '12.3456', '1 20', '12 5', '1e3', '١٢'])('%j is refused', (input) => {
-    expect(parseTnd(input)).toBeNull();
+    expect(parseMoney(input)).toBeNull();
   });
 
   it('refuses amounts above the cap', () => {
-    expect(parseTnd('1 000 000')).toBe(MAX_MIL);
-    expect(parseTnd('1 000 001')).toBeNull();
+    expect(parseMoney('1 000 000')).toBe(MAX_MIL);
+    expect(parseMoney('1 000 001')).toBeNull();
   });
 });
 
@@ -51,23 +51,23 @@ describe('milFromTnd', () => {
   });
 });
 
-describe('formatTnd', () => {
+describe('formatMoney', () => {
   it('groups thousands with a non-breaking space and keeps the unit attached', () => {
-    const s = formatTnd(1_200_000);
+    const s = formatMoney(1_200_000);
     expect(s).toMatch(/^1[  ]200 TND$/);
     expect(s).not.toContain(' ');
   });
 
   it('shows millimes only when there are some', () => {
-    expect(formatTnd(12_500, { unit: false })).toBe('12,5');
-    expect(formatTnd(12_000, { unit: false })).toBe('12');
-    expect(formatTnd(1, { unit: false })).toBe('0,001');
+    expect(formatMoney(12_500, { unit: false })).toBe('12,5');
+    expect(formatMoney(12_000, { unit: false })).toBe('12');
+    expect(formatMoney(1, { unit: false })).toBe('0,001');
   });
 
   it('uses a real minus sign, and a plus only when asked', () => {
-    expect(formatTnd(-8_000, { unit: false })).toBe('−8');
-    expect(formatTnd(200_000, { unit: false, sign: true })).toBe('+200');
-    expect(formatTnd(0, { unit: false, sign: true })).toBe('0');
+    expect(formatMoney(-8_000, { unit: false })).toBe('−8');
+    expect(formatMoney(200_000, { unit: false, sign: true })).toBe('+200');
+    expect(formatMoney(0, { unit: false, sign: true })).toBe('0');
   });
 });
 

@@ -10,7 +10,7 @@ import { shortDate } from '../../shared/format';
 import { computeFacts } from '../../shared/facts';
 import { t } from '../../shared/i18n/t';
 import { keypadMil } from '../../shared/keypad';
-import { formatTnd, type Mil } from '../../shared/money';
+import { formatMoney, type Mil } from '../../shared/money';
 import { Keypad } from './Keypad';
 import './add.css';
 
@@ -32,7 +32,7 @@ type Props = {
 
 const POTS: Pot[] = ['needs', 'wants'];
 const COLOR: Record<Pot, string> = { needs: 'var(--need)', wants: 'var(--want)' };
-const typed = (mil: Mil) => formatTnd(mil, { unit: false }).replace(/[^0-9,]/g, '');
+const typed = (mil: Mil) => formatMoney(mil, { unit: false }).replace(/[^0-9,]/g, '');
 
 /** Amount on a keypad, Besoins/Envies, category, date, note — for adding and editing. */
 export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
@@ -100,7 +100,7 @@ export function ExpenseForm({ store, initial, onSubmit, children }: Props) {
             <i style={{ background: COLOR[p] }} aria-hidden="true" />
             {t('add.left', {
               pot: t(`pot.${p}`),
-              amount: facts ? formatTnd(facts.pots[p].left, { unit: false }) : '…',
+              amount: facts ? formatMoney(facts.pots[p].left, { unit: false }) : '…',
             })}
           </button>
         ))}

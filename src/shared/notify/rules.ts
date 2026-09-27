@@ -23,7 +23,7 @@ import {
 import { computeFacts, type Facts, type FactsInput } from '../facts';
 import { shortDate } from '../format';
 import { t } from '../i18n/t';
-import { formatTnd, type Mil } from '../money';
+import { formatMoney, type Mil } from '../money';
 import { isSavingsOpportunity, spendPace } from '../nudges';
 import { activeGoal, dueDeposits, paydayId, paydayOpensAt, tunisInstant } from '../payday';
 import type { Expense, Goal, NewSavingsMove, NotificationActionT, Reminder } from '../schemas';
@@ -62,7 +62,7 @@ const SPIKE_NUM = 13;
 const SPIKE_DEN = 10;
 const RECAP_HOUR = 19;
 
-const n = (mil: Mil) => formatTnd(mil, { unit: false });
+const n = (mil: Mil) => formatMoney(mil, { unit: false });
 const CLOCK = new Intl.DateTimeFormat('fr-FR', {
   timeZone: 'Africa/Tunis',
   hour: '2-digit',

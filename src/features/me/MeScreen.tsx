@@ -23,7 +23,7 @@ import { nextPayday, payPeriod, periodsSince, todayTunis } from '../../shared/da
 import { initials, shortDate } from '../../shared/format';
 import { goalView } from '../../shared/goal';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { activeGoal } from '../../shared/payday';
 import { currentPlan, pendingPlan } from '../../shared/plan';
 import { sameSplit, splitText } from '../../shared/split';
@@ -67,7 +67,7 @@ export function MeScreen({ store }: ScreenProps) {
   if (sub === 'couple') return <CoupleScreen store={store} api={couple} onBack={back} />;
 
   const hidden = hideAmounts.value;
-  const money = (mil: number, unit = true) => (hidden ? HIDDEN : formatTnd(mil, { unit }));
+  const money = (mil: number, unit = true) => (hidden ? HIDDEN : formatMoney(mil, { unit }));
   const today = todayTunis();
   const plan = currentPlan(p);
   const next = pendingPlan(p);

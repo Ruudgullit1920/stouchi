@@ -5,7 +5,7 @@ import { toast } from '../../../src/app/ui';
 import { createStore, type Store } from '../../../src/data/store';
 import { SalarySheet } from '../../../src/features/me/SalarySheet';
 import { shortDate } from '../../../src/shared/format';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import type { Row } from '../../../src/data/localdb';
 import { bill, profile } from '../fixtures';
 
@@ -54,8 +54,8 @@ describe('SalarySheet', () => {
     open();
     type('3000');
     const preview = screen.getByTestId('split-preview').textContent;
-    expect(preview).toContain(formatTnd(1_500_000, { unit: false }));
-    expect(preview).toContain(`+${formatTnd(500_000, { unit: false })}`);
+    expect(preview).toContain(formatMoney(1_500_000, { unit: false }));
+    expect(preview).toContain(`+${formatMoney(500_000, { unit: false })}`);
   });
 
   it('"dès ce mois" writes the main salary, and the toast undoes it', async () => {
@@ -65,7 +65,7 @@ describe('SalarySheet', () => {
     fireEvent.click(save());
     const row = await saved();
     expect(row).toMatchObject({ salary_mil: 3_000_000, next_from: null, next_salary_mil: null });
-    expect(toast.value?.message).toBe(`Salaire : ${formatTnd(3_000_000)}`);
+    expect(toast.value?.message).toBe(`Salaire : ${formatMoney(3_000_000)}`);
     toast.value?.onAction?.();
     await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(2));
     expect(write.mock.calls[1][1]).toEqual(profile());

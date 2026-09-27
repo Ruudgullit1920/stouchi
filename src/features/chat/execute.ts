@@ -17,7 +17,7 @@ import { categoryLabel, isCategory, potOf, type Pot } from '../../shared/categor
 import { todayTunis } from '../../shared/dates';
 import { shortDate } from '../../shared/format';
 import { t, type StringKey } from '../../shared/i18n/t';
-import { formatTnd, MAX_MIL, milFromTnd, type Mil } from '../../shared/money';
+import { formatMoney, MAX_MIL, milFromTnd, type Mil } from '../../shared/money';
 import { activeGoal, tunisInstant } from '../../shared/payday';
 import { PartnerChange, type Bill, type Debt, type Expense, type Goal } from '../../shared/schemas';
 import { CoupleError, type CoupleApi } from '../../data/couple';
@@ -85,7 +85,7 @@ const str = (x: unknown, fallback?: string): string => {
   if (fallback !== undefined) return fallback;
   throw new Invalid();
 };
-const money = (m: Mil) => formatTnd(m);
+const money = (m: Mil) => formatMoney(m);
 
 /** The existing row an action works on: its table and key. */
 function targetOf(a: ServerAction, store: Store): { table: Table; key: string } | null {
@@ -217,7 +217,7 @@ async function run(a: ServerAction, ctx: ExecCtx): Promise<ExecResult> {
         patch.amount_mil !== undefined
           ? t('chat.done.edit_expense.amount', {
               label,
-              from: formatTnd(before.amount_mil, { unit: false }),
+              from: formatMoney(before.amount_mil, { unit: false }),
               to: money(patch.amount_mil),
             })
           : t('chat.done.edit_expense', { label });

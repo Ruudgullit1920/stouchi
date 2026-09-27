@@ -13,7 +13,7 @@ import { signal } from '@preact/signals';
 import { todayTunis } from '../../shared/dates';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { isUndo, parseLocal } from '../../shared/localParser';
-import { formatTnd, MIL_PER_TND, type Mil } from '../../shared/money';
+import { formatMoney, MIL_PER_TND, type Mil } from '../../shared/money';
 import type { AamRequest, AamReply, ApiResult } from './api';
 import {
   execute,
@@ -165,7 +165,7 @@ export function createChat(deps: ChatDeps) {
       });
     } else if ('ask' in parsed && parsed.ask === 'what' && parsed.amount !== undefined) {
       pendingAmount = parsed.amount;
-      say(t('chat.offline.what', { amount: formatTnd(parsed.amount) }));
+      say(t('chat.offline.what', { amount: formatMoney(parsed.amount) }));
     } else {
       say(t('ask' in parsed ? 'chat.offline.amount' : 'chat.offline.unknown'));
     }

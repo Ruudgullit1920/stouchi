@@ -5,7 +5,7 @@ import { todayTunis } from '../../shared/dates';
 import { monthYear } from '../../shared/format';
 import { goalView } from '../../shared/goal';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { activeGoal } from '../../shared/payday';
 import { HIDDEN, hideAmounts } from '../budget/hideAmounts';
 import { HoldButton } from './HoldButton';
@@ -80,7 +80,7 @@ export function DeleteSheet({ store, remove, onExport, onDeleted }: Props) {
           <li>
             <X aria-hidden="true" />
             {goal
-              ? t('me.delete.goal', { amount: hideAmounts.value ? HIDDEN : formatTnd(saved) })
+              ? t('me.delete.goal', { amount: hideAmounts.value ? HIDDEN : formatMoney(saved) })
               : t('me.delete.plan')}
           </li>
           <li>

@@ -21,7 +21,7 @@ import { categoryLabel, isCategory } from '../../shared/categories';
 import { shortDate } from '../../shared/format';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { titleOf } from '../../shared/ledger';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { activeGoal } from '../../shared/payday';
 import type { Card } from './history';
 import { receiptLook } from './ReceiptCard';
@@ -48,7 +48,7 @@ function look(card: Card, store: Store): Look | null {
       const ch = (a.changes ?? {}) as Record<string, unknown>;
       const parts: string[] = [];
       if (ch.amount !== undefined)
-        parts.push(`${formatTnd(e.amount_mil, { unit: false })} → ${formatTnd(milOf(ch.amount))}`);
+        parts.push(`${formatMoney(e.amount_mil, { unit: false })} → ${formatMoney(milOf(ch.amount))}`);
       const cat = str(ch.category);
       if (isCategory(cat)) parts.push(`${categoryLabel(e.category)} → ${categoryLabel(cat)}`);
       if (ch.label !== undefined) parts.push(`« ${str(ch.label)} »`);
@@ -81,7 +81,7 @@ function look(card: Card, store: Store): Look | null {
       const parts: string[] = [];
       if (change.kind === 'delete') parts.push(t('chat.card.delete', { label: titleOf(e) }));
       if (ch.amount !== undefined)
-        parts.push(`${formatTnd(e.amount_mil, { unit: false })} → ${formatTnd(milOf(ch.amount))}`);
+        parts.push(`${formatMoney(e.amount_mil, { unit: false })} → ${formatMoney(milOf(ch.amount))}`);
       const cat = str(ch.category);
       if (isCategory(cat)) parts.push(`${categoryLabel(e.category)} → ${categoryLabel(cat)}`);
       if (ch.label !== undefined) parts.push(`« ${str(ch.label)} »`);
@@ -162,7 +162,7 @@ function look(card: Card, store: Store): Look | null {
         title: name ? t('chat.card.goal', { name }) : goal.name,
         sub:
           a.target !== undefined
-            ? `${formatTnd(goal.target_mil, { unit: false })} → ${formatTnd(milOf(a.target))}`
+            ? `${formatMoney(goal.target_mil, { unit: false })} → ${formatMoney(milOf(a.target))}`
             : t('chat.card.goal.rename'),
       };
     }

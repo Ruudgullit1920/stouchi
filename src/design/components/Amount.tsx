@@ -1,5 +1,5 @@
 import { t } from '../../shared/i18n/t';
-import { formatTnd, type Mil } from '../../shared/money';
+import { formatMoney, type Mil } from '../../shared/money';
 
 /** What stands in for an amount when the person hides amounts (the eye on Budget). */
 export const HIDDEN = '•••';
@@ -10,7 +10,7 @@ type Props = { mil: Mil; sign?: boolean; class?: string };
 export function Amount({ mil, sign = false, class: extra = '' }: Props) {
   return (
     <span class={`amount num ${extra}`.trim()}>
-      {formatTnd(mil, { unit: false, sign })}
+      {formatMoney(mil, { unit: false, sign })}
       <span class="amount__unit">
         {' '}
         {t('unit.tnd')}

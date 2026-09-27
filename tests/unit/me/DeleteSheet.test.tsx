@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore, type Store } from '../../../src/data/store';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { DeleteSheet } from '../../../src/features/me/DeleteSheet';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { expense, goal, move, profile, USER } from '../fixtures';
 
 const remove = vi.fn<() => Promise<void>>();
@@ -46,7 +46,7 @@ describe('DeleteSheet', () => {
     open();
     const gone = screen.getByRole('list').textContent;
     expect(gone).toContain('depuis janvier 2026');
-    expect(gone).toContain(formatTnd(450_000));
+    expect(gone).toContain(formatMoney(450_000));
     expect(gone).toContain('Aam Salah');
   });
 

@@ -7,7 +7,7 @@ import { createStore, type Store } from '../../../src/data/store';
 import { SplitScreen } from '../../../src/features/me/SplitScreen';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { shortDate } from '../../../src/shared/format';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { profile } from '../fixtures';
 
 const write = vi.fn<(table: 'profiles', row: Row) => Promise<void>>().mockResolvedValue(undefined);
@@ -89,8 +89,10 @@ describe('SplitScreen — hidden amounts', () => {
   it('hides the pot amounts and the salary', () => {
     hideAmounts.value = true;
     open();
-    expect(screen.getByTestId('split-rows').textContent).not.toContain(formatTnd(1_000_000, { unit: false }));
-    expect(document.body.textContent).not.toContain(formatTnd(2_000_000));
+    expect(screen.getByTestId('split-rows').textContent).not.toContain(
+      formatMoney(1_000_000, { unit: false }),
+    );
+    expect(document.body.textContent).not.toContain(formatMoney(2_000_000));
   });
 });
 

@@ -5,7 +5,7 @@ import { categoryLabel } from '../../shared/categories';
 import { shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { titleOf } from '../../shared/ledger';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import {
   NotificationAction,
   type Expense,
@@ -14,7 +14,7 @@ import {
 } from '../../shared/schemas';
 
 const what = (e: Pick<Expense, 'label' | 'category' | 'amount_mil'>) =>
-  `${titleOf(e as Expense)} · ${formatTnd(e.amount_mil)}`;
+  `${titleOf(e as Expense)} · ${formatMoney(e.amount_mil)}`;
 
 /** The title and body of a partner_request row; null for any other row. */
 export function partnerText(row: Notification, store: Store): { title: string; body: string } | null {
@@ -38,7 +38,7 @@ export function partnerText(row: Notification, store: Store): { title: string; b
 function changes(e: Expense, f: Extract<PartnerChangeT, { kind: 'edit' }>['fields']): string {
   const parts: string[] = [];
   if (f.amount_mil !== undefined)
-    parts.push(`${formatTnd(e.amount_mil, { unit: false })} → ${formatTnd(f.amount_mil)}`);
+    parts.push(`${formatMoney(e.amount_mil, { unit: false })} → ${formatMoney(f.amount_mil)}`);
   if (f.category !== undefined) parts.push(`${categoryLabel(e.category)} → ${categoryLabel(f.category)}`);
   if (f.pot !== undefined && f.pot !== e.pot) parts.push(`${t(`pot.${e.pot}`)} → ${t(`pot.${f.pot}`)}`);
   if (f.label !== undefined) parts.push(`« ${e.label} » → « ${f.label} »`);

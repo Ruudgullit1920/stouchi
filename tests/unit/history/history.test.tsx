@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/pre
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createStore, type Store } from '../../../src/data/store';
 import { HistoryScreen } from '../../../src/features/history/HistoryScreen';
-import { formatTnd, splitSalary } from '../../../src/shared/money';
+import { formatMoney, splitSalary } from '../../../src/shared/money';
 import { coupleOn, expense, HOUSEHOLD, move, PARTNER, profile, SOLO } from '../fixtures';
 
 let store: Store;
@@ -166,13 +166,13 @@ describe('HistoryScreen — couple mode', () => {
   it('Moi keeps my rows: the list, the categories and the month total follow', () => {
     render(<HistoryScreen store={store} />);
     expect(screen.getByRole('button', { name: 'Tout' }).getAttribute('aria-pressed')).toBe('true');
-    expect(total()).toContain(formatTnd(134_500, { unit: false }));
+    expect(total()).toContain(formatMoney(134_500, { unit: false }));
     fireEvent.click(screen.getByRole('button', { name: 'Moi' }));
     expect(screen.getByRole('button', { name: 'Moi' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Tout' }).getAttribute('aria-pressed')).toBe('false');
     expect(screen.queryByText('Monoprix')).toBeNull();
     expect(screen.getByText('Carrefour')).toBeTruthy();
-    expect(total()).toContain(formatTnd(84_500, { unit: false }));
+    expect(total()).toContain(formatMoney(84_500, { unit: false }));
   });
 
   describe('the pot cards (M1)', () => {
@@ -194,20 +194,20 @@ describe('HistoryScreen — couple mode', () => {
 
     it('Tout compares shared Besoins with the household budget, like the Budget screen', () => {
       render(<HistoryScreen store={store} />);
-      expect(card('Besoins')).toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
+      expect(card('Besoins')).toContain(formatMoney(myNeeds() + 900_000, { unit: false }));
     });
 
     it('Moi compares my Besoins with my own budget', () => {
       render(<HistoryScreen store={store} />);
       fireEvent.click(screen.getByRole('button', { name: 'Moi' }));
-      expect(card('Besoins')).toContain(formatTnd(myNeeds(), { unit: false }));
-      expect(card('Besoins')).not.toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
+      expect(card('Besoins')).toContain(formatMoney(myNeeds(), { unit: false }));
+      expect(card('Besoins')).not.toContain(formatMoney(myNeeds() + 900_000, { unit: false }));
     });
 
     it('a period before the pairing (no shared row) keeps my own budget in Tout (review I1)', () => {
       render(<HistoryScreen store={store} />);
       fireEvent.click(screen.getByRole('option', { name: /^Août 2026/ }));
-      expect(card('Besoins')).toContain(formatTnd(myNeeds(), { unit: false }));
+      expect(card('Besoins')).toContain(formatMoney(myNeeds(), { unit: false }));
     });
 
     it('a past period holding a shared row counts as the household’s', () => {
@@ -217,7 +217,7 @@ describe('HistoryScreen — couple mode', () => {
       ];
       render(<HistoryScreen store={store} />);
       fireEvent.click(screen.getByRole('option', { name: /^Août 2026/ }));
-      expect(card('Besoins')).toContain(formatTnd(myNeeds() + 900_000, { unit: false }));
+      expect(card('Besoins')).toContain(formatMoney(myNeeds() + 900_000, { unit: false }));
     });
 
     it('uses the plan in force for the period, like Budget (review m2)', () => {
@@ -230,14 +230,14 @@ describe('HistoryScreen — couple mode', () => {
         next_from: '2026-09-01',
       });
       render(<HistoryScreen store={store} />);
-      expect(card('Besoins')).toContain(formatTnd(1_500_000, { unit: false }));
+      expect(card('Besoins')).toContain(formatMoney(1_500_000, { unit: false }));
     });
 
     it('Épargne counts my deposits only, in Tout and in Moi', () => {
       render(<HistoryScreen store={store} />);
-      expect(card('Épargne')).toContain(formatTnd(100_000, { unit: false }));
+      expect(card('Épargne')).toContain(formatMoney(100_000, { unit: false }));
       fireEvent.click(screen.getByRole('button', { name: 'Moi' }));
-      expect(card('Épargne')).toContain(formatTnd(100_000, { unit: false }));
+      expect(card('Épargne')).toContain(formatMoney(100_000, { unit: false }));
     });
   });
 

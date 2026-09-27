@@ -8,7 +8,7 @@ import { todayTunis } from '../../shared/dates';
 import { computeFacts } from '../../shared/facts';
 import { shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import type { Bill } from '../../shared/schemas';
 import { HIDDEN, hideAmounts } from '../budget/hideAmounts';
 import { BillSheet, dayText } from './BillSheet';
@@ -31,7 +31,7 @@ export function BillsScreen({ store, write, onBack }: Props) {
   const reserved = billsDueTotal(bills, facts.period);
   const needs = facts.pots.needs.budget;
   const meter = billsMeter(reserved, needs);
-  const money = (m: number, unit = true) => (hideAmounts.value ? HIDDEN : formatTnd(m, { unit }));
+  const money = (m: number, unit = true) => (hideAmounts.value ? HIDDEN : formatMoney(m, { unit }));
 
   const edit = (bill?: Bill) =>
     openSheet(

@@ -19,7 +19,7 @@ import { computeFacts } from '../../shared/facts';
 import { monthName } from '../../shared/format';
 import { t, type StringKey } from '../../shared/i18n/t';
 import { groupByDay, potBreakdown, titleOf } from '../../shared/ledger';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { normalize } from '../../shared/search';
 import './pot.css';
 
@@ -146,11 +146,11 @@ export function PotScreen({ store, onOpenExpense }: ScreenProps) {
             </span>
           </div>
           <div class="ps-big">
-            <b class="num">{formatTnd(left, { unit: false })}</b>
+            <b class="num">{formatMoney(left, { unit: false })}</b>
             <span>{t(left < 0 ? 'pot.unit' : current ? 'pot.rest' : 'pot.restPast')}</span>
             {current && left >= 0 && (
               <em class="num">
-                {t('pot.perDay', { amount: formatTnd(Math.floor(left / facts.daysLeft), { unit: false }) })}
+                {t('pot.perDay', { amount: formatMoney(Math.floor(left / facts.daysLeft), { unit: false }) })}
               </em>
             )}
           </div>
@@ -180,8 +180,8 @@ export function PotScreen({ store, onOpenExpense }: ScreenProps) {
           <div class="ps-cap">
             <span class="num">
               {t('pot.spentOf', {
-                spent: formatTnd(total, { unit: false }),
-                budget: formatTnd(budget, { unit: false }),
+                spent: formatMoney(total, { unit: false }),
+                budget: formatMoney(budget, { unit: false }),
               })}
             </span>
             <span>{current ? t('pot.daysLeft', { n: facts.daysLeft }) : monthName(period.label)}</span>
@@ -207,7 +207,7 @@ export function PotScreen({ store, onOpenExpense }: ScreenProps) {
                   <span>
                     <span class="bk-top">
                       <b>{categoryLabel(c.key)}</b>
-                      <b class="bk-amt num">{formatTnd(c.total, { unit: false })}</b>
+                      <b class="bk-amt num">{formatMoney(c.total, { unit: false })}</b>
                     </span>
                     <span class="bk-bar">
                       <i style={{ width: `${share * 100}%`, background: tint(pot, c.tint) }} />

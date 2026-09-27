@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { evaluate, type Candidate, type Sent, type UserSnapshot } from '../../../src/shared/notify/rules';
 import { dueDeposits, tunisInstant } from '../../../src/shared/payday';
 import {
@@ -215,8 +215,8 @@ describe('payday', () => {
     expect(c).toMatchObject({ trigger: 'payday', dedupeKey: 'payday:2026-09-01', action: null });
     expect(c.paydayDeposit).toEqual(device);
     expect(c.facts).toMatchObject({
-      salaire: formatTnd(2_000_000, { unit: false }),
-      besoins: formatTnd(1_000_000, { unit: false }),
+      salaire: formatMoney(2_000_000, { unit: false }),
+      besoins: formatMoney(1_000_000, { unit: false }),
       envies: '600',
       epargne: '400',
       objectif: 'Voyage',

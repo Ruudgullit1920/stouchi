@@ -6,7 +6,7 @@ import { sheet } from '../../../src/app/ui';
 import { createStore, type Store } from '../../../src/data/store';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { shortDate } from '../../../src/shared/format';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import {
   bill,
   coupleOn,
@@ -119,9 +119,9 @@ describe('Moi — the screen', () => {
 
   it('shows the plan rows with their values', () => {
     open();
-    expect(row(/Salaire mensuel/).textContent).toContain(formatTnd(2_000_000));
+    expect(row(/Salaire mensuel/).textContent).toContain(formatMoney(2_000_000));
     expect(row(/Répartition/).textContent).toContain('50 / 30 / 20');
-    expect(row(/Factures fixes/).textContent).toContain(`${formatTnd(125_000)} réservés ce mois`);
+    expect(row(/Factures fixes/).textContent).toContain(`${formatMoney(125_000)} réservés ce mois`);
     expect(row(/Factures fixes/).textContent).toMatch(/2$/);
     expect(row(/Jour de paie/).textContent).toContain('Le 1er');
     expect(row(/Jour de paie/).textContent).toContain(`Prochaine paie : ${shortDate('2026-10-01')}`);
@@ -146,7 +146,7 @@ describe('Moi — the screen', () => {
     });
     open();
     expect(row(/Salaire mensuel/).textContent).toContain(
-      `Passe à ${formatTnd(2_500_000)} le ${shortDate('2026-10-01')}`,
+      `Passe à ${formatMoney(2_500_000)} le ${shortDate('2026-10-01')}`,
     );
     expect(row(/Répartition/).textContent).not.toContain('Passe à');
   });
@@ -171,7 +171,7 @@ describe('Moi — the screen', () => {
     fireEvent.click(sw);
     expect(hideAmounts.value).toBe(true);
     expect(sw.getAttribute('aria-checked')).toBe('true');
-    expect(row(/Salaire mensuel/).textContent).not.toContain(formatTnd(2_000_000));
+    expect(row(/Salaire mensuel/).textContent).not.toContain(formatMoney(2_000_000));
     expect(screen.getByTestId('me-stats').textContent).not.toContain('150');
   });
 

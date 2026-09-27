@@ -18,7 +18,7 @@ import { addDays, daysBetween, isInPeriod, payPeriod, periodsBack, todayTunis } 
 import { monthName } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { groupByDay, historyLine, periodTotals, potBreakdown, titleOf } from '../../shared/ledger';
-import { formatTnd, splitSalary } from '../../shared/money';
+import { formatMoney, splitSalary } from '../../shared/money';
 import { planFor } from '../../shared/plan';
 import { searchExpenses } from '../../shared/search';
 import type { Expense } from '../../shared/schemas';
@@ -114,7 +114,9 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
             <section key={g.period.start} class="sgroup">
               <div class="sec">
                 <h2>{monthName(g.period.label)}</h2>
-                <span class="meta">{t('history.count', { count: g.count, amount: formatTnd(g.total) })}</span>
+                <span class="meta">
+                  {t('history.count', { count: g.count, amount: formatMoney(g.total) })}
+                </span>
               </div>
               <div class="list">
                 {g.items.map(({ expense, ranges }) =>
@@ -195,7 +197,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
           {current && ` · ${t('history.current')}`}
         </p>
         <p class="big num monthcard__total">
-          {formatTnd(total, { unit: false })}
+          {formatMoney(total, { unit: false })}
           <span class="unit">{t('unit.tnd')}</span>
         </p>
         <MonthBars
@@ -221,8 +223,8 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
               <i style={{ background: COLOR[p] }} aria-hidden="true" />
               {t(`pot.${p}`)}
             </span>
-            <b class="num">{formatTnd(totals[index][p], { unit: false })}</b>
-            <small>{t('budget.of', { amount: formatTnd(budgets[p], { unit: false }) })}</small>
+            <b class="num">{formatMoney(totals[index][p], { unit: false })}</b>
+            <small>{t('budget.of', { amount: formatMoney(budgets[p], { unit: false }) })}</small>
             <span class="potmini__bar" aria-hidden="true">
               <i
                 style={{
@@ -238,7 +240,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
             <i style={{ background: 'var(--save)' }} aria-hidden="true" />
             {t('pot.savings')}
           </span>
-          <b class="num">{formatTnd(saved, { unit: false })}</b>
+          <b class="num">{formatMoney(saved, { unit: false })}</b>
           <small>{t('budget.pot.saved')}</small>
           <span class="potmini__bar" aria-hidden="true">
             <i style={{ width: saved > 0 ? '100%' : '0%', background: 'var(--save)' }} />
@@ -286,7 +288,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
                       <i style={{ width: `${(c.total / cats[0].total) * 100}%`, background: COLOR[pot] }} />
                     </span>
                   </span>
-                  <span class="catrow__v num">{formatTnd(c.total, { unit: false })}</span>
+                  <span class="catrow__v num">{formatMoney(c.total, { unit: false })}</span>
                 </button>
               );
             })}
@@ -297,7 +299,7 @@ export function HistoryScreen({ store, onOpenExpense }: ScreenProps) {
             <span class="meta">
               {t('history.count', {
                 count: shown.length,
-                amount: formatTnd(shown.reduce((s, e) => s + e.amount_mil, 0)),
+                amount: formatMoney(shown.reduce((s, e) => s + e.amount_mil, 0)),
               })}
             </span>
           </div>
