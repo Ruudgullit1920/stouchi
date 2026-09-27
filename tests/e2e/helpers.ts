@@ -121,6 +121,9 @@ export async function restoreOnboarded(client?: SupabaseClient, firstName = 'Tes
     onboarded_at: new Date().toISOString(),
   });
   if (error) throw error;
+  /* once onboarded, the currency changes only through set_currency (a trigger keeps it otherwise) */
+  const reset = await c.rpc('set_currency', { p_code: 'TND' });
+  if (reset.error) throw reset.error;
 }
 
 /** Back to a first run: not onboarded, no active goal, no active bill. */

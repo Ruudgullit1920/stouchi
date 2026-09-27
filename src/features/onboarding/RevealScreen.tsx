@@ -60,6 +60,8 @@ export function RevealScreen({
           split_needs: profile.split_needs,
           split_wants: profile.split_wants,
           split_savings: profile.split_savings,
+          /* the whole row lands in the device's copy: without it, the display falls back to TND */
+          currency: profile.currency,
           onboarded_at: now().toISOString(),
         });
       clearDraft(profile.user_id);
