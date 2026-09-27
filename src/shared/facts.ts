@@ -14,9 +14,20 @@
  * Couple mode (Phase 6): Besoins is the household's — both budgets, and every
  * Besoins row passed in, whoever wrote it. Envies stays mine: a partner's
  * Envies row is dropped here even though RLS already hides it. Each partner
- * keeps their own pay period. */
+ * keeps their own pay period.
+ *
+ * The period onboarding happened in runs on what was left in the account
+ * (profiles.opening_mil) instead of the salary's Besoins + Envies, once the
+ * user has said (spec §4.6), split between the two in the plan's ratio. */
 import { billDueDates } from './bills';
-import { daysLeft as daysLeftIn, isInPeriod, payPeriod, type ISODate, type PayPeriod } from './dates';
+import {
+  daysLeft as daysLeftIn,
+  isInPeriod,
+  payPeriod,
+  todayTunis,
+  type ISODate,
+  type PayPeriod,
+} from './dates';
 import { splitSalary, type Mil, type Split } from './money';
 import { planFor } from './plan';
 import type { Bill, BillPayment, Debt, Expense, Income, Profile, SavingsMove } from './schemas';
@@ -84,6 +95,41 @@ function pot(budget: Mil, spent: Mil, reserved: Mil, moved: Mil): PotFacts {
   return { budget, spent, reserved, moved, left: holds - used, ratio, warn: ratio >= WARN_AT };
 }
 
+/** The pay period `period` is the one onboarding happened in. */
+function isOpeningPeriod(profile: Profile, period: PayPeriod): boolean {
+  return !!profile.onboarded_at && isInPeriod(todayTunis(new Date(profile.onboarded_at)), period);
+}
+
+/** Today falls in the period onboarding happened in: the only time the opening balance is asked. */
+export function inOpeningPeriod(profile: Profile, today: ISODate | PayPeriod): boolean {
+  return isOpeningPeriod(profile, typeof today === 'string' ? payPeriod(today, profile.payday) : today);
+}
+
+/** Besoins and Envies share `total` in the plan's ratio; all of it is Besoins when both are 0 %. */
+function splitOpening(total: Mil, split: Split): { needs: Mil; wants: Mil } {
+  const both = split.needs + split.wants;
+  const needs = both === 0 ? total : Math.floor((total * split.needs) / both);
+  return { needs, wants: total - needs };
+}
+
+/** The opening_mil to store for `balance`, what is in the account right now. What I
+ * already logged this period is already out of it (money moved in, already in), so
+ * it goes back in: Reste then shows `balance` minus the unpaid bills. Only my rows —
+ * a partner's Besoins never left my account. */
+export function openingBudget(input: FactsInput, balance: Mil): Mil {
+  const me = input.profile.user_id;
+  const own = <T extends { user_id: string }>(rows: T[]) => rows.filter((r) => r.user_id === me);
+  const { needs, wants } = computeFacts({
+    ...input,
+    profile: { ...input.profile, opening_mil: null },
+    expenses: own(input.expenses),
+    incomes: own(input.incomes),
+    savingsMoves: own(input.savingsMoves),
+    couple: null,
+  }).pots;
+  return Math.max(0, balance + needs.spent + wants.spent - needs.moved - wants.moved);
+}
+
 export function computeFacts({
   profile,
   expenses,
@@ -98,7 +144,10 @@ export function computeFacts({
   const period = payPeriod(today, profile.payday);
   /* a change waiting for the next payday counts from its period on (spec §4.6) */
   const plan = planFor(profile, period);
-  const budgets = splitSalary(plan.salary_mil, plan.split);
+  const salaryBudgets = splitSalary(plan.salary_mil, plan.split);
+  const opening = inOpeningPeriod(profile, period) ? (profile.opening_mil ?? null) : null;
+  const budgets =
+    opening === null ? salaryBudgets : { ...salaryBudgets, ...splitOpening(opening, plan.split) };
   const mine = (row: { user_id: string }, p: 'needs' | 'wants' | null) =>
     !couple || p !== 'wants' || row.user_id === couple.me;
   const incomes = allIncomes.filter((i) => mine(i, i.pot));

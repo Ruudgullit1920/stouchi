@@ -744,6 +744,14 @@ describe('pending plan on profiles (Phase 5)', () => {
     const [row] = await asOwner('select next_salary_mil from public.profiles where user_id = $1', [DAVE]);
     expect(row.next_salary_mil).toBeNull();
   });
+
+  it('opening_mil: the owner sets it, never negative, nobody else writes it (spec §4.6)', async () => {
+    expect(await setNext(DAVE, { opening_mil: 700_000 })).toHaveLength(1);
+    await expect(setNext(DAVE, { opening_mil: -1 })).rejects.toMatchObject(CHECK);
+    expect(await setNext(BOB, { opening_mil: 1 })).toEqual([]);
+    const [row] = await asOwner('select opening_mil from public.profiles where user_id = $1', [DAVE]);
+    expect(Number(row.opening_mil)).toBe(700_000);
+  });
 });
 
 describe('delete_my_account (Phase 5)', () => {

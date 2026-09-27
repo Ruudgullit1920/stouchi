@@ -34,6 +34,9 @@ const ProfileBase = z.object({
   next_split_wants: z.int().min(0).max(100).nullable().optional(),
   next_split_savings: z.int().min(0).max(100).nullable().optional(),
   next_from: date.nullable().optional(),
+  /* what was left in the account at onboarding: that period's Besoins + Envies
+     (spec §4.6). Optional, so older rows and inserts still parse. */
+  opening_mil: mil.nullable().optional(),
   created_at: instant,
   updated_at: instant,
 });
