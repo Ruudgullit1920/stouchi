@@ -1,5 +1,5 @@
-/* Phase 3: Aam Salah's chat on a real backend (plan Task 10). The preview
- * server has no /api/aam function, so each test stubs it with canned replies;
+/* Phase 3: Aam Salah's chat on a real backend (plan Task 10). The model's
+ * answers aren't deterministic, so each test stubs /api/aam with canned replies;
  * everything the app does with them (the local repos, the outbox, sync) is real. */
 import { expect, test, type Page } from '@playwright/test';
 import { blockingViolations, cleanUp, HAS_ACCOUNT, readMil, RUN, STORAGE_STATE, testClient } from './helpers';

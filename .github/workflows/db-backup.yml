@@ -27,13 +27,33 @@ jobs:
     env:
       BUCKET: stouchi-db-backups
     steps:
+      # Until the secrets above are set, a scheduled run says so and stops
+      # green instead of failing every Sunday; a manual run fails loudly.
+      - name: Secrets present
+        id: secrets
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: |
+          if [ -n "$SUPABASE_DB_URL" ] && [ -n "$BACKUP_AGE_RECIPIENT" ] && [ -n "$R2_ENDPOINT" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "::warning::DB backup skipped: the repository secrets are not set"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::The DB backup secrets are not set"; exit 1
+          fi
+
       # pg_dump must be at least the server's major version (Supabase runs 17)
       - name: Install pg_dump 17 and age
+        if: steps.secrets.outputs.ok == 'true'
         run: |
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y postgresql-client-17 age
 
       - name: Dump and encrypt
+        if: steps.secrets.outputs.ok == 'true'
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
@@ -47,6 +67,7 @@ jobs:
           ls -lh "$FILE"
 
       - name: Upload to R2
+        if: steps.secrets.outputs.ok == 'true'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

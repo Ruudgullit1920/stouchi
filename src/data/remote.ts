@@ -44,6 +44,8 @@ const CONFLICT: Partial<Record<Table, string>> = {
 };
 /** tables without updated_at are insert-only: their cursor is created_at */
 const CURSOR: Partial<Record<Table, string>> = { bill_payments: 'created_at', savings_moves: 'created_at' };
+/** The column a table's pull cursor follows; pullSince returns rows in its order, oldest first. */
+export const cursorColumn = (table: Table): string => CURSOR[table] ?? 'updated_at';
 const PAGE = 1000;
 
 /** PostgREST filter for "after this row" in (col, key) order: keyset paging,
@@ -95,7 +97,7 @@ export function supabaseRemote(client: Db, floor: () => ISODate): Remote {
     },
 
     async pullSince(table, cursor) {
-      const col = CURSOR[table] ?? 'updated_at';
+      const col = cursorColumn(table);
       const key = (CONFLICT[table] ?? 'id').split(',')[0];
       const rows: Row[] = [];
       for (;;) {

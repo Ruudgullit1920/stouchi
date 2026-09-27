@@ -44,7 +44,8 @@ jobs:
         with: { node-version: 24, cache: npm }
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
-      - name: E2E + axe on iPhone 13 and Pixel 7
+      - name: E2E + axe on iPhone 13 and Pixel 7 (on a local Cloudflare Pages server)
+        env: { WRANGLER_SEND_METRICS: 'false' }
         run: npm run e2e
       - uses: actions/upload-artifact@v4
         if: failure()

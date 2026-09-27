@@ -2,12 +2,12 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 
-/* Scope: the TypeScript app. The CommonJS assistant pipeline (lib/, api/*.js,
+/* Scope: the TypeScript app. The CommonJS assistant pipeline (lib/,
    scripts/*.js) is plain JavaScript and stays out of the TypeScript lint. */
 export default tseslint.config(
   {
     ignores: [
-      'dist/**', 'coverage/**', 'playwright-report/**', 'test-results/**',
+      'dist/**', 'coverage/**', 'playwright-report/**', 'test-results/**', '.wrangler/**',
       'prototype/**', '.superpowers/**', '**/*.js', '**/*.mjs', '**/*.cjs',
       /* Deno (npm: imports, the Deno global); its logic is src/server/notify, linted there */
       'supabase/functions/**',

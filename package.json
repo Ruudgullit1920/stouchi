@@ -11,6 +11,7 @@
     "build": "vite build",
     "build:notify": "node scripts/build-notify.mjs",
     "preview": "vite preview",
+    "preview:pages": "wrangler pages dev dist --ip 127.0.0.1",
     "typecheck": "tsc",
     "lint": "eslint .",
     "format": "prettier --write --no-error-on-unmatched-pattern \"src/**/*.{ts,tsx,css,json,html}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"*.mts\" playwright.config.ts tsconfig.json",
@@ -27,8 +28,6 @@
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@preact/signals": "^2.11.2",
-    "@sentry/browser": "^11.0.0",
-    "@sentry/node": "^11.0.0",
     "@supabase/auth-js": "^2.117.1",
     "@supabase/postgrest-js": "^2.117.1",
     "@supabase/supabase-js": "^2.117.1",
@@ -58,6 +57,7 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.0",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "wrangler": "4.141.0"
   }
 }

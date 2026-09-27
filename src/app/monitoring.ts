@@ -1,38 +1,45 @@
-/* Error tracking in the browser (spec §8.7): Sentry, loaded after the first
- * paint so it isn't part of the first-load budget (§8.4), and only when
- * VITE_SENTRY_DSN is set — dev, E2E and CI send nothing. Every event goes
- * through scrub(): nothing the user typed leaves the phone (§8.5). */
+/* Error tracking in the browser (spec §8.7): PostHog, loaded after the page has
+ * loaded and gone idle so it isn't part of the first-load budget (§8.4), and
+ * only when VITE_POSTHOG_KEY is set — dev, E2E and CI send nothing. It captures
+ * exceptions and our own events only: no autocapture, no session replay, no
+ * page text. Every event goes through scrubCapture(): nothing the user typed
+ * leaves the phone (§8.5). */
 import { setSyncFailureReporter } from '../data/report';
-import { scrub, type ReportEvent } from '../shared/scrub';
+import { scrubCapture, type CaptureEvent } from '../shared/scrub';
 
-export interface Tracker {
-  init(options: {
-    dsn: string;
-    release?: string;
-    sendDefaultPii: boolean;
-    tracesSampleRate: number;
-    beforeSend: (event: ReportEvent) => ReportEvent | null;
-    beforeBreadcrumb: (crumb: { category?: string }) => { category?: string } | null;
-  }): void;
-  captureMessage(message: string, options: { level: 'warning'; tags: Record<string, string> }): void;
+export interface Analytics {
+  init(key: string, options: Record<string, unknown>): unknown;
+  capture(event: string, properties: Record<string, string>): unknown;
+  register(properties: Record<string, string>): unknown;
 }
 
+const loadPosthog = () => import('posthog-js').then((m) => m.default as unknown as Analytics);
+
 export async function initMonitoring(
-  dsn: string | undefined = import.meta.env.VITE_SENTRY_DSN as string | undefined,
-  load: () => Promise<Tracker> = () => import('@sentry/browser') as unknown as Promise<Tracker>,
+  key: string | undefined = import.meta.env.VITE_POSTHOG_KEY as string | undefined,
+  load: () => Promise<Analytics> = loadPosthog,
+  release: string = (import.meta.env.VITE_RELEASE as string | undefined) ?? 'dev',
 ): Promise<boolean> {
-  if (!dsn) return false;
-  const sentry = await load();
-  sentry.init({
-    dsn,
-    release: import.meta.env.VITE_SENTRY_RELEASE as string | undefined,
-    sendDefaultPii: false,
-    tracesSampleRate: 0,
-    beforeSend: (event) => scrub(event),
-    beforeBreadcrumb: (crumb) => ({ category: crumb.category }),
+  if (!key) return false;
+  const posthog = await load();
+  posthog.init(key, {
+    api_host: (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://eu.i.posthog.com',
+    defaults: '2026-05-30',
+    person_profiles: 'identified_only',
+    capture_exceptions: true,
+    autocapture: false,
+    rageclick: false,
+    capture_dead_clicks: false,
+    capture_heatmaps: false,
+    disable_session_recording: true,
+    mask_all_text: true,
+    mask_all_element_attributes: true,
+    disable_surveys: true,
+    before_send: (event: CaptureEvent | null) => (event ? scrubCapture(event) : null),
   });
+  posthog.register({ release });
   setSyncFailureReporter(({ table, kind, code }) =>
-    sentry.captureMessage('sync_failed', { level: 'warning', tags: { table, kind, code } }),
+    posthog.capture('sync_failed', { table, kind, code: code || 'unknown' }),
   );
   return true;
 }

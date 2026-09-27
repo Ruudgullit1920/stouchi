@@ -4,9 +4,9 @@ A household budget PWA, written in French. Amounts are in Tunisian dinars (TND).
 
 ## Stack
 - Vite + Preact + TypeScript app in `src/`. Supabase (Postgres + RLS) for data and auth.
-- **Hosting: Cloudflare Pages**, project `stouchi-app` (`wrangler.jsonc`, output `dist/`). Headers and CSP are in `src/public/_headers`. `/api/aam` runs as a Pages Function (`functions/api/aam.ts`). `api/aam.ts` is the older Vercel entry point.
+- **Hosting: Cloudflare Pages**, project `stouchi-app` (`wrangler.jsonc`, output `dist/`). Headers and CSP are in `src/public/_headers`. `/api/aam` runs as a Pages Function (`functions/api/aam.ts`). Production is the `production` branch, previews are every other branch. `npm run preview:pages` serves `dist/` locally as Pages does, and the E2E suite runs on it.
 - Analytics and AI observability: PostHog (`posthog-js`, loaded on demand in `src/main.tsx`; `lib/ai-observability.js`).
-- Error tracking: Sentry, wired for Vercel only so far (see "Open decisions").
+- Error tracking: PostHog too (`src/app/monitoring.ts`, `src/server/monitoring.ts`). Everything sent goes through `src/shared/scrub.ts`: nothing the user typed leaves the device.
 - Push notifications: the Supabase Edge Function `supabase/functions/notify-run` (built by `npm run build:notify`).
 
 ## Where things are
@@ -22,7 +22,7 @@ A household budget PWA, written in French. Amounts are in Tunisian dinars (TND).
 - Phases 0–6 are done. Phase 7 (launch): Sessions A (hardening) and B (cut-over prep and a rehearsal on `stouchi-test`) are done. See their outcomes in the launch plan.
 - The Session A+B work was merged here from `budget-maison` in PR #9 (2026-09-27).
 - **Launch: Sunday 1 November 2026, morning, on Cloudflare Pages** (decided 2026-09-27).
-- **Next:** rewrite the Task 10 runbook for Cloudflare Pages (it still assumes Vercel), then settle Sentry vs PostHog. Session C (launch day) follows.
+- **Next:** Session B′ code is done (see "Session B′ outcome" in the launch plan). The owner creates the Cloudflare Pages project and disconnects the Vercel `stouchi` project and the `stouchi` Worker; then the preview checks and the rehearsal (Task 17), then Session C (launch day).
 - Still for the owner before launch:
   - the backfill dry run on production;
   - the Auth settings on production;
@@ -30,8 +30,7 @@ A household budget PWA, written in French. Amounts are in Tunisian dinars (TND).
   - the plan's "before Session C" list.
 
 ## Open decisions
-- **Sentry or PostHog for errors.** Sentry is Vercel-wired: `_headers` doesn't allow `*.sentry.io`, `functions/api/aam.ts` doesn't report, and the release reads `VERCEL_GIT_COMMIT_SHA`.
-- Carried over from Phase 7: the WebKit E2E input flake and the sync-loop finding.
+- Settled on 2026-09-27: D9 (address `https://stouchi-app.pages.dev`), D10 (PostHog for errors), D11 (production branch `production`). The WebKit input flake and the sync-loop finding are fixed (launch plan, "Session B′ outcome").
 
 ## Commands
 - `npm run dev`: Vite dev server, http://localhost:5173.

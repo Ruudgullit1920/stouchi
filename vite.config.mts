@@ -1,16 +1,15 @@
-import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, loadEnv, type Plugin } from 'vite';
-import { injectSw, precacheList } from './scripts/sw-inject';
+import { buildVersion, injectSw, precacheList } from './scripts/sw-inject';
 
 const envDir = fileURLToPath(new URL('.', import.meta.url));
 
-/* In dev, POST /api/aam runs the same handler as the Vercel function
-   (api/aam.ts). The pipeline is CommonJS, so it is required natively here
+/* In dev, POST /api/aam runs the same handler as the Pages Function
+   (functions/api/aam.ts). The pipeline is CommonJS, so it is required natively here
    and handed to the handler, which Vite loads from source. */
 function aamApi(): Plugin {
   return {
@@ -47,7 +46,7 @@ function aamApi(): Plugin {
 
 /* public/sw.js is copied as is; once the build is written, fill in its version
    and precache list (scripts/sw-inject). The version hashes the content-hashed
-   file names, so any change to the app installs a new worker. */
+   file names and index.html, so any change to the app installs a new worker. */
 function serviceWorker(): Plugin {
   let outDir = '';
   let files: string[] = [];
@@ -62,7 +61,7 @@ function serviceWorker(): Plugin {
     },
     closeBundle() {
       const path = join(outDir, 'sw.js');
-      const version = createHash('sha256').update(files.sort().join('\n')).digest('hex').slice(0, 12);
+      const version = buildVersion(files, readFileSync(join(outDir, 'index.html'), 'utf8'));
       writeFileSync(path, injectSw(readFileSync(path, 'utf8'), version, precacheList(files)));
     },
   };
@@ -75,9 +74,9 @@ export default defineConfig({
   /* .env stays at the repo root, next to the legacy app's */
   envDir,
   plugins: [preact(), aamApi(), serviceWorker()],
-  /* Sentry's release tag: the commit Vercel builds (spec §8.7) */
+  /* the release tag on error reports: the commit Cloudflare Pages builds (spec §8.7) */
   define: {
-    'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev'),
+    'import.meta.env.VITE_RELEASE': JSON.stringify(process.env.CF_PAGES_COMMIT_SHA ?? 'dev'),
   },
   build: {
     outDir: fileURLToPath(new URL('./dist', import.meta.url)),

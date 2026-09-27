@@ -34,23 +34,16 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-const phKey = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-/* loaded on demand, like Sentry: posthog-js alone would put first-load JS over
-   the 150 kB budget (spec §8.4, gated by npm run check:size) */
-if (phKey) {
-  void import('posthog-js')
-    .then(({ default: posthog }) => {
-      posthog.init(phKey, {
-        api_host: (import.meta.env.VITE_POSTHOG_HOST as string | undefined) ?? 'https://eu.i.posthog.com',
-        person_profiles: 'identified_only',
-        defaults: '2026-05-30',
-      });
-    })
-    .catch(() => undefined);
-}
-
 const root = document.getElementById('app');
 if (root) render(<App />, root);
 
-/* after the first paint, off the first-load budget (spec §8.4, §8.7) */
-setTimeout(() => void initMonitoring().catch(() => undefined), 0);
+/* PostHog (error tracking and analytics) once the page has loaded and gone
+   idle, so it neither counts in nor competes with the first load (spec §8.4,
+   §8.7; posthog-js alone would put first-load JS over the 150 kB budget) */
+const startMonitoring = () => void initMonitoring().catch(() => undefined);
+const whenIdle = () =>
+  'requestIdleCallback' in window
+    ? requestIdleCallback(startMonitoring, { timeout: 5000 })
+    : setTimeout(startMonitoring, 1000);
+if (document.readyState === 'complete') whenIdle();
+else addEventListener('load', whenIdle, { once: true });

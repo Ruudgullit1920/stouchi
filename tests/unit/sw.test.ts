@@ -8,14 +8,36 @@ import { injectSw } from '../../scripts/sw-inject';
 type Listener = (e: unknown) => void;
 /* vary: the response carries a Vary header (Vite preview sends Vary: Origin),
    so a lookup matches it only with ignoreVary */
-type Res = { ok: boolean; body: string; vary?: boolean; clone: () => Res };
+type Res = {
+  ok: boolean;
+  body: string;
+  vary?: boolean;
+  redirected?: boolean;
+  clone: () => Res;
+  blob: () => Promise<string>;
+};
 const ORIGIN = 'https://stouchi.test';
-const res = (body: string, ok = true, vary = false): Res => ({
+const res = (body: string, ok = true, vary = false, redirected = false): Res => ({
   ok,
   body,
   vary,
-  clone: () => res(body, ok, vary),
+  redirected,
+  clone: () => res(body, ok, vary, redirected),
+  blob: () => Promise.resolve(body),
 });
+/* the worker rebuilds a redirected response with `new Response(blob, init)` */
+class FakeResponse {
+  ok: boolean;
+  redirected = false;
+  constructor(
+    public body: string,
+    init: { status?: number } = {},
+  ) {
+    this.ok = (init.status ?? 200) < 400;
+  }
+}
+/* a url whose network answer went through a redirect (Pages: /index.html → /) */
+const REDIRECTED = '__redirected__:';
 const HANG = '__hang__';
 const abs = (u: string | { url: string }) => new URL(typeof u === 'string' ? u : u.url, ORIGIN).href;
 
@@ -32,6 +54,8 @@ function loadWorker(
     const body = net.get(abs(req));
     /* HANG: a connection that is up but never answers (weak Wi-Fi) */
     if (body === HANG) return new Promise<Res>(() => {});
+    if (body?.startsWith(REDIRECTED))
+      return Promise.resolve(res(body.slice(REDIRECTED.length), true, false, true));
     return body === undefined ? Promise.reject(new TypeError('offline')) : Promise.resolve(res(body));
   });
   const store = new Map<string, Map<string, Res>>(
@@ -93,7 +117,7 @@ function loadWorker(
     opts.version ?? 'v1',
     opts.precache ?? [],
   );
-  runInNewContext(source, { self, caches, fetch, URL, setTimeout });
+  runInNewContext(source, { self, caches, fetch, URL, setTimeout, Response: FakeResponse });
   const fire = async (type: string, event: Record<string, unknown>) => {
     let work: Promise<unknown> = Promise.resolve();
     listeners.get(type)?.({ ...event, waitUntil: (p: Promise<unknown>) => (work = p) });
@@ -156,15 +180,31 @@ describe('sw.js — push', () => {
 });
 
 describe('sw.js — offline shell and updates (spec §8.3)', () => {
-  const SHELL = ['/index.html', '/assets/index-a.js'];
+  const SHELL = ['/', '/assets/index-a.js'];
 
   it("install precaches this build's shell and waits: no skipWaiting", async () => {
     const w = loadWorker([], { version: 'v2', precache: SHELL });
-    w.net.set(abs('/index.html'), '<html>v2');
+    w.net.set(abs('/'), '<html>v2');
     w.net.set(abs('/assets/index-a.js'), 'js v2');
     await w.fire('install', {});
     expect([...w.store.get('stouchi-v2')!.keys()]).toEqual(SHELL.map(abs));
     expect(w.self.skipWaiting).not.toHaveBeenCalled();
+  });
+
+  it('a shell the host answered through a redirect is stored as a plain response (Cloudflare Pages)', async () => {
+    const w = loadWorker([], { version: 'v2', precache: SHELL });
+    w.net.set(abs('/'), `${REDIRECTED}<html>v2`);
+    w.net.set(abs('/assets/index-a.js'), 'js v2');
+    await w.fire('install', {});
+    const shell = w.store.get('stouchi-v2')!.get(abs('/')) as unknown as FakeResponse;
+    expect(shell).toBeInstanceOf(FakeResponse);
+    expect(shell).toMatchObject({ body: '<html>v2', redirected: false });
+  });
+
+  it('a failed precache fails the install, so a half-cached version never takes over', async () => {
+    const w = loadWorker([], { version: 'v2', precache: SHELL });
+    w.net.set(abs('/'), '<html>v2');
+    await expect(w.fire('install', {})).rejects.toThrow();
   });
 
   it('activate keeps this version and the one before (an old window may still lazy-load from it), drops older ones', async () => {
@@ -186,13 +226,13 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
   });
 
   it('a page load goes to the network first', async () => {
-    const w = loadWorker([], { caches: { 'stouchi-v1': { '/index.html': res('<html>old') } } });
+    const w = loadWorker([], { caches: { 'stouchi-v1': { '/': res('<html>old') } } });
     w.net.set(abs('/budget'), '<html>new');
     expect((await w.request('/budget', { mode: 'navigate' })) as Res).toMatchObject({ body: '<html>new' });
   });
 
   it('offline, a page load gets the cached shell', async () => {
-    const w = loadWorker([], { caches: { 'stouchi-v1': { '/index.html': res('<html>cached') } } });
+    const w = loadWorker([], { caches: { 'stouchi-v1': { '/': res('<html>cached') } } });
     expect((await w.request('/', { mode: 'navigate' })) as Res).toMatchObject({ body: '<html>cached' });
   });
 
@@ -200,8 +240,8 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
     const w = loadWorker([], {
       version: 'v2',
       caches: {
-        'stouchi-v1': { '/index.html': res('<html>v1') },
-        'stouchi-v2': { '/index.html': res('<html>v2') },
+        'stouchi-v1': { '/': res('<html>v1') },
+        'stouchi-v2': { '/': res('<html>v2') },
       },
     });
     expect((await w.request('/', { mode: 'navigate' })) as Res).toMatchObject({ body: '<html>v2' });
@@ -210,7 +250,7 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
   it('a page load that hangs falls back to the cached shell after 3 s (review m2)', async () => {
     vi.useFakeTimers();
     try {
-      const w = loadWorker([], { caches: { 'stouchi-v1': { '/index.html': res('<html>cached') } } });
+      const w = loadWorker([], { caches: { 'stouchi-v1': { '/': res('<html>cached') } } });
       w.net.set(abs('/'), HANG);
       const answer = w.request('/', { mode: 'navigate' });
       await vi.advanceTimersByTimeAsync(3000);
@@ -248,7 +288,7 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
 
   it('the offline shell is found even when stored with a Vary header', async () => {
     const w = loadWorker([], {
-      caches: { 'stouchi-v1': { '/index.html': res('<html>cached', true, true) } },
+      caches: { 'stouchi-v1': { '/': res('<html>cached', true, true) } },
     });
     expect((await w.request('/', { mode: 'navigate' })) as Res).toMatchObject({ body: '<html>cached' });
   });

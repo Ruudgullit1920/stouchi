@@ -1,5 +1,12 @@
 name: Aam Salah eval
+# Spec §8.6: nightly from the default branch, on every push that changes the
+# assistant's instructions or the eval, and by hand.
 on:
+  schedule:
+    - cron: '0 2 * * *' # every night, 02:00 UTC
+  push:
+    branches: [main]
+    paths: ['lib/aam-salah/**', 'scripts/eval-aam-salah.js']
   workflow_dispatch:
 permissions:
   contents: read
