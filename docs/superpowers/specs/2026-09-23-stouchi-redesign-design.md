@@ -197,7 +197,7 @@ animated element is interactive immediately.
 ### 5.6 Accessibility (WCAG 2.1 AA)
 Text contrast ≥ 4.5 : 1 (3 : 1 for ≥ 18 px bold) — check white-on-pot-colour cards; touch targets
 ≥ 44 × 44 px (where the prototype draws a smaller button — 40 px icon buttons, 36 px pills and avatar —
-a transparent `::after` extends the target); every icon button has a label; tabs, pills and toggles expose `aria-selected` /
+the button's box stays 44 px and a `::before` draws the prototype's shape inside it); every icon button has a label; tabs, pills and toggles expose `aria-selected` /
 `aria-pressed` / `aria-checked`; sheets and push screens trap focus and return it on close; live
 regions for chat replies and toasts; the month bar picker is keyboard-operable; no information by
 colour alone (pot names always shown next to colours). White text never sits on `--acc` (3.0 : 1): the
