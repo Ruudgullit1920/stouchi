@@ -7,10 +7,10 @@ import { HIDDEN } from './hideAmounts';
 
 type Kind = 'needs' | 'wants' | 'savings';
 const LOOK: Record<Kind, { icon: string; color: string }> = {
-  /* the *-ink shades: white text on them passes AA (spec §5.6) */
-  needs: { icon: 'house', color: 'var(--need-ink)' },
-  wants: { icon: 'sparkles', color: 'var(--want-ink)' },
-  savings: { icon: 'money_bag', color: 'var(--save-ink)' },
+  /* the prototype's pot colours, as the owner asked (spec §5.6 notes the contrast) */
+  needs: { icon: 'house', color: 'var(--need)' },
+  wants: { icon: 'sparkles', color: 'var(--want)' },
+  savings: { icon: 'money_bag', color: 'var(--save)' },
 };
 
 type Props = {

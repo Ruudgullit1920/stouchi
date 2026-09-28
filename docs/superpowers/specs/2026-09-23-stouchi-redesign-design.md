@@ -215,6 +215,8 @@ the button's box stays 44 px and a `::before` draws the prototype's shape inside
 regions for chat replies and toasts; the month bar picker is keyboard-operable; no information by
 colour alone (pot names always shown next to colours). White text never sits on `--acc` (3.0 : 1): the
 prototype's orange CTAs use `--acc-cta` `#D43F1C` (4.6 : 1), disabled `--acc-cta-off` `#FFC3B5`.
+Exception (owner's call, 2026-09-28): the three pot cards use the prototype's `--need` / `--want` /
+`--save` behind their white text (about 3.5, 4.2 and 2.8 : 1), not the `*-ink` shades.
 
 ## 6. Content and voice
 French, "tu", short sentences, no jargon, no guilt. Aam Salah speaks in the chat, the notifications,

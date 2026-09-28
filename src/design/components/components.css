@@ -224,16 +224,14 @@ span.ic.d3 .i3d,
 
 /* Segmented bar */
 .segbar {
+  /* the prototype's bar: separate rounded segments, no track (the "reste" segment is the grey) */
   display: flex;
-  gap: 4px;
-  height: 14px;
-  border-radius: var(--r-pill);
-  background: var(--line);
-  overflow: hidden;
+  gap: 3px;
+  height: 10px;
 }
 .segbar__seg {
   height: 100%;
-  border-radius: var(--r-pill);
+  border-radius: 5px;
   transform-origin: left;
   animation: grow 800ms var(--ease) both;
 }

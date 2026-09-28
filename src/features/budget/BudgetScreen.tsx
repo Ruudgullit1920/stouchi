@@ -91,7 +91,8 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           { label: t('pot.needs'), mil: needs.spent, color: 'var(--need)' },
           { label: t('pot.wants'), mil: wants.spent, color: 'var(--want)' },
           { label: t('budget.bar.reserved'), mil: needs.reserved, color: 'var(--need-soft)' },
-          { label: t('budget.bar.left'), mil: Math.max(0, facts.left), color: 'var(--line)' },
+          { label: t('pot.savings'), mil: savings.budget, color: 'var(--save)' },
+          { label: t('budget.bar.left'), mil: Math.max(0, facts.left), color: 'var(--track)' },
         ]}
       />
       <p class="legend">
