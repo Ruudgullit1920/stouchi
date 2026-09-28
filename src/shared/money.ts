@@ -41,6 +41,12 @@ export function formatTnd(
   return prefix + figure + (unit ? ' TND' : '');
 }
 
+/** Down to the tenth of a dinar (84,666 → 84,6; −1,234 → −1,3), for summary figures:
+ * cut, never rounded up, so they never show more money than there is. */
+export function floorTenth(mil: Mil): Mil {
+  return Math.floor(mil / 100) * 100;
+}
+
 export interface Split {
   needs: number;
   wants: number;

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SPLIT,
   MAX_MIL,
+  floorTenth,
   formatTnd,
   isValidSplit,
   milFromTnd,
@@ -111,5 +112,17 @@ describe('splitSalary', () => {
     expect(isValidSplit({ needs: 50, wants: 30, savings: 30 })).toBe(false);
     expect(isValidSplit({ needs: 50.5, wants: 29.5, savings: 20 })).toBe(false);
     expect(isValidSplit({ needs: -10, wants: 90, savings: 20 })).toBe(false);
+  });
+});
+
+describe('floorTenth', () => {
+  it('cuts to one decimal, never rounds up', () => {
+    expect(formatTnd(floorTenth(84_666), { unit: false })).toBe('84,6');
+    expect(formatTnd(floorTenth(2_485_649), { unit: false })).toBe('2 485,6');
+    expect(formatTnd(floorTenth(84_099), { unit: false })).toBe('84');
+  });
+
+  it('a negative goes further down, never shows less overspend', () => {
+    expect(formatTnd(floorTenth(-1_234), { unit: false })).toBe('−1,3');
   });
 });
