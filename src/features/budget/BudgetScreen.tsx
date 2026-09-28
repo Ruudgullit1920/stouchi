@@ -166,7 +166,7 @@ export function BudgetScreen({ store, onOpenExpense, onAdd }: ScreenProps) {
           ))
         ) : (
           <div class="first-exp">
-            <button type="button" class="first-exp__ic" aria-label={t('nav.add')} onClick={onAdd}>
+            <button type="button" class="first-exp__ic" aria-label={t('budget.first.add')} onClick={onAdd}>
               <Plus size={20} aria-hidden="true" />
             </button>
             <span>

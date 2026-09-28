@@ -35,6 +35,16 @@ describe('BudgetScreen', () => {
     expect(screen.getByRole('status', { name: 'Chargement…' })).toBeTruthy();
   });
 
+  it('the first-expense "+" is a button that opens the add menu, named apart from the tab bar +', () => {
+    store.profile.value = profile();
+    ready(store);
+    const onAdd = vi.fn();
+    render(<BudgetScreen store={store} onAdd={onAdd} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter ma première dépense' }));
+    expect(onAdd).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Ajouter une dépense' })).toBeNull();
+  });
+
   it('shows the error state when the first load fails', () => {
     store.sync.value = { ...store.sync.value, load: 'error' };
     render(<BudgetScreen store={store} />);
