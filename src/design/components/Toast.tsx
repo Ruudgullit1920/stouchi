@@ -10,19 +10,25 @@ export interface ToastData {
 
 type Props = { toast: ToastData | null; onDismiss: () => void; duration?: number };
 
+/* An undo toast stays 6 s (spec §4.4); a plain confirmation only needs a glance. */
+const ACTION_MS = 6000;
+const PLAIN_MS = 2500;
+
 /** The live region stays mounted so screen readers announce each new toast (spec §5.6). */
-export function Toast({ toast, onDismiss, duration = 6000 }: Props) {
+export function Toast({ toast, onDismiss, duration }: Props) {
   /* A new onDismiss each render, or a new-but-same-id toast object, must not restart the
      timer: key the effect on the id itself and read the latest callback from a ref,
      the same pattern as Sheet's close ref. */
   const dismiss = useRef(onDismiss);
   dismiss.current = onDismiss;
 
+  const ms = duration ?? (toast?.actionLabel ? ACTION_MS : PLAIN_MS);
+
   useEffect(() => {
     if (!toast) return;
-    const timer = setTimeout(() => dismiss.current(), duration);
+    const timer = setTimeout(() => dismiss.current(), ms);
     return () => clearTimeout(timer);
-  }, [toast?.id, duration]);
+  }, [toast?.id, ms]);
 
   return (
     <div class="toast-region" role="status" aria-live="polite">

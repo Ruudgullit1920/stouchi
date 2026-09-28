@@ -344,7 +344,8 @@ span.ic.d3 .i3d,
   position: fixed;
   left: var(--gutter);
   right: var(--gutter);
-  bottom: calc(24px + env(safe-area-inset-bottom));
+  /* above the tab bar, not over it */
+  bottom: calc(env(safe-area-inset-bottom) + 14px + var(--nav-h) + 12px);
   z-index: 60;
   display: flex;
   justify-content: center;
@@ -362,10 +363,6 @@ span.ic.d3 .i3d,
   color: #fff;
   font-weight: 600;
   animation: slide-up 320ms var(--ease) both;
-}
-/* "Nouvelle version" stays until tapped: above the tab bar, not over it */
-.toast-region--update {
-  bottom: calc(env(safe-area-inset-bottom) + 14px + var(--nav-h) + 12px);
 }
 .toast__action {
   min-height: 44px;
