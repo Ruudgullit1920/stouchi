@@ -12,7 +12,7 @@ import { TabBar } from './TabBar';
 import { ToastHost } from './ToastHost';
 import { UpdateToast } from './UpdateToast';
 
-export type ScreenProps = { store: Store; onOpenExpense?: (e: Expense) => void };
+export type ScreenProps = { store: Store; onOpenExpense?: (e: Expense) => void; onAdd?: () => void };
 type Props = {
   store: Store;
   screens: Partial<Record<RouteName, ComponentType<ScreenProps>>>;
@@ -40,7 +40,7 @@ export function Shell({ store, screens, onAdd, addOpen, onOpenExpense, onRetry, 
         <SessionLost store={store} />
         <FailedWrites store={store} onRetry={onRetry} onDiscard={onDiscard} />
         <Suspense fallback={<Skeleton lines={6} />}>
-          {Screen && <Screen store={store} onOpenExpense={onOpenExpense} />}
+          {Screen && <Screen store={store} onOpenExpense={onOpenExpense} onAdd={onAdd} />}
         </Suspense>
       </main>
       <TabBar onAdd={onAdd} addOpen={addOpen} />

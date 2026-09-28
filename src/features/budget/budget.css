@@ -251,6 +251,13 @@ button.avatar::before {
   color: #fff;
   display: grid;
   place-items: center;
+  position: relative;
+}
+/* a 44px touch target around the 40px circle (spec §5.6) */
+.first-exp__ic::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
 }
 .first-exp b {
   display: block;
