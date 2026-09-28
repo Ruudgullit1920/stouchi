@@ -98,3 +98,43 @@ describe('geminiCaller', () => {
     await expect(call(new Response('{"choices":[]}'))('p', new AbortController().signal)).rejects.toThrow();
   });
 });
+
+describe('geminiCaller with several keys', () => {
+  const ok = () =>
+    new Response(JSON.stringify({ choices: [{ message: { content: '{"titre":"a","texte":"b"}' } }] }));
+  const bearers = (fetchFn: { mock: { calls: unknown[][] } }) =>
+    fetchFn.mock.calls.map((c) => ((c[1] as RequestInit).headers as Record<string, string>).Authorization);
+
+  it('falls through to the next key when the first is out of quota', async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(new Response('quota', { status: 429 }))
+      .mockResolvedValueOnce(ok());
+    const call = geminiCaller({ key: 'a, b', model: 'm', fetchFn });
+    await expect(call('p', new AbortController().signal)).resolves.toBe('{"titre":"a","texte":"b"}');
+    expect(bearers(fetchFn)).toEqual(['Bearer a', 'Bearer b']);
+  });
+  it('uses the first key alone while it works', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(ok());
+    await geminiCaller({ key: 'a,b', model: 'm', fetchFn })('p', new AbortController().signal);
+    expect(bearers(fetchFn)).toEqual(['Bearer a']);
+  });
+  it('throws the last error once every key has failed', async () => {
+    const fetchFn = vi.fn().mockImplementation(() => Promise.resolve(new Response('no', { status: 403 })));
+    await expect(
+      geminiCaller({ key: 'a,b', model: 'm', fetchFn })('p', new AbortController().signal),
+    ).rejects.toThrow('403');
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+  it('stops at once when the budget signal has aborted', async () => {
+    const abort = new AbortController();
+    const fetchFn = vi.fn().mockImplementation(() => {
+      abort.abort();
+      return Promise.reject(new Error('aborted'));
+    });
+    await expect(geminiCaller({ key: 'a,b', model: 'm', fetchFn })('p', abort.signal)).rejects.toThrow(
+      'aborted',
+    );
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+});

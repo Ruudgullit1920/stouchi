@@ -37,3 +37,12 @@ export function handleAam(p: {
 /** The reply shown when an action was dropped: never a sentence claiming it happened. */
 export const SAFE: { fr: string; en: string };
 export const DEFAULT_CHAIN: string;
+
+/** The models to try, in order: one entry per model and key (a key variable may hold several, comma-separated). */
+export function chainFromEnv(env: Record<string, string | undefined>): {
+  provider: string;
+  model: string;
+  url: string;
+  key: string;
+  extra: Record<string, unknown>;
+}[];
