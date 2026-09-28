@@ -91,7 +91,8 @@ test.describe('signed in', () => {
     const spent = (data ?? []).reduce((s, e: { amount_mil: number }) => s + e.amount_mil, 0);
     await expect
       .poll(async () => readMil((await page.locator('.hero .big').textContent()) ?? ''))
-      .toBe(1_600_000 - spent);
+      /* the hero is cut to the tenth of a dinar */
+      .toBe(Math.floor((1_600_000 - spent) / 100) * 100);
     await noViolations(page);
     await expect
       .poll(async () => {

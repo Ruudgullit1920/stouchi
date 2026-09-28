@@ -19,7 +19,7 @@ import { computeFacts } from '../../shared/facts';
 import { initials, monthName, shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { titleOf } from '../../shared/ledger';
-import { formatMoney } from '../../shared/money';
+import { floorTenth, formatMoney } from '../../shared/money';
 import { Bell } from '../notifications/Bell';
 import { HIDDEN, hideAmounts, toggleHideAmounts } from './hideAmounts';
 import { maybeAskOpening } from './OpeningSheet';
@@ -78,11 +78,11 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
       </div>
       <div class="hero">
         <p class={facts.left < 0 ? 'big num big--over' : 'big num'}>
-          {money(left)}
+          {money(floorTenth(left))}
           <span class="unit">{t('unit.money')}</span>
         </p>
         <p class="perday">
-          <b class="num">{t('budget.perDay', { amount: money(facts.perDay) })}</b>
+          <b class="num">{t('budget.perDay', { amount: money(floorTenth(facts.perDay)) })}</b>
           <span>{t('period.daysLeft', { n: facts.daysLeft })}</span>
         </p>
       </div>
