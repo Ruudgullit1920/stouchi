@@ -26,7 +26,7 @@ import { UpcomingList } from './UpcomingList';
 import './budget.css';
 
 /** Home (spec §3): what can I still spend? */
-export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
+export function BudgetScreen({ store, onOpenExpense, onAdd }: ScreenProps) {
   const profile = store.profile.value;
   const { load } = store.sync.value;
   const facts = profile ? computeFacts(factsInput(store, profile, todayTunis())) : null;
@@ -155,9 +155,9 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           ))
         ) : (
           <div class="first-exp">
-            <span class="first-exp__ic" aria-hidden="true">
-              <Plus size={20} />
-            </span>
+            <button type="button" class="first-exp__ic" aria-label={t('nav.add')} onClick={onAdd}>
+              <Plus size={20} aria-hidden="true" />
+            </button>
             <span>
               <b>{t('budget.first.title')}</b>
               <span>{t('budget.first.body')}</span>
