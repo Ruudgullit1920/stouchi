@@ -298,6 +298,7 @@
   "budget.nothingDue": "Rien à payer d’ici ta paie.",
   "budget.first.title": "Note ta première dépense",
   "budget.first.body": "Touche le +, et c’est noté.",
+  "budget.first.add": "Ajouter ma première dépense",
   "budget.pot.saved": "mis de côté",
   "budget.pot.over": "dépassé de {amount}",
   "budget.pot.warn": "Attention",
