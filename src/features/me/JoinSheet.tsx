@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks';
 import { CoupleError } from '../../data/couple';
+import type { CurrencyCode } from '../../shared/currencies';
 import { t, type StringKey } from '../../shared/i18n/t';
 
 const PREFIX = 'STC';
@@ -18,8 +19,9 @@ export function codeInput(typed: string): { shown: string; code: string | null }
 }
 
 type Props = {
-  join: (code: string) => Promise<void>;
-  onJoined: () => void;
+  join: (code: string) => Promise<{ currency: CurrencyCode | null } | void>;
+  /** `currency`: mine changed to the host's */
+  onJoined: (currency: CurrencyCode | null) => void;
 };
 
 /** J'ai reçu un code (prototype `joincode`): the partner's code, and why it was refused. */
@@ -34,8 +36,8 @@ export function JoinSheet({ join, onJoined }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await join(code);
-      onJoined();
+      const joined = await join(code);
+      onJoined(joined?.currency ?? null);
     } catch (err) {
       setError(err instanceof CoupleError ? err.key : 'couple.err.generic');
       setBusy(false);

@@ -7,7 +7,7 @@ import { applyUpdate, updateReady } from './update';
 export function UpdateToast() {
   if (!updateReady.value || sheet.value) return null;
   return (
-    <div class="toast-region toast-region--update" role="status">
+    <div class="toast-region" role="status">
       <div class="toast">
         <span>{t('update.ready')}</span>
         <button type="button" class="toast__action" onClick={applyUpdate}>

@@ -1187,3 +1187,15 @@ ul.rem {
 .me-sheet .codein + .field-error {
   margin-top: 8px;
 }
+.srow .ic.img img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: block;
+}
+.srow:disabled {
+  cursor: default;
+}
+.srow:disabled .chev {
+  opacity: 0.3;
+}

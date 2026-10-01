@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { payPeriod, periodsBack } from '../../src/shared/dates';
 import { groupByDay, historyLine, periodTotals, potBreakdown, titleOf } from '../../src/shared/ledger';
-import { formatTnd } from '../../src/shared/money';
+import { formatMoney } from '../../src/shared/money';
 import { expense } from './fixtures';
 
 const sept = payPeriod('2026-09-10', 1);
@@ -105,7 +105,7 @@ describe('historyLine', () => {
     ];
     expect(historyLine(exps, sept, aug)).toEqual({
       key: 'history.line.up',
-      vars: { category: 'Courses', amount: formatTnd(300_000), delta: formatTnd(50_000) },
+      vars: { category: 'Courses', amount: formatMoney(300_000), delta: formatMoney(50_000) },
     });
   });
 
@@ -115,7 +115,7 @@ describe('historyLine', () => {
       expense({ category: 'courses', amount_mil: 250_000, spent_on: '2026-08-12' }),
     ];
     expect(historyLine(down, sept, aug)?.key).toBe('history.line.down');
-    expect(historyLine(down, sept, aug)?.vars.delta).toBe(formatTnd(150_000));
+    expect(historyLine(down, sept, aug)?.vars.delta).toBe(formatMoney(150_000));
     expect(historyLine([expense({ amount_mil: 100_000 })], sept, aug)?.key).toBe('history.line.first');
   });
 });

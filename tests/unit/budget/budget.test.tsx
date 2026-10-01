@@ -6,7 +6,7 @@ import { createStore, type Store } from '../../../src/data/store';
 import { BudgetScreen } from '../../../src/features/budget/BudgetScreen';
 import { hideAmounts } from '../../../src/features/budget/hideAmounts';
 import { computeFacts } from '../../../src/shared/facts';
-import { formatTnd } from '../../../src/shared/money';
+import { formatMoney } from '../../../src/shared/money';
 import { bill, coupleOn, expense, HOUSEHOLD, PARTNER, profile } from '../fixtures';
 
 let store: Store;
@@ -35,6 +35,16 @@ describe('BudgetScreen', () => {
     expect(screen.getByRole('status', { name: 'Chargement…' })).toBeTruthy();
   });
 
+  it('the first-expense "+" is a button that opens the add menu, named apart from the tab bar +', () => {
+    store.profile.value = profile();
+    ready(store);
+    const onAdd = vi.fn();
+    render(<BudgetScreen store={store} onAdd={onAdd} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ajouter ma première dépense' }));
+    expect(onAdd).toHaveBeenCalledOnce();
+    expect(screen.queryByRole('button', { name: 'Ajouter une dépense' })).toBeNull();
+  });
+
   it('shows the error state when the first load fails', () => {
     store.sync.value = { ...store.sync.value, load: 'error' };
     render(<BudgetScreen store={store} />);
@@ -61,7 +71,7 @@ describe('BudgetScreen', () => {
     });
     const { container } = render(<BudgetScreen store={store} />);
     expect(norm(container.querySelector('.hero')?.textContent ?? '')).toContain(
-      norm(formatTnd(f.left, { unit: false })),
+      norm(formatMoney(f.left, { unit: false })),
     );
     expect(screen.getByText('21 jours restants')).toBeTruthy();
     const pots = container.querySelectorAll('.pot');
@@ -86,7 +96,7 @@ describe('BudgetScreen', () => {
     store.expenses.value = [expense({ amount_mil: 650_000, category: 'cafe', pot: 'wants' })];
     ready(store);
     render(<BudgetScreen store={store} />);
-    expect(norm(screen.getByText(/dépassé de/).textContent)).toContain(norm(formatTnd(50_000)));
+    expect(norm(screen.getByText(/dépassé de/).textContent)).toContain(norm(formatMoney(50_000)));
   });
 
   it('hides and shows the amounts with the eye, and remembers it', () => {

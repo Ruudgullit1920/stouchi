@@ -71,6 +71,28 @@ describe('Partager à deux — off', () => {
     expect(sheet.value?.title).toBe('Rejoindre un foyer');
   });
 
+  it('after a join, says when my currency changed to the host’s', async () => {
+    store.household.value = SOLO;
+    api.join = vi.fn().mockResolvedValue({ currency: 'EUR' });
+    open();
+    fireEvent.click(button(/J'ai reçu un code/));
+    openedSheet();
+    fireEvent.input(screen.getByLabelText("Code d'invitation"), { target: { value: 'STCABC234' } });
+    fireEvent.click(button('Rejoindre le foyer'));
+    await waitFor(() => expect(toast.value?.message).toBe('Ta devise passe à EUR'));
+  });
+
+  it('after a join that kept my currency, says the usual', async () => {
+    store.household.value = SOLO;
+    api.join = vi.fn().mockResolvedValue({ currency: null });
+    open();
+    fireEvent.click(button(/J'ai reçu un code/));
+    openedSheet();
+    fireEvent.input(screen.getByLabelText("Code d'invitation"), { target: { value: 'STCABC234' } });
+    fireEvent.click(button('Rejoindre le foyer'));
+    await waitFor(() => expect(toast.value?.message).toBe('Vous gérez le foyer à deux'));
+  });
+
   it('offline, every action is disabled and says why', () => {
     store.household.value = SOLO;
     store.sync.value = { ...store.sync.value, online: false };

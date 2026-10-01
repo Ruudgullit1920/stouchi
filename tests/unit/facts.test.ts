@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeFacts, type FactsInput } from '../../src/shared/facts';
+import { computeFacts, inOpeningPeriod, openingBudget, type FactsInput } from '../../src/shared/facts';
 import { bill, debt, expense, income, move, payment, profile, uuidN } from './fixtures';
 
 const base = (p: Partial<FactsInput> = {}): FactsInput => ({
@@ -364,5 +364,74 @@ describe('computeFacts — couple mode (Phase 6)', () => {
     expect(partners.period.start).toBe('2026-09-05');
     expect(partners.pots.needs.spent).toBe(20_000);
     expect(partners.pots.needs.budget).toBe(900_000 + 1_000_000);
+  });
+});
+
+describe('computeFacts — the opening balance (spec §4.6)', () => {
+  /* joined on 2026-09-01; the September period is the one onboarding happened in */
+  const joined = (opening_mil: number | null, p: Partial<FactsInput['profile']> = {}) =>
+    profile({ opening_mil, ...p });
+
+  it('runs the joining period on it, split between Besoins and Envies in the plan ratio', () => {
+    const f = computeFacts(base({ profile: joined(800_000) }));
+    expect(f.pots.needs.budget).toBe(500_000);
+    expect(f.pots.wants.budget).toBe(300_000);
+    expect(f.pots.savings.budget).toBe(400_000);
+    expect(f.left).toBe(800_000);
+  });
+
+  it('is back to the salary from the next payday', () => {
+    const f = computeFacts(base({ profile: joined(800_000), today: '2026-10-05' }));
+    expect(f.left).toBe(1_600_000);
+  });
+
+  it('changes nothing while unanswered', () => {
+    expect(computeFacts(base({ profile: joined(null) })).left).toBe(1_600_000);
+  });
+
+  it('puts it all in Besoins when Besoins and Envies are both 0 %', () => {
+    const p = joined(500_000, { split_needs: 0, split_wants: 0, split_savings: 100 });
+    const f = computeFacts(base({ profile: p }));
+    expect(f.pots.needs.budget).toBe(500_000);
+    expect(f.pots.wants.budget).toBe(0);
+  });
+
+  it('knows which period is the joining one', () => {
+    expect(inOpeningPeriod(profile(), '2026-09-28')).toBe(true);
+    expect(inOpeningPeriod(profile(), '2026-10-01')).toBe(false);
+    expect(inOpeningPeriod(profile({ onboarded_at: null }), '2026-09-28')).toBe(false);
+  });
+});
+
+describe('openingBudget', () => {
+  it('makes Reste the balance typed, whatever was logged before', () => {
+    const input = base({
+      profile: profile(),
+      expenses: [expense({ amount_mil: 100_000, pot: 'needs' })],
+      incomes: [income({ amount_mil: 150_000, pot: 'wants', received_on: '2026-09-05' })],
+    });
+    const opening_mil = openingBudget(input, 700_000);
+    expect(opening_mil).toBe(650_000);
+    expect(computeFacts({ ...input, profile: profile({ opening_mil }) }).left).toBe(700_000);
+  });
+
+  it('still sets unpaid bills aside from the balance', () => {
+    const input = base({ profile: profile(), bills: [bill()] });
+    const f = computeFacts({ ...input, profile: profile({ opening_mil: openingBudget(input, 700_000) }) });
+    expect(f.pots.needs.reserved).toBeGreaterThan(0);
+    expect(f.left).toBe(700_000 - f.pots.needs.reserved);
+  });
+
+  it("ignores a partner's rows: they never left my account", () => {
+    const input = base({
+      profile: profile(),
+      expenses: [expense({ user_id: uuidN(9), amount_mil: 300_000, pot: 'needs' })],
+    });
+    expect(openingBudget(input, 700_000)).toBe(700_000);
+  });
+
+  it('never goes below zero', () => {
+    const input = base({ incomes: [income({ amount_mil: 900_000, received_on: '2026-09-05' })] });
+    expect(openingBudget(input, 100_000)).toBe(0);
   });
 });

@@ -2,15 +2,15 @@ import { ChevronRight, CircleCheck } from 'lucide-preact';
 import { Icon3D, i3dFile } from '../../design/i3d';
 import type { PotFacts } from '../../shared/facts';
 import { t } from '../../shared/i18n/t';
-import { formatTnd, type Mil } from '../../shared/money';
+import { formatMoney, type Mil } from '../../shared/money';
 import { HIDDEN } from './hideAmounts';
 
 type Kind = 'needs' | 'wants' | 'savings';
 const LOOK: Record<Kind, { icon: string; color: string }> = {
-  /* the *-ink shades: white text on them passes AA (spec §5.6) */
-  needs: { icon: 'house', color: 'var(--need-ink)' },
-  wants: { icon: 'sparkles', color: 'var(--want-ink)' },
-  savings: { icon: 'money_bag', color: 'var(--save-ink)' },
+  /* the prototype's pot colours, as the owner asked (spec §5.6 notes the contrast) */
+  needs: { icon: 'house', color: 'var(--need)' },
+  wants: { icon: 'sparkles', color: 'var(--want)' },
+  savings: { icon: 'money_bag', color: 'var(--save)' },
 };
 
 type Props = {
@@ -29,7 +29,7 @@ type Props = {
 
 export function PotCard({ kind, pct, facts, budget, hidden, shared = false, goal, onOpen }: Props) {
   const { icon, color } = LOOK[kind];
-  const money = (m: Mil) => (hidden ? HIDDEN : formatTnd(m, { unit: false }));
+  const money = (m: Mil) => (hidden ? HIDDEN : formatMoney(m, { unit: false }));
   const over = facts && facts.left < 0;
   return (
     <button type="button" class="pot" style={{ background: color }} onClick={onOpen}>
@@ -53,7 +53,7 @@ export function PotCard({ kind, pct, facts, budget, hidden, shared = false, goal
             <b class="num">{money(Math.max(0, facts.left))}</b>
             <span>
               {over
-                ? t('budget.pot.over', { amount: hidden ? HIDDEN : formatTnd(-facts.left) })
+                ? t('budget.pot.over', { amount: hidden ? HIDDEN : formatMoney(-facts.left) })
                 : t('budget.of', { amount: money(facts.budget) })}
             </span>
           </>

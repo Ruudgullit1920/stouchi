@@ -1,6 +1,6 @@
 import { MIL_PER_TND, type Mil } from '../../shared/money';
 
-/** Whole dinars, digits only (the setup answers are round figures). */
+/** Whole units of the currency, digits only (the setup answers are round figures). */
 export function AmountInput({
   label,
   value,

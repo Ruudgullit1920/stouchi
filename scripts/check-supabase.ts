@@ -152,7 +152,8 @@ const ROUND_TRIPS: Record<SpecTable, (c: Ctx) => Promise<RoundTrip>> = {
     return error ? 'read-only by design' : 'failed: a user could create a notification';
   },
   push_subscriptions: (c) => {
-    const endpoint = `https://qa.invalid/${randomUUID()}`;
+    /* a known push host (20261001's check); the row is deleted right after */
+    const endpoint = `https://fcm.googleapis.com/fcm/send/qa-check-${randomUUID()}`;
     return insertReadDelete(c, 'push_subscriptions', { endpoint, p256dh: 'qa', auth: 'qa' }, [
       'endpoint',
       endpoint,

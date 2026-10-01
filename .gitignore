@@ -26,3 +26,6 @@ supabase/functions/notify-run/core.js
 supabase/.temp/
 .wrangler
 .wrangler
+
+# TypeScript incremental build info
+*.tsbuildinfo

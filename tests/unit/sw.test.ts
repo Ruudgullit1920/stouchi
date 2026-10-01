@@ -13,15 +13,22 @@ type Res = {
   body: string;
   vary?: boolean;
   redirected?: boolean;
+  headers: { get: (name: string) => string | null };
   clone: () => Res;
   blob: () => Promise<string>;
 };
 const ORIGIN = 'https://stouchi.test';
+/* a body that starts with <html is the app's page (text/html), anything else a file */
+const typeOf = (body: string) => (body.startsWith('<html') ? 'text/html; charset=utf-8' : 'image/webp');
+const headersOf = (body: string) => ({
+  get: (name: string) => (name.toLowerCase() === 'content-type' ? typeOf(body) : null),
+});
 const res = (body: string, ok = true, vary = false, redirected = false): Res => ({
   ok,
   body,
   vary,
   redirected,
+  headers: headersOf(body),
   clone: () => res(body, ok, vary, redirected),
   blob: () => Promise.resolve(body),
 });
@@ -29,11 +36,13 @@ const res = (body: string, ok = true, vary = false, redirected = false): Res => 
 class FakeResponse {
   ok: boolean;
   redirected = false;
+  headers: Res['headers'];
   constructor(
     public body: string,
-    init: { status?: number } = {},
+    init: { status?: number; headers?: Res['headers'] } = {},
   ) {
     this.ok = (init.status ?? 200) < 400;
+    this.headers = init.headers ?? headersOf(body);
   }
 }
 /* a url whose network answer went through a redirect (Pages: /index.html → /) */
@@ -50,7 +59,11 @@ function loadWorker(
   const opened: string[] = [];
   /* the network: a url → body, or offline when absent */
   const net = new Map<string, string>();
-  const fetch = vi.fn((req: string | { url: string }) => {
+  /* the browser's HTTP cache: what a plain fetch gets, until cache: 'reload' */
+  const httpCache = new Map<string, string>();
+  const fetch = vi.fn((req: string | { url: string }, init?: { cache?: string }) => {
+    const stale = init?.cache === 'reload' ? undefined : httpCache.get(abs(req));
+    if (stale !== undefined) return Promise.resolve(res(stale));
     const body = net.get(abs(req));
     /* HANG: a connection that is up but never answers (weak Wi-Fi) */
     if (body === HANG) return new Promise<Res>(() => {});
@@ -132,7 +145,7 @@ function loadWorker(
     });
     return answer ? await answer : 'network';
   };
-  return { listeners, shown, opened, fire, request, net, store, self, fetch };
+  return { listeners, shown, opened, fire, request, net, httpCache, store, self, fetch };
 }
 
 const pushEvent = (payload: unknown) => ({ data: { json: () => payload } });
@@ -298,6 +311,43 @@ describe('sw.js — offline shell and updates (spec §8.3)', () => {
     w.net.set(abs('/assets/chat-b.js'), 'chat');
     expect((await w.request('/assets/chat-b.js')) as Res).toMatchObject({ body: 'chat' });
     expect(w.store.get('stouchi-v1')?.has(abs('/assets/chat-b.js'))).toBe(true);
+  });
+
+  /* Cloudflare Pages answers a missing file with the app's page (200, text/html)
+     and the year-long immutable header of /assets/*: mid-deploy, an icon asked
+     of an edge that did not have it yet got the page, and kept it. */
+  it("an asset answered with the app's page is fetched again past the HTTP cache, and only the file is kept", async () => {
+    const w = loadWorker([], { version: 'v1' });
+    w.httpCache.set(abs('/assets/fuel-a.webp'), '<html>app');
+    w.net.set(abs('/assets/fuel-a.webp'), 'webp');
+    expect((await w.request('/assets/fuel-a.webp')) as Res).toMatchObject({ body: 'webp' });
+    expect(w.store.get('stouchi-v1')!.get(abs('/assets/fuel-a.webp'))).toMatchObject({ body: 'webp' });
+  });
+
+  it("the app's page is never kept as an asset", async () => {
+    const w = loadWorker([], { version: 'v1' });
+    w.net.set(abs('/assets/gone-a.webp'), '<html>app');
+    expect((await w.request('/assets/gone-a.webp')) as Res).toMatchObject({ body: '<html>app' });
+    expect(w.store.get('stouchi-v1')?.has(abs('/assets/gone-a.webp'))).toBeFalsy();
+  });
+
+  it('a page already cached as an asset (by an older version) is replaced by the file', async () => {
+    const w = loadWorker([], {
+      version: 'v2',
+      caches: { 'stouchi-v1': { '/assets/fuel-a.webp': res('<html>app') }, 'stouchi-v2': {} },
+    });
+    w.net.set(abs('/assets/fuel-a.webp'), 'webp');
+    expect((await w.request('/assets/fuel-a.webp')) as Res).toMatchObject({ body: 'webp' });
+    w.fetch.mockClear();
+    expect((await w.request('/assets/fuel-a.webp')) as Res).toMatchObject({ body: 'webp' });
+    expect(w.fetch).not.toHaveBeenCalled();
+  });
+
+  it("an asset answered with the app's page fails the install", async () => {
+    const w = loadWorker([], { version: 'v2', precache: SHELL });
+    w.net.set(abs('/'), '<html>v2');
+    w.net.set(abs('/assets/index-a.js'), '<html>v2');
+    await expect(w.fire('install', {})).rejects.toThrow();
   });
 
   it('never touches Supabase, the API or a write', async () => {

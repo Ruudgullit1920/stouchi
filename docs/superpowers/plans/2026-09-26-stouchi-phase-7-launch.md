@@ -160,6 +160,8 @@ Missing migrations, to apply **one by one, in this order**. Don't use `supabase 
 5. `20260928_phase5_plan_and_delete`
 6. `20260929_phase6_couple`
 7. `20260930_legacy_join_limit`
+8. `20261001_push_subscription_limits` (added 2026-09-27: it was missing from this list, and from `stouchi-test`)
+9. `20261002_currency` (currency choice, added 2026-09-27; before the app build that writes `profiles.currency`)
 
 ### Supabase Auth on production (updated for D9)
 

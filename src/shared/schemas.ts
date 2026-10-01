@@ -1,12 +1,13 @@
 /* zod schemas for the spec §7 tables — one source of truth for the client, the
  * server and the backfill. Limits mirror the SQL checks in
  * supabase/migrations/20260923_redesign_schema.sql, 20260925_phase3_incomes_soft_delete.sql and
- * 20260926_phase4_notify.sql;
+ * 20260926_phase4_notify.sql and 20261002_currency.sql;
  * the db tests pin both.
  *
  * Refinements sit on top of plain objects: zod 4 refuses .omit() on a refined object. */
 import { z } from 'zod';
 import { CATEGORY_KEYS } from './categories';
+import { CURRENCY_CODES } from './currencies';
 import { MAX_MIL, isValidSplit } from './money';
 
 const uuid = z.uuid();
@@ -34,6 +35,12 @@ const ProfileBase = z.object({
   next_split_wants: z.int().min(0).max(100).nullable().optional(),
   next_split_savings: z.int().min(0).max(100).nullable().optional(),
   next_from: date.nullable().optional(),
+  /* display only (currency spec §4). Rows cached before it, or a code this build doesn't
+     know yet, read as TND rather than failing the whole profile. */
+  currency: z.enum(CURRENCY_CODES).catch('TND'),
+  /* what was left in the account at onboarding: that period's Besoins + Envies
+     (spec §4.6). Optional, so older rows and inserts still parse. */
+  opening_mil: mil.nullable().optional(),
   created_at: instant,
   updated_at: instant,
 });
@@ -68,7 +75,9 @@ const nextIsWhole = (p: NextCols) => {
 };
 const NEXT_ERROR = { message: 'a pending plan is all or nothing and adds up to 100', path: ['next_from'] };
 export const ProfileRow = ProfileBase.refine(splitAddsUp, SPLIT_ERROR).refine(nextIsWhole, NEXT_ERROR);
+/* The currency is left out of inserts that don't choose one (the backfill): the column's default applies. */
 export const ProfileInsert = ProfileBase.omit({ created_at: true, updated_at: true })
+  .extend({ currency: z.enum(CURRENCY_CODES).optional() })
   .refine(splitAddsUp, SPLIT_ERROR)
   .refine(nextIsWhole, NEXT_ERROR);
 

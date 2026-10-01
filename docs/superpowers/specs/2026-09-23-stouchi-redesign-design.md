@@ -86,11 +86,13 @@ runs 25 → 24. Every "ce mois", every per-day figure, every month in Historique
    "Créer un compte" uses the same screen. Google pre-fills the first name.
 3. **Setup**, one question per screen, progress bar, back allowed, each asked by Aam Salah:
    1. Prénom.
-   2. Salaire net mensuel — live 50/30/20 preview.
-   3. Jour de paie — 1er, 5, 10, 15, 20, 25, 28, fin du mois.
-   4. Factures fixes — toggle cards with editable monthly amount; live "réservé dans Besoins" meter,
+   2. Devise — nine currencies with round flags, the time zone's suggestion first and chosen
+      (display only, never converted; see `2026-09-27-currency-design.md`).
+   3. Salaire net mensuel — live 50/30/20 preview, in the chosen currency.
+   4. Jour de paie — 1er, 5, 10, 15, 20, 25, 28, fin du mois.
+   5. Factures fixes — toggle cards with editable monthly amount; live "réservé dans Besoins" meter,
       amber above 80 %, explanation above 100 %. Can be skipped ("Je n'ai pas de factures fixes").
-   5. Objectif — six goal types, target (pre-filled per type; Sécurité = 3 × salary), already saved,
+   6. Objectif — six goal types, target (pre-filled per type; Sécurité = 3 × salary), already saved,
       live target date.
 4. **Reveal**: salary coin, three pots drop in with counting amounts, confetti, "Ouvrir mon budget".
 
@@ -129,6 +131,17 @@ the savings deposit is recorded against the goal, bills for the period are reser
 notification ("Salaire reçu, c'est réparti"). If the user changes salary or split mid-period, the
 change applies from the next payday unless they choose "appliquer maintenant".
 
+**Opening balance.** Someone who joins mid-period has already spent part of that salary. Right
+after onboarding, the home screen asks in a bottom sheet « Il te reste combien sur ton compte ? »,
+with the Reste it would give shown live as they type. « C'est parti » stores it; « Plus tard » asks
+again on the next launch, until the next payday opens, after which it is never asked. The period
+onboarding happened in then runs on that amount instead of the salary's Besoins + Envies, split
+between the two in the plan's ratio; unpaid bills are still reserved from it, and the savings share
+is unchanged (that period gets no payday deposit anyway). What the user already logged that period
+is added back when it is stored (`profiles.opening_mil`), so Reste shows the balance they typed
+minus the unpaid bills. Users moved over from the legacy app (they have expenses dated before
+their onboarding day) are never asked.
+
 ### 4.7 Couple mode (optional)
 Moi → Partager à deux → invite code. Each expense gets a small avatar of who logged it; Historique
 gets a Tout / Moi filter; the home number becomes the household's. Aam Salah never edits or deletes
@@ -158,7 +171,7 @@ always reads blue and Envies purple.
 
 ### 5.2 Type
 Plus Jakarta Sans 400–800. Numbers: 800 weight, tight tracking (−0.045 em), tabular figures, unit
-("TND") set smaller and raised. Labels: 11 px, uppercase, 0.12 em tracking. Amounts are formatted with
+(the household's currency: "TND", "€" …) set smaller and raised. Labels: 11 px, uppercase, 0.12 em tracking. Amounts are formatted with
 `Intl.NumberFormat('fr-TN')` and **non-breaking** thousands separators.
 
 ### 5.3 Icons and logos
@@ -202,6 +215,8 @@ the button's box stays 44 px and a `::before` draws the prototype's shape inside
 regions for chat replies and toasts; the month bar picker is keyboard-operable; no information by
 colour alone (pot names always shown next to colours). White text never sits on `--acc` (3.0 : 1): the
 prototype's orange CTAs use `--acc-cta` `#D43F1C` (4.6 : 1), disabled `--acc-cta-off` `#FFC3B5`.
+Exception (owner's call, 2026-09-28): the three pot cards use the prototype's `--need` / `--want` /
+`--save` behind their white text (about 3.5, 4.2 and 2.8 : 1), not the `*-ink` shades.
 
 ## 6. Content and voice
 French, "tu", short sentences, no jargon, no guilt. Aam Salah speaks in the chat, the notifications,
@@ -215,12 +230,14 @@ Replaces today's single JSON document per user (`budget_data.data`) and per hous
 expenses by id; search spans a year; partners write concurrently; the JSON merge functions have had to
 be rewritten for every new key.
 
-**Money is stored as integer millimes** (1 TND = 1 000 millimes) — never floats. Dates are `date`
+**Money is stored as integer millimes** (1 TND = 1 000 millimes; other currencies keep the same
+thousandths, so 2-decimal ones end in 0) — never floats. The currency is a display label only
+(`profiles.currency`, `src/shared/currencies.ts`); switching it converts nothing. Dates are `date`
 (local, Africa/Tunis); instants are `timestamptz`.
 
 | Table | Key columns |
 |---|---|
-| `profiles` | `user_id` PK, `first_name`, `salary_mil`, `payday` (1–28 or 0 = last day), `split_needs/wants/savings` (sum 100), `onboarded_at` |
+| `profiles` | `user_id` PK, `first_name`, `salary_mil`, `payday` (1–28 or 0 = last day), `split_needs/wants/savings` (sum 100), `onboarded_at`, `currency` (TND EUR USD GBP CAD CHF MAD DZD LYD, default TND; one per household: `set_currency(code)` updates me and my partner, `couple_join` copies the host's), `opening_mil` (nullable, ≥ 0, §4.6) |
 | `households`, `household_members` | kept from today |
 | `expenses` | `id` uuid (client-generated), `user_id`, `household_id` null, `amount_mil` > 0, `category`, `pot` (`needs`/`wants`), `label` ≤ 60, `spent_on` date, `source` (`manual`/`chat`/`bill`), `bill_id` null, `created_at`, `updated_at`, `deleted_at` |
 | `bills` | `id`, `user_id`, `household_id` null, `label`, `amount_mil`, `frequency` (`monthly`/`bimonthly`/`quarterly`/`yearly`), `day`, `starts_on` (anchors non-monthly bills), `active` |

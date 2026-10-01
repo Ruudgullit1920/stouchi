@@ -83,15 +83,25 @@ describe('Toast', () => {
     expect(onDismiss).toHaveBeenCalledTimes(2);
   });
 
+  it('a plain toast, with no action, dismisses itself after 2.5 s', () => {
+    vi.useFakeTimers();
+    const onDismiss = vi.fn();
+    render(<Toast toast={{ id: 1, message: 'Dépense enregistrée' }} onDismiss={onDismiss} />);
+    vi.advanceTimersByTime(2400);
+    expect(onDismiss).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(100);
+    expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
   it('a new inline onDismiss, or a new-but-same-id toast object, does not restart the timer', () => {
     vi.useFakeTimers();
     const onDismissA = vi.fn();
     const onDismissB = vi.fn();
     const toast = { id: 1, message: 'Dépense supprimée.' };
     const { rerender } = render(<Toast toast={toast} onDismiss={onDismissA} />);
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(1500);
     rerender(<Toast toast={{ ...toast }} onDismiss={onDismissB} />);
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(1000);
     expect(onDismissA).not.toHaveBeenCalled();
     expect(onDismissB).toHaveBeenCalledOnce();
   });
@@ -100,19 +110,19 @@ describe('Toast', () => {
     vi.useFakeTimers();
     const onDismiss = vi.fn();
     const { rerender } = render(<Toast toast={{ id: 1, message: 'Un.' }} onDismiss={onDismiss} />);
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(1500);
     rerender(<Toast toast={{ id: 2, message: 'Deux.' }} onDismiss={onDismiss} />);
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(1500);
     expect(onDismiss).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(1000);
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 
-  it('toast={null} before 6 s cancels the timer for good', () => {
+  it('toast={null} before it expires cancels the timer for good', () => {
     vi.useFakeTimers();
     const onDismiss = vi.fn();
     const { rerender } = render(<Toast toast={{ id: 1, message: 'Un.' }} onDismiss={onDismiss} />);
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(1500);
     rerender(<Toast toast={null} onDismiss={onDismiss} />);
     vi.advanceTimersByTime(10000);
     expect(onDismiss).not.toHaveBeenCalled();

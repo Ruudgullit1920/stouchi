@@ -21,7 +21,7 @@ export function SegmentedBar({ segments, total }: { segments: Segment[]; total?:
           <span
             key={s.label}
             class="segbar__seg"
-            style={{ width: `${share(s.mil) * 100}%`, background: s.color }}
+            style={{ flex: `${share(s.mil)} 1 0`, background: s.color }}
           />
         ))}
     </div>

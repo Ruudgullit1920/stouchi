@@ -6,7 +6,7 @@
  * All logic is in core.js, built from src/server/notify by
  * `npm run build:notify` (run it before every deploy). This file only wires in
  * the service-key client (built into the function's environment, never in
- * Vercel or .env), the Gemini writer and web-push.
+ * Cloudflare or .env), the Gemini writer and web-push.
  *
  * Secrets (supabase secrets set …): VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY,
  * VAPID_SUBJECT (mailto:…), GEMINI_API_KEY, POSTHOG_API_KEY, POSTHOG_HOST;

@@ -4,9 +4,9 @@
  * and labels are always the French category name. */
 import { categoryLabel, potOf, type CategoryKey } from './categories';
 import { addDays, type ISODate } from './dates';
-import { MIL_PER_TND, parseTnd, type Mil } from './money';
+import { MIL_PER_TND, parseMoney, type Mil } from './money';
 
-/** The add_expense action, as /api/aam would send it (amount in TND). */
+/** The add_expense action, as /api/aam would send it (amount in units of the current currency). */
 export interface AddExpense {
   type: 'add_expense';
   kind: 'direct';
@@ -74,7 +74,7 @@ function amountIn(t: string): Mil | null {
     t.replace(DAY_OF_MONTH, ' '),
   );
   if (!m) return null;
-  const mil = parseTnd(m[1]);
+  const mil = parseMoney(m[1]);
   return mil === null ? null : mil * (m[2] ? 1000 : 1);
 }
 

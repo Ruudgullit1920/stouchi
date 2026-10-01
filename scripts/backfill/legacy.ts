@@ -1,7 +1,7 @@
 /* How today's app (app.js) stored things, read the way it read them. */
 import { isCategory, type CategoryKey, type Pot } from '../../src/shared/categories';
 import { isValidISODate, todayTunis, type ISODate } from '../../src/shared/dates';
-import { milFromTnd, parseTnd, type Mil } from '../../src/shared/money';
+import { milFromTnd, parseMoney, type Mil } from '../../src/shared/money';
 import { isRec, records, str, type Rec } from './shared';
 
 /* app.js CATS keys carry accents; the new keys don't. 'épargne' was an expense
@@ -102,7 +102,7 @@ export function isSharedBill(b: Rec): boolean {
 
 export function legacyAmount(raw: unknown): Mil | null {
   if (typeof raw === 'number') return milFromTnd(raw);
-  if (typeof raw === 'string') return parseTnd(raw);
+  if (typeof raw === 'string') return parseMoney(raw);
   return null;
 }
 

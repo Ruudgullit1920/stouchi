@@ -11,7 +11,7 @@ import {
 } from 'lucide-preact';
 import { monthName } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { goalEta } from '../../shared/payday';
 import { AmountInput } from './AmountInput';
 import { GOAL_PRESETS, goalLabel, goalTarget, potsOf, type GoalKey, type StepProps } from './draft';
@@ -102,7 +102,7 @@ function Eta({ target, saved, rate, today }: { target: number; saved: number; ra
       <CalendarHeart aria-hidden="true" />
       {when &&
         t('setup.goal.eta', {
-          rate: formatTnd(rate),
+          rate: formatMoney(rate),
           when: `${monthName(when.slice(0, 7)).toLowerCase()} ${when.slice(0, 4)}`,
         })}
     </p>

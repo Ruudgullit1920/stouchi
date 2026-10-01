@@ -42,6 +42,7 @@ A household budget PWA, written in French. Amounts are in Tunisian dinars (TND).
 
 ## Domain rules
 - **Money:** integer millimes (1 TND = 1000). Never use floats. Helpers are in `src/shared/money.ts`.
+- **Currency:** display only, `src/shared/currencies.ts`; amounts are never converted.
 - **Dates:** Africa/Tunis. Figures use pay periods, not calendar months (`src/shared/dates.ts`).
 - **Categories:** `src/shared/categories.ts` must stay aligned with `CAT_POT` in `lib/aam-salah/validate.js`.
 - **UI text:** French only, in `src/shared/i18n/fr.json`. No hard-coded strings in components.

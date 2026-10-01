@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setCurrentCurrency } from '../../src/shared/currentCurrency';
 import { isUndo, parseLocal } from '../../src/shared/localParser';
 
 const TODAY = '2026-09-10';
@@ -87,5 +88,23 @@ describe('isUndo', () => {
 
   it.each(['annule le café de lundi', '50 courses', 'bonjour'])('%s → not a plain undo', (text) => {
     expect(isUndo(text)).toBe(false);
+  });
+});
+
+describe('parseLocal and the currency', () => {
+  afterEach(() => setCurrentCurrency('TND'));
+
+  it('reads euros in EUR', () => {
+    setCurrentCurrency('EUR');
+    expect(parseLocal('café 4,50 €', TODAY)).toMatchObject({ action: { category: 'cafe', amount: 4.5 } });
+  });
+
+  it('reads dinars in TND', () => {
+    expect(parseLocal('café 4,500 dt', TODAY)).toMatchObject({ action: { category: 'cafe', amount: 4.5 } });
+  });
+
+  it('asks rather than read "4,500" as 4,5 or 4 500 in EUR', () => {
+    setCurrentCurrency('EUR');
+    expect(parseLocal('café 4,500', TODAY)).toEqual({ ask: 'amount' });
   });
 });

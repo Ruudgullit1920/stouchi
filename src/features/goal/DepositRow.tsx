@@ -3,7 +3,7 @@ import { Coins, HandCoins } from 'lucide-preact';
 import { HIDDEN } from '../../design/components/Amount';
 import { monthName, shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import type { SavingsMove } from '../../shared/schemas';
 
 /** "de septembre", "d’août" */
@@ -39,7 +39,7 @@ export function DepositRow({
         </span>
       </span>
       <span class={move.amount_mil < 0 ? 'goal-move__a num goal-move__a--out' : 'goal-move__a num'}>
-        {hidden ? HIDDEN : formatTnd(move.amount_mil, { unit: false, sign: true })}
+        {hidden ? HIDDEN : formatMoney(move.amount_mil, { unit: false, sign: true })}
       </span>
     </li>
   );

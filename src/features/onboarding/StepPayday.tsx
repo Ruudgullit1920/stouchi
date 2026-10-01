@@ -1,6 +1,6 @@
 import { CalendarCheck } from 'lucide-preact';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { potsOf, type StepProps } from './draft';
 
 /** 0 = the last day of the month */
@@ -32,10 +32,10 @@ export function StepPayday({ draft, set }: StepProps) {
           ? t('setup.payday.hintEmpty')
           : t('setup.payday.hint', {
               day: dayLabel(draft.payday),
-              salary: formatTnd(draft.salary_mil),
-              needs: formatTnd(pots.needs, { unit: false }),
-              wants: formatTnd(pots.wants, { unit: false }),
-              savings: formatTnd(pots.savings, { unit: false }),
+              salary: formatMoney(draft.salary_mil),
+              needs: formatMoney(pots.needs, { unit: false }),
+              wants: formatMoney(pots.wants, { unit: false }),
+              savings: formatMoney(pots.savings, { unit: false }),
             })}
       </p>
     </>

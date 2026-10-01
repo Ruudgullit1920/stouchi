@@ -1,4 +1,5 @@
 import { Eye, EyeOff, Plus } from 'lucide-preact';
+import { useEffect } from 'preact/hooks';
 import type { ScreenProps } from '../../app/Shell';
 import { navigate } from '../../app/router';
 import { CATEGORY_ICON, categoryI3d } from '../../design/components/CategoryIcon';
@@ -8,7 +9,8 @@ import { LedgerRow } from '../../design/components/LedgerRow';
 import { SegmentedBar } from '../../design/components/SegmentedBar';
 import { Skeleton } from '../../design/components/Skeleton';
 import { useRolling } from '../../design/useRolling';
-import { syncNow } from '../../data/app';
+import { syncNow, writeMine } from '../../data/app';
+import type { Row } from '../../data/localdb';
 import { categoryLabel } from '../../shared/categories';
 import { authorOf } from '../../shared/couple';
 import { todayTunis } from '../../shared/dates';
@@ -17,20 +19,28 @@ import { computeFacts } from '../../shared/facts';
 import { initials, monthName, shortDate } from '../../shared/format';
 import { t } from '../../shared/i18n/t';
 import { titleOf } from '../../shared/ledger';
-import { formatTnd } from '../../shared/money';
+import { floorTenth, formatMoney } from '../../shared/money';
 import { Bell } from '../notifications/Bell';
 import { HIDDEN, hideAmounts, toggleHideAmounts } from './hideAmounts';
+import { maybeAskOpening } from './OpeningSheet';
 import { activeGoal } from '../../shared/payday';
 import { PotCard } from './PotCard';
 import { UpcomingList } from './UpcomingList';
 import './budget.css';
 
+const writeProfile = (table: 'profiles', row: Row) => writeMine(table, row);
+
 /** Home (spec §3): what can I still spend? */
-export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
+export function BudgetScreen({ store, onOpenExpense, onAdd }: ScreenProps) {
   const profile = store.profile.value;
-  const { load } = store.sync.value;
+  const { load, pulled } = store.sync.value;
   const facts = profile ? computeFacts(factsInput(store, profile, todayTunis())) : null;
   const left = useRolling(facts?.left ?? 0);
+  /* a new user who joined mid-period: what is left in the account (spec §4.6).
+     After a pull, so an answer given on another device, and old expenses, are known. */
+  useEffect(() => {
+    if (pulled) maybeAskOpening(store, writeProfile);
+  }, [profile, pulled]);
 
   if (!profile && load === 'loading') return <Skeleton lines={8} />;
   if (!profile && load === 'error') return <ErrorState onRetry={() => void syncNow()} />;
@@ -38,7 +48,7 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
     return <EmptyState title={t('budget.noProfile.title')} body={t('budget.noProfile.body')} />;
 
   const hidden = hideAmounts.value;
-  const money = (m: number, unit = false) => (hidden ? HIDDEN : formatTnd(m, { unit }));
+  const money = (m: number, unit = false) => (hidden ? HIDDEN : formatMoney(m, { unit }));
   const { needs, wants, savings } = facts.pots;
 
   return (
@@ -68,11 +78,11 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
       </div>
       <div class="hero">
         <p class={facts.left < 0 ? 'big num big--over' : 'big num'}>
-          {money(left)}
-          <span class="unit">{t('unit.tnd')}</span>
+          {money(floorTenth(left))}
+          <span class="unit">{t('unit.money')}</span>
         </p>
         <p class="perday">
-          <b class="num">{t('budget.perDay', { amount: money(facts.perDay) })}</b>
+          <b class="num">{t('budget.perDay', { amount: money(floorTenth(facts.perDay)) })}</b>
           <span>{t('period.daysLeft', { n: facts.daysLeft })}</span>
         </p>
       </div>
@@ -81,7 +91,8 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           { label: t('pot.needs'), mil: needs.spent, color: 'var(--need)' },
           { label: t('pot.wants'), mil: wants.spent, color: 'var(--want)' },
           { label: t('budget.bar.reserved'), mil: needs.reserved, color: 'var(--need-soft)' },
-          { label: t('budget.bar.left'), mil: Math.max(0, facts.left), color: 'var(--line)' },
+          { label: t('pot.savings'), mil: savings.budget, color: 'var(--save)' },
+          { label: t('budget.bar.left'), mil: Math.max(0, facts.left), color: 'var(--track)' },
         ]}
       />
       <p class="legend">
@@ -155,9 +166,9 @@ export function BudgetScreen({ store, onOpenExpense }: ScreenProps) {
           ))
         ) : (
           <div class="first-exp">
-            <span class="first-exp__ic" aria-hidden="true">
-              <Plus size={20} />
-            </span>
+            <button type="button" class="first-exp__ic" aria-label={t('budget.first.add')} onClick={onAdd}>
+              <Plus size={20} aria-hidden="true" />
+            </button>
             <span>
               <b>{t('budget.first.title')}</b>
               <span>{t('budget.first.body')}</span>

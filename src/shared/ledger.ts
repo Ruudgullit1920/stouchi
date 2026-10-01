@@ -3,7 +3,7 @@
 import { categoryLabel, type CategoryKey, type Pot } from './categories';
 import { isInPeriod, type ISODate, type PayPeriod } from './dates';
 import type { StringKey } from './i18n/t';
-import { formatTnd, type Mil } from './money';
+import { formatMoney, type Mil } from './money';
 import type { Expense } from './schemas';
 
 /** Category colours are tints of the pot colour (spec §5.1), biggest first. */
@@ -78,8 +78,8 @@ export function historyLine(
   const before = sum(es.filter((e) => e.category === top.key && isInPeriod(e.spent_on, previous)));
   const vars = {
     category: categoryLabel(top.key),
-    amount: formatTnd(top.total),
-    delta: formatTnd(Math.abs(top.total - before)),
+    amount: formatMoney(top.total),
+    delta: formatMoney(Math.abs(top.total - before)),
   };
   if (before === 0) return { key: 'history.line.first', vars };
   return { key: top.total >= before ? 'history.line.up' : 'history.line.down', vars };

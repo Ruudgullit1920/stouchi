@@ -1,6 +1,6 @@
 import { Icon3D, i3d } from '../../design/i3d';
 import { t, type StringKey } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { AmountInput } from './AmountInput';
 import { billLabel, meter, type BillKey, type DraftBill, type StepProps } from './draft';
 
@@ -17,7 +17,7 @@ export function StepBills({ draft, set }: StepProps) {
   const change = (key: BillKey, patch: Partial<DraftBill>) =>
     set({ bills: draft.bills.map((b) => (b.key === key ? { ...b, ...patch } : b)) });
   const m = meter(draft);
-  const left = formatTnd(m.need - m.used);
+  const left = formatMoney(m.need - m.used);
 
   return (
     <>
@@ -68,7 +68,7 @@ export function StepBills({ draft, set }: StepProps) {
         <div class="mh">
           <span>{t('setup.meter.title')}</span>
           <span class="num">
-            {t('setup.meter.of', { used: formatTnd(m.used, { unit: false }), need: formatTnd(m.need) })}
+            {t('setup.meter.of', { used: formatMoney(m.used, { unit: false }), need: formatMoney(m.need) })}
           </span>
         </div>
         <div class="mt" aria-hidden="true">
@@ -76,7 +76,7 @@ export function StepBills({ draft, set }: StepProps) {
         </div>
         <p>
           {m.level === 'over'
-            ? t('setup.meter.over', { over: formatTnd(m.used - m.need) })
+            ? t('setup.meter.over', { over: formatMoney(m.used - m.need) })
             : m.level === 'warn'
               ? t('setup.meter.warn', { pct: m.pct, left })
               : t('setup.meter.ok', { left })}

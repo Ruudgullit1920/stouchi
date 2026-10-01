@@ -1,5 +1,5 @@
 import { t } from '../../shared/i18n/t';
-import { formatTnd, MIL_PER_TND } from '../../shared/money';
+import { formatMoney, MIL_PER_TND } from '../../shared/money';
 import { AmountInput } from './AmountInput';
 import { MIN_SALARY, potsOf, type StepProps } from './draft';
 
@@ -37,7 +37,7 @@ export function StepSalary({ draft, set }: StepProps) {
             class={salary === v * MIL_PER_TND ? 'on' : undefined}
             onClick={() => set({ salary_mil: v * MIL_PER_TND })}
           >
-            {formatTnd(v * MIL_PER_TND, { unit: false })}
+            {formatMoney(v * MIL_PER_TND, { unit: false })}
           </button>
         ))}
       </div>
@@ -53,7 +53,7 @@ export function StepSalary({ draft, set }: StepProps) {
             <span>
               {t(p.name)} <small>{p.pct} %</small>
             </span>
-            <b class="num">{formatTnd(pots[p.key])}</b>
+            <b class="num">{formatMoney(pots[p.key])}</b>
           </div>
         ))}
       </div>

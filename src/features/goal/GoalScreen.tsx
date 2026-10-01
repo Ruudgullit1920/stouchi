@@ -14,7 +14,7 @@ import { nextPayday, payPeriod, todayTunis } from '../../shared/dates';
 import { monthYear, shortDate } from '../../shared/format';
 import { goalView, sooner } from '../../shared/goal';
 import { t } from '../../shared/i18n/t';
-import { MIL_PER_TND, formatTnd, splitSalary } from '../../shared/money';
+import { MIL_PER_TND, formatMoney, splitSalary } from '../../shared/money';
 import { activeGoal } from '../../shared/payday';
 import { planFor } from '../../shared/plan';
 import { hideAmounts } from '../budget/hideAmounts';
@@ -87,7 +87,7 @@ export function GoalScreen({ store }: ScreenProps) {
   const monthly = splitSalary(salary_mil, split).savings;
   const v = goalView(goal, store.savingsMoves.value, monthly, today);
   const hidden = hideAmounts.value;
-  const money = (m: number, unit = true) => (hidden ? HIDDEN : formatTnd(m, { unit }));
+  const money = (m: number, unit = true) => (hidden ? HIDDEN : formatMoney(m, { unit }));
   const Icon = goalIcon(goal.icon);
   const gain = extra === null ? null : sooner(goal, v.saved, monthly, extra * MIL_PER_TND, today);
 
@@ -104,7 +104,7 @@ export function GoalScreen({ store }: ScreenProps) {
         </span>
         <span class="goal-card__saved num">
           {money(v.saved, false)}
-          <span class="unit">{t('unit.tnd')}</span>
+          <span class="unit">{t('unit.money')}</span>
         </span>
         <span class="goal-card__target">{t('goal.of', { amount: money(goal.target_mil) })}</span>
         <span class="goal-card__bar" aria-hidden="true">

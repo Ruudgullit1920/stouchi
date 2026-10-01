@@ -14,7 +14,7 @@ import type { Store } from '../../data/store';
 import { potOf } from '../../shared/categories';
 import { addDays, payPeriod, todayTunis } from '../../shared/dates';
 import { t } from '../../shared/i18n/t';
-import { formatTnd } from '../../shared/money';
+import { formatMoney } from '../../shared/money';
 import { tunisInstant } from '../../shared/payday';
 import {
   PartnerChange,
@@ -149,7 +149,7 @@ export async function runAction(
         user_id: userId,
         text: t('notify.reminder.debt', {
           person: d.person,
-          amount: formatTnd(d.amount_mil, { unit: false }),
+          amount: formatMoney(d.amount_mil, { unit: false }),
         }),
         remind_at,
         done_at: null,
