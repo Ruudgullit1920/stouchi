@@ -5,7 +5,7 @@
  *
  * Needs SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env: it reads every
  * account, so RLS must be bypassed. Local admin use only — this key never goes
- * to Vercel. .backfill/ holds real users' data and is gitignored. Only counts
+ * to Cloudflare. .backfill/ holds real users' data and is gitignored. Only counts
  * are printed, never personal data. */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { str } from './convert';
