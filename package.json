@@ -30,7 +30,7 @@
     "@preact/signals": "^2.11.2",
     "@supabase/auth-js": "^2.117.1",
     "@supabase/postgrest-js": "^2.117.1",
-    "@supabase/supabase-js": "^2.117.1",
+    "@supabase/supabase-js": "^2.117.2",
     "idb": "^8.0.3",
     "lucide-preact": "^1.47.0",
     "posthog-js": "^1.434.14",
